@@ -57,11 +57,13 @@
                         <div [class]="'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ' +
                             (notification.type === 'new_ticket' ? 'bg-blue-100 text-blue-600' :
                             notification.type === 'customer_reply' ? 'bg-green-100 text-green-600' :
+                            notification.type === 'mention' ? 'bg-purple-100 text-purple-600' :
                             'bg-red-100 text-red-600')">
                         <app-icon [name]="{
                             new_ticket: 'mail',
                             customer_reply: 'messagesquare',
-                            sla_breach: 'alertcircle'
+                            sla_breach: 'alertcircle',
+                            mention: 'at-sign'
                         }[notification.type]" class="w-5 h-5"></app-icon>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -82,6 +84,9 @@
                 </div>
             }
         </div>
+        <button (click)="showKeyboardShortcuts.set(true)" class="p-2 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 focus:outline-none" title="Keyboard Shortcuts (?)">
+            <app-icon name="help-circle" class="w-6 h-6"></app-icon>
+        </button>
         <div class="flex items-center space-x-2">
            <app-icon name="user" class="w-5 h-5 text-gray-500 dark:text-slate-400"></app-icon>
             <select [ngModel]="currentUser().id" (ngModelChange)="updateCurrentUser(+$event)" class="text-sm border-none bg-transparent focus:ring-0 text-gray-900 dark:text-slate-100 dark:bg-slate-800">
@@ -206,16 +211,25 @@
                                 />
                             }
                             @case ('dropdown') {
-                                <select
-                                    [ngModel]="advancedFilters().customFilters[field.id] || 'all'"
-                                    (ngModelChange)="updateAdvancedFilterCustomField(field.id, $event)"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
-                                >
-                                    <option value="all">All</option>
-                                    @for (option of field.options || []; track option) {
-                                        <option [value]="option">{{ option }}</option>
-                                    }
-                                </select>
+                                @if(field.options && field.options.length > 0) {
+                                    <select
+                                        [ngModel]="advancedFilters().customFilters[field.id] || 'all'"
+                                        (ngModelChange)="updateAdvancedFilterCustomField(field.id, $event)"
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+                                    >
+                                        <option value="all">All</option>
+                                        @for (option of field.options; track option) {
+                                            <option [value]="option">{{ option }}</option>
+                                        }
+                                    </select>
+                                } @else {
+                                    <input 
+                                        type="text" 
+                                        disabled 
+                                        value="No options defined" 
+                                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm bg-gray-100 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 cursor-not-allowed"
+                                    />
+                                }
                             }
                         }
                     </div>
@@ -270,6 +284,20 @@
             >
               <app-icon name="barchart3" class="w-4 h-4"></app-icon>
               <span>Analytics</span>
+            </button>
+             <button
+              (click)="activeView.set('reports')"
+              [class]="'w-full text-left px-4 py-2 rounded-lg transition flex items-center space-x-2 ' + (activeView() === 'reports' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700')"
+            >
+              <app-icon name="filetext" class="w-4 h-4"></app-icon>
+              <span>Reports</span>
+            </button>
+            <button
+              (click)="activeView.set('slack')"
+              [class]="'w-full text-left px-4 py-2 rounded-lg transition flex items-center space-x-2 ' + (activeView() === 'slack' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700')"
+            >
+              <app-icon name="slack" class="w-4 h-4"></app-icon>
+              <span>Slack</span>
             </button>
              @if(hasPermission('manage_settings')) {
                 <hr class="my-2 dark:border-slate-700">
@@ -425,8 +453,19 @@
             @case ('analytics') {
               <app-analytics-dashboard [analytics]="analytics()"></app-analytics-dashboard>
             }
+            @case ('reports') {
+              <app-reports [tickets]="tickets()" [agents]="agents()"></app-reports>
+            }
             @case ('knowledge-base') {
               <app-knowledge-base [articles]="knowledgeBaseArticles()" [categories]="knowledgeBaseCategories()"></app-knowledge-base>
+            }
+             @case ('slack') {
+              <app-slack-integration
+                [messages]="slackMessages()"
+                [settings]="slackSettings()"
+                (createTicket)="handleCreateTicketFromSlack($event)"
+                (viewTicket)="handleViewTicketFromSlack($event)"
+              ></app-slack-integration>
             }
             @case ('tickets') {
               <div class="flex h-full flex-col">
@@ -466,7 +505,7 @@
                       @for (ticket of filteredTickets(); track ticket.id) {
                         @let sla = calculateSLA(ticket);
                         @let isSelected = selectedTicketIds().includes(ticket.id);
-                        <div [class]="'p-4 transition hover:bg-gray-50 dark:hover:bg-slate-700/50 ' + (selectedTicket()?.id === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50' : '')">
+                        <div [class]="'p-4 transition hover:bg-gray-50 dark:hover:bg-slate-700/50 border-l-4 ' + (selectedTicket()?.id === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50 border-indigo-500' : 'border-transparent')">
                           <div class="flex items-start space-x-3">
                             <button (click)="$event.stopPropagation(); toggleTicketSelection(ticket.id)" class="mt-1 flex-shrink-0">
                                 @if(isSelected) {
@@ -479,6 +518,13 @@
                               <div class="flex items-start justify-between mb-2">
                                 <h3 class="font-medium text-gray-900 dark:text-slate-100 line-clamp-1 flex items-center space-x-2">
                                     <app-icon [name]="{ web: 'mail', email: 'inbox', chat: 'message-circle' }[ticket.channel]" [title]="'Channel: ' + ticket.channel" class="w-4 h-4 text-gray-400 dark:text-slate-500"></app-icon>
+                                    @if(ticket.sentiment === 'positive') {
+                                        <app-icon name="smile" class="w-4 h-4 text-green-500" title="Positive Sentiment"></app-icon>
+                                    } @else if (ticket.sentiment === 'negative') {
+                                        <app-icon name="frown" class="w-4 h-4 text-red-500" title="Negative Sentiment"></app-icon>
+                                    } @else {
+                                        <app-icon name="meh" class="w-4 h-4 text-gray-400" title="Neutral Sentiment"></app-icon>
+                                    }
                                     @if(ticket.isPrivate) {
                                         <app-icon name="lock" class="w-4 h-4 text-gray-500 dark:text-slate-400" title="Private Ticket"></app-icon>
                                     }
@@ -548,6 +594,7 @@
                         [macros]="macros()"
                         [customFieldDefinitions]="customFieldDefinitions()"
                         [allAgents]="agents()"
+                        [customerTicketHistory]="customerTicketHistory()"
                         (statusChange)="updateTicketStatus($event)"
                         (tagsChange)="updateTicketTags($event)"
                         (reply)="addReply($event)"
@@ -558,6 +605,7 @@
                         (splitTicket)="splitTicket($event)"
                         (addWatcher)="handleAddWatcher({ ticketId: ticket.id, agentId: $event })"
                         (removeWatcher)="handleRemoveWatcher({ ticketId: ticket.id, agentId: $event })"
+                        (linkTicket)="handleLinkTicket({ parentId: ticket.id, childId: $event })"
                       ></app-ticket-detail>
                     } @else {
                       <div class="h-full flex items-center justify-center text-gray-500 dark:text-slate-500">
@@ -580,6 +628,7 @@
     <app-new-ticket-modal
       [availableTags]="availableTags()"
       [customFieldDefinitions]="customFieldDefinitions()"
+      [knowledgeBaseArticles]="knowledgeBaseArticles()"
       (close)="showNewTicket.set(false)"
       (submit)="handleNewTicket($event)"
     ></app-new-ticket-modal>
@@ -607,6 +656,8 @@
       [agents]="agents()"
       [roles]="roles()"
       [groups]="groups()"
+      [slackSettings]="slackSettings()"
+      (slackSettingsChange)="slackSettings.set($event)"
       (close)="showSettings.set(false)"
     ></app-settings-modal>
   }
@@ -617,6 +668,26 @@
       (close)="showCSAT.set(false)"
       (submit)="submitCSAT($event)"
     ></app-csat-modal>
+  }
+
+  @if (showKeyboardShortcuts()) {
+    <div class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-slate-800 rounded-lg max-w-lg w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-slate-100">Keyboard Shortcuts</h2>
+                <button (click)="showKeyboardShortcuts.set(false)" class="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200">
+                    <app-icon name="xcircle" class="w-6 h-6"></app-icon>
+                </button>
+            </div>
+            <div class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                <div class="flex justify-between items-center"><span class="text-gray-700 dark:text-slate-300">New Ticket</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500">N</kbd></div>
+                <div class="flex justify-between items-center"><span class="text-gray-700 dark:text-slate-300">Open this menu</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500">?</kbd></div>
+                <div class="flex justify-between items-center"><span class="text-gray-700 dark:text-slate-300">Focus Reply</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500">R</kbd></div>
+                <div class="flex justify-between items-center"><span class="text-gray-700 dark:text-slate-300">Add Internal Note</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500">I</kbd></div>
+                <div class="flex justify-between items-center"><span class="text-gray-700 dark:text-slate-300">Change Status</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-slate-600 dark:text-slate-100 dark:border-slate-500">S</kbd></div>
+            </div>
+        </div>
+    </div>
   }
   
   @if(showChatWidget()) {

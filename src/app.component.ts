@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy, signal, computed, WritableSignal, Signal, effect, Injector } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, WritableSignal, Signal, effect, Injector, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ticket, AutomationRule, CannedResponse, SlaRules, SlaInfo, AdvancedFilters, AnalyticsData, KnowledgeBaseArticle, KnowledgeBaseCategory, Activity, TimeLog, CustomFieldDefinition, Macro, Message, Agent, Role, Group, AutomationAction, AutomationTrigger, MockEmail, ChatSession, ChatMessage, Notification, View } from './models';
+import { Ticket, AutomationRule, CannedResponse, SlaRules, SlaInfo, AdvancedFilters, AnalyticsData, KnowledgeBaseArticle, KnowledgeBaseCategory, Activity, TimeLog, CustomFieldDefinition, Macro, Message, Agent, Role, Group, AutomationAction, AutomationTrigger, MockEmail, ChatSession, ChatMessage, Notification, View, SlackSettings, SlackMessage } from './models';
 import { AnalyticsDashboardComponent } from './components/analytics-dashboard/analytics-dashboard.component';
 import { TicketDetailComponent } from './components/ticket-detail/ticket-detail.component';
 import { NewTicketModalComponent } from './components/new-ticket-modal/new-ticket-modal.component';
@@ -16,6 +16,9 @@ import { SettingsModalComponent } from './components/settings-modal/settings-mod
 import { InboxComponent } from './components/inbox/inbox.component';
 import { ChatComponent } from './components/chat/chat.component';
 import { ChatWidgetComponent } from './components/chat-widget/chat-widget.component';
+import { ReportsComponent } from './components/reports/reports.component';
+import { SlackIntegrationComponent } from './components/slack-integration/slack-integration.component';
+import { GeminiService } from './gemini.service';
 
 @Component({
   selector: 'app-root',
@@ -38,16 +41,19 @@ import { ChatWidgetComponent } from './components/chat-widget/chat-widget.compon
     InboxComponent,
     ChatComponent,
     ChatWidgetComponent,
+    ReportsComponent,
+    SlackIntegrationComponent,
   ],
 })
 export class AppComponent {
-  activeView = signal<'tickets' | 'analytics' | 'knowledge-base' | 'customer-portal' | 'inbox' | 'chat'>('tickets');
+  activeView = signal<'tickets' | 'analytics' | 'knowledge-base' | 'customer-portal' | 'inbox' | 'chat' | 'reports' | 'slack'>('tickets');
   selectedTicket: WritableSignal<Ticket | null> = signal(null);
   showNewTicket = signal(false);
   showAutomation = signal(false);
   showCSAT = signal(false);
   showSlaManagement = signal(false);
   showSettings = signal(false);
+  showKeyboardShortcuts = signal(false);
   csatTicket: WritableSignal<Ticket | null> = signal(null);
   filterStatus = signal('all');
   filterTag = signal('all');
@@ -87,6 +93,10 @@ export class AppComponent {
     }
   ]);
   activeViewId = signal<string | null>('all');
+
+  // Integrations
+  slackSettings = signal<SlackSettings>({ enabled: true, channel: 'support-tickets' });
+  slackMessages = signal<SlackMessage[]>([]);
 
 
   // Notifications
@@ -133,7 +143,7 @@ export class AppComponent {
     return this.chatSessions().find(c => c.customerEmail === user.email && c.status !== 'closed' && c.status !== 'ticket_created') || null;
   });
 
-  constructor(private injector: Injector) {
+  constructor(private injector: Injector, private geminiService: GeminiService) {
     const savedTheme = localStorage.getItem('bolddesk-theme') as 'light' | 'dark';
     if (savedTheme) {
       this.theme.set(savedTheme);
@@ -143,6 +153,11 @@ export class AppComponent {
     const savedViewsFromStorage = localStorage.getItem('bolddesk-saved-views');
     if (savedViewsFromStorage) {
         this.savedViews.set(JSON.parse(savedViewsFromStorage));
+    }
+    
+    const savedSlackSettings = localStorage.getItem('bolddesk-slack-settings');
+    if (savedSlackSettings) {
+        this.slackSettings.set(JSON.parse(savedSlackSettings));
     }
 
     effect(() => {
@@ -226,6 +241,10 @@ export class AppComponent {
     effect(() => {
         localStorage.setItem('bolddesk-saved-views', JSON.stringify(this.savedViews()));
     });
+    
+    effect(() => {
+        localStorage.setItem('bolddesk-slack-settings', JSON.stringify(this.slackSettings()));
+    });
 
     // Effect to deselect active view if filters change
     effect(() => {
@@ -249,6 +268,38 @@ export class AppComponent {
         this.activeViewId.set(null);
       }
     }, { allowSignalWrites: true });
+    
+    // Effect for Slack notifications
+    effect((onCleanup) => {
+        const currentTickets = this.tickets();
+        onCleanup(() => {
+            const previousTickets = this.tickets();
+            if (currentTickets.length > previousTickets.length) {
+                const newTicket = currentTickets[0]; // Assuming new ticket is at the start
+                this.postToSlack(newTicket);
+            }
+        });
+    });
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    // Disable shortcuts if an input, textarea, or select is focused
+    const target = event.target as HTMLElement;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'n':
+        event.preventDefault();
+        this.showNewTicket.set(true);
+        break;
+      case '?':
+        this.showKeyboardShortcuts.set(true);
+        break;
+      // Add more shortcuts here for navigation or actions
+    }
   }
 
   toggleTheme() {
@@ -380,10 +431,10 @@ export class AppComponent {
   ]);
 
   tickets = signal<Ticket[]>([
-    { id: 1, subject: 'Cannot login to account', customer: 'John Smith', email: 'john.smith@email.com', status: 'open', priority: 'high', assignedTo: 'Unassigned', created: '2025-10-18T10:30:00', lastUpdate: '2025-10-18T14:20:00', firstResponseAt: null, tags: ['Technical', 'Account'], category: 'Technical', messages: [{ from: 'John Smith', content: 'I cannot login to my account. I keep getting an error message.', timestamp: '2025-10-18T10:30:00', type: 'customer', attachments: [], channel: 'web' }], internalNotes: [], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-18T10:30:00', details: 'Ticket created' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 3600, timeLogs: [], customFields: { order_id: 'ORD-12345', product_area: 'Website', purchase_date: '2025-10-15' }, isPrivate: false, watchers: [], cc: [], channel: 'web' },
-    { id: 2, subject: 'Feature request: Dark mode', customer: 'Emily Davis', email: 'emily.davis@email.com', status: 'in-progress', priority: 'medium', assignedTo: 'Mike Chen', created: '2025-10-17T09:15:00', lastUpdate: '2025-10-18T11:00:00', firstResponseAt: '2025-10-17T10:30:00', tags: ['Feature Request'], category: 'Feature Request', messages: [{ from: 'Emily Davis', content: 'Would love to see a dark mode option in the app.', timestamp: '2025-10-17T09:15:00', type: 'customer', attachments: [], channel: 'web' }, { from: 'Mike Chen', content: 'Thank you for the suggestion! We are adding this to our roadmap.', timestamp: '2025-10-18T11:00:00', type: 'agent', attachments: [], channel: 'web' }], internalNotes: [{ from: 'Mike Chen', content: 'Adding to Q1 2026 roadmap. UI team to review.', timestamp: '2025-10-18T11:05:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-17T09:15:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-17T09:16:00', details: 'Assigned to Mike Chen' }, { type: 'status_changed', user: 'Mike Chen', timestamp: '2025-10-17T10:30:00', details: 'Status changed to In Progress' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 900, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web' },
-    { id: 3, subject: 'Billing question', customer: 'Robert Wilson', email: 'robert.w@email.com', status: 'resolved', priority: 'low', assignedTo: 'Sarah Johnson', created: '2025-10-16T14:00:00', lastUpdate: '2025-10-17T16:30:00', firstResponseAt: '2025-10-16T15:00:00', resolvedAt: '2025-10-17T16:30:00', tags: ['Billing'], category: 'Billing', messages: [{ from: 'Robert Wilson', content: 'I was charged twice this month.', timestamp: '2025-10-16T14:00:00', type: 'customer', attachments: [], channel: 'email' }, { from: 'Sarah Johnson', content: 'I have reviewed your account and processed a refund for the duplicate charge.', timestamp: '2025-10-17T16:30:00', type: 'agent', attachments: [], channel: 'email' }], internalNotes: [{ from: 'Sarah Johnson', content: 'Refund processed: $49.99. Reference: REF-2834', timestamp: '2025-10-17T16:28:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-16T14:00:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-16T14:01:00', details: 'Assigned to Sarah Johnson' }, { type: 'status_changed', user: 'Sarah Johnson', timestamp: '2025-10-17T16:30:00', details: 'Status changed to Resolved' }], csatRating: 5, viewingAgents: [], timeTrackedSeconds: 1200, timeLogs: [], customFields: {}, isPrivate: true, watchers: [1], cc: ['billing@company.com'], channel: 'email' },
-    { id: 4, subject: 'App crashes on startup', customer: 'Lisa Chen', email: 'lisa.chen@email.com', status: 'open', priority: 'urgent', assignedTo: 'Unassigned', created: '2025-10-18T13:00:00', lastUpdate: '2025-10-18T13:00:00', firstResponseAt: null, tags: ['Bug', 'Technical'], category: 'Bug', messages: [{ from: 'Lisa Chen', content: 'The app crashes immediately when I try to open it. I have tried restarting my phone.', timestamp: '2025-10-18T13:00:00', type: 'customer', attachments: ['crash_log.txt'], channel: 'web' }], internalNotes: [], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-18T13:00:00', details: 'Ticket created' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 0, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web' }
+    { id: 1, subject: 'Cannot login to account', customer: 'John Smith', email: 'john.smith@email.com', status: 'open', priority: 'high', assignedTo: 'Unassigned', created: '2025-10-18T10:30:00', lastUpdate: '2025-10-18T14:20:00', firstResponseAt: null, tags: ['Technical', 'Account'], category: 'Technical', messages: [{ from: 'John Smith', content: 'I cannot login to my account. I keep getting an error message.', timestamp: '2025-10-18T10:30:00', type: 'customer', attachments: [], channel: 'web' }], internalNotes: [], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-18T10:30:00', details: 'Ticket created' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 3600, timeLogs: [], customFields: { order_id: 'ORD-12345', product_area: 'Website', purchase_date: '2025-10-15' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'negative' },
+    { id: 2, subject: 'Feature request: Dark mode', customer: 'Emily Davis', email: 'emily.davis@email.com', status: 'in-progress', priority: 'medium', assignedTo: 'Mike Chen', created: '2025-10-17T09:15:00', lastUpdate: '2025-10-18T11:00:00', firstResponseAt: '2025-10-17T10:30:00', tags: ['Feature Request'], category: 'Feature Request', messages: [{ from: 'Emily Davis', content: 'Would love to see a dark mode option in the app.', timestamp: '2025-10-17T09:15:00', type: 'customer', attachments: [], channel: 'web' }, { from: 'Mike Chen', content: 'Thank you for the suggestion! We are adding this to our roadmap.', timestamp: '2025-10-18T11:00:00', type: 'agent', attachments: [], channel: 'web' }], internalNotes: [{ from: 'Mike Chen', content: 'Adding to Q1 2026 roadmap. UI team to review.', timestamp: '2025-10-18T11:05:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-17T09:15:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-17T09:16:00', details: 'Assigned to Mike Chen' }, { type: 'status_changed', user: 'Mike Chen', timestamp: '2025-10-17T10:30:00', details: 'Status changed to In Progress' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 900, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'positive' },
+    { id: 3, subject: 'Billing question', customer: 'Robert Wilson', email: 'robert.w@email.com', status: 'resolved', priority: 'low', assignedTo: 'Sarah Johnson', created: '2025-10-16T14:00:00', lastUpdate: '2025-10-17T16:30:00', firstResponseAt: '2025-10-16T15:00:00', resolvedAt: '2025-10-17T16:30:00', tags: ['Billing'], category: 'Billing', messages: [{ from: 'Robert Wilson', content: 'I was charged twice this month.', timestamp: '2025-10-16T14:00:00', type: 'customer', attachments: [], channel: 'email' }, { from: 'Sarah Johnson', content: 'I have reviewed your account and processed a refund for the duplicate charge.', timestamp: '2025-10-17T16:30:00', type: 'agent', attachments: [], channel: 'email' }], internalNotes: [{ from: 'Sarah Johnson', content: 'Refund processed: $49.99. Reference: REF-2834', timestamp: '2025-10-17T16:28:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-16T14:00:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-16T14:01:00', details: 'Assigned to Sarah Johnson' }, { type: 'status_changed', user: 'Sarah Johnson', timestamp: '2025-10-17T16:30:00', details: 'Status changed to Resolved' }], csatRating: 5, viewingAgents: [], timeTrackedSeconds: 1200, timeLogs: [], customFields: {}, isPrivate: true, watchers: [1], cc: ['billing@company.com'], channel: 'email', sentiment: 'neutral' },
+    { id: 4, subject: 'App crashes on startup', customer: 'Lisa Chen', email: 'lisa.chen@email.com', status: 'open', priority: 'urgent', assignedTo: 'Unassigned', created: '2025-10-18T13:00:00', lastUpdate: '2025-10-18T13:00:00', firstResponseAt: null, tags: ['Bug', 'Technical'], category: 'Bug', messages: [{ from: 'Lisa Chen', content: 'The app crashes immediately when I try to open it. I have tried restarting my phone.', timestamp: '2025-10-18T13:00:00', type: 'customer', attachments: ['crash_log.txt'], channel: 'web' }], internalNotes: [], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-18T13:00:00', details: 'Ticket created' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 0, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'negative' }
   ]);
 
   knowledgeBaseCategories = signal<KnowledgeBaseCategory[]>([
@@ -509,6 +560,12 @@ export class AppComponent {
     return this.tickets().filter(t => t.email === user.email && !t.isPrivate);
   });
   
+  readonly customerTicketHistory = computed(() => {
+    const ticket = this.selectedTicket();
+    if (!ticket) return [];
+    return this.tickets().filter(t => t.email === ticket.email && t.id !== ticket.id);
+  });
+  
   readonly statusCounts = computed(() => {
       const allTickets = this.tickets();
       return {
@@ -628,7 +685,7 @@ export class AppComponent {
     return date.toLocaleDateString();
   }
   
-  handleNewTicket(formData: any) {
+  async handleNewTicket(formData: any) {
     const newTicket: Ticket = {
       id: this.tickets().length + 1,
       subject: formData.subject,
@@ -656,9 +713,21 @@ export class AppComponent {
       channel: 'web'
     };
     
-    const updatedTicket = this.runAutomationRules(newTicket, 'ticket_created');
+    let updatedTicket = this.runAutomationRules(newTicket, 'ticket_created');
+    
+    // AI Enhancements
+    const sentiment = await this.geminiService.analyzeSentiment(updatedTicket);
+    const suggestedTags = await this.geminiService.suggestTags(updatedTicket, this.availableTags());
+    updatedTicket = { 
+        ...updatedTicket, 
+        sentiment, 
+        tags: [...new Set([...updatedTicket.tags, ...suggestedTags])] 
+    };
+
     this.tickets.update(current => [updatedTicket, ...current]);
     this.showNewTicket.set(false);
+    
+    this.postToSlack(updatedTicket);
 
     const newNotification: Notification = {
       id: `notif-${Date.now()}`,
@@ -839,6 +908,10 @@ export class AppComponent {
             timestamp: new Date().toISOString()
         };
         this.notifications.update(n => [newNotification, ...n]);
+        // Update sentiment on new customer reply
+        this.geminiService.analyzeSentiment(ticketForNotification).then(sentiment => {
+            this.tickets.update(tickets => tickets.map(t => t.id === ticketForNotification!.id ? {...t, sentiment} : t));
+        });
     }
   }
 
@@ -847,6 +920,30 @@ export class AppComponent {
       if (t.id === event.ticketId) {
         const updatedTicket = { ...t, internalNotes: [...t.internalNotes, { from: event.agentName, content: event.content, timestamp: new Date().toISOString() }], lastUpdate: new Date().toISOString(), activity: [...t.activity, { type: 'note_added', user: event.agentName, timestamp: new Date().toISOString(), details: 'Internal note added' }] };
         this.selectedTicket.set(updatedTicket);
+        
+        // Handle @mentions
+        const mentionRegex = /@([\w\s.\(\)]+)/g;
+        let match;
+        const mentions = new Set<string>();
+        while ((match = mentionRegex.exec(event.content)) !== null) {
+          mentions.add(match[1].trim());
+        }
+
+        mentions.forEach(agentName => {
+          const mentionedAgent = this.agents().find(a => a.name === agentName);
+          if (mentionedAgent && mentionedAgent.id !== (this.currentUser() as Agent).id) {
+            const newNotification: Notification = {
+              id: `notif-${Date.now()}-${t.id}`,
+              type: 'mention',
+              message: `${event.agentName} mentioned you in ticket #${t.id}`,
+              ticketId: t.id,
+              isRead: false,
+              timestamp: new Date().toISOString()
+            };
+            this.notifications.update(n => [newNotification, ...n]);
+          }
+        });
+
         return updatedTicket;
       }
       return t;
@@ -1420,6 +1517,51 @@ export class AppComponent {
     }));
   }
 
+  handleLinkTicket(event: { parentId: number, childId: number }) {
+      this.tickets.update(tickets => {
+          let parentTicket: Ticket | undefined;
+          let childTicket: Ticket | undefined;
+
+          // Find tickets
+          for(const ticket of tickets) {
+              if (ticket.id === event.parentId) parentTicket = ticket;
+              if (ticket.id === event.childId) childTicket = ticket;
+          }
+
+          if (!parentTicket || !childTicket) return tickets;
+
+          // Update parent
+          const updatedParent = {
+              ...parentTicket,
+              childTicketIds: [...(parentTicket.childTicketIds || []), event.childId],
+              activity: [...parentTicket.activity, {
+                  type: 'linked', user: this.currentUser().name, timestamp: new Date().toISOString(), details: `Linked ticket #${event.childId} as a child.`
+              }]
+          };
+
+          // Update child
+          const updatedChild = {
+              ...childTicket,
+              parentId: event.parentId,
+              activity: [...childTicket.activity, {
+                  type: 'linked', user: this.currentUser().name, timestamp: new Date().toISOString(), details: `This ticket was linked to parent #${event.parentId}.`
+              }]
+          };
+
+          const newTickets = tickets.map(t => {
+              if (t.id === event.parentId) return updatedParent;
+              if (t.id === event.childId) return updatedChild;
+              return t;
+          });
+          
+          if(this.selectedTicket()?.id === event.parentId) {
+              this.selectedTicket.set(updatedParent);
+          }
+
+          return newTickets;
+      });
+  }
+
   // Views Handlers
   applyView(viewId: string | null) {
     if (viewId === null || viewId === 'all') {
@@ -1480,5 +1622,65 @@ export class AppComponent {
         this.applyView('all');
       }
     }
+  }
+
+  // Slack Integration Handlers
+  postToSlack(ticket: Ticket) {
+    if (!this.slackSettings().enabled) return;
+
+    const priorityColors: {[key: string]: string} = {
+        urgent: '#A855F7',
+        high: '#EF4444',
+        medium: '#F97316',
+        low: '#6B7280'
+    };
+
+    const newMessage: SlackMessage = {
+      id: `slack-${Date.now()}`,
+      author: 'BoldDesk Bot',
+      authorIcon: 'B',
+      timestamp: new Date().toISOString(),
+      attachment: {
+        color: priorityColors[ticket.priority] || '#6B7280',
+        title: `New Ticket #${ticket.id}: ${ticket.subject}`,
+        title_link: `/tickets/${ticket.id}`,
+        fields: [
+          { title: 'Customer', value: ticket.customer, short: true },
+          { title: 'Priority', value: ticket.priority, short: true },
+          { title: 'Assigned To', value: ticket.assignedTo, short: true },
+          { title: 'Tags', value: ticket.tags.join(', ') || 'None', short: true }
+        ]
+      }
+    };
+    this.slackMessages.update(messages => [newMessage, ...messages]);
+  }
+  
+  handleCreateTicketFromSlack(subject: string) {
+    const user = this.currentUser();
+    this.handleNewTicket({
+        subject,
+        customer: user.name,
+        email: 'roleId' in user ? user.email : 'slack-user@example.com',
+        description: `Ticket created from Slack by ${user.name}`,
+        priority: 'medium',
+        tags: ['Slack'],
+        customFields: {}
+    });
+    const successMessage: SlackMessage = {
+        id: `slack-${Date.now()}`,
+        author: user.name,
+        authorIcon: user.name.charAt(0),
+        timestamp: new Date().toISOString(),
+        content: `I've created a new ticket: "${subject}"`
+    };
+    this.slackMessages.update(messages => [successMessage, ...messages]);
+  }
+  
+  handleViewTicketFromSlack(ticketId: number) {
+      const ticket = this.tickets().find(t => t.id === ticketId);
+      if (ticket) {
+          this.activeView.set('tickets');
+          this.selectedTicket.set(ticket);
+      }
   }
 }

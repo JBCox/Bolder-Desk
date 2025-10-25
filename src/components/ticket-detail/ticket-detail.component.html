@@ -1,152 +1,88 @@
-<div class="flex flex-col h-full">
-  <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-6">
-    @if (otherViewingAgents().length > 0) {
-      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-600 dark:text-yellow-300 p-4 mb-4 rounded-r-lg" role="alert">
-        <div class="flex items-center">
-          <app-icon name="eye" class="w-5 h-5 mr-3"></app-icon>
-          <div>
-            <p class="font-bold">Heads up!</p>
-            <p class="text-sm">{{ otherViewingAgents().join(', ') }} is also viewing this ticket.</p>
+<div class="flex h-full">
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col">
+    <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-6">
+      @if (otherViewingAgents().length > 0) {
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-600 dark:text-yellow-300 p-4 mb-4 rounded-r-lg" role="alert">
+          <div class="flex items-center">
+            <app-icon name="eye" class="w-5 h-5 mr-3"></app-icon>
+            <div>
+              <p class="font-bold">Heads up!</p>
+              <p class="text-sm">{{ otherViewingAgents().join(', ') }} is also viewing this ticket.</p>
+            </div>
           </div>
         </div>
-      </div>
-    }
-    <div class="flex items-start justify-between mb-4">
-      <div class="flex-1">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
-          <app-icon [name]="{ web: 'mail', email: 'inbox', chat: 'message-circle' }[ticket().channel]" [title]="'Channel: ' + ticket().channel" class="w-6 h-6 text-gray-400 dark:text-slate-500"></app-icon>
-          <span>{{ ticket().subject }}</span>
-        </h2>
-        <div class="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-slate-400">
-          <span class="flex items-center space-x-1"><app-icon name="user" class="w-4 h-4"></app-icon><span>{{ ticket().customer }}</span></span>
-          <span>{{ ticket().email }}</span>
-          <span>Created {{ formatDate(ticket().created) }}</span>
-          <span class="flex items-center space-x-1"><app-icon name="clock" class="w-4 h-4"></app-icon><span>Time tracked: {{ totalTimeTrackedFormatted() }}</span></span>
-          @if (ticket().csatRating) {
-            <span class="flex items-center space-x-1 text-yellow-600">
-              <app-icon name="star" class="w-4 h-4 fill-current"></app-icon><span>{{ ticket().csatRating }}/5</span>
-            </span>
-          }
+      }
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
+            <app-icon [name]="{ web: 'mail', email: 'inbox', chat: 'message-circle' }[ticket().channel]" [title]="'Channel: ' + ticket().channel" class="w-6 h-6 text-gray-400 dark:text-slate-500"></app-icon>
+            <span>#{{ ticket().id }} - {{ ticket().subject }}</span>
+          </h2>
+          <div class="flex items-center space-x-4 text-sm text-gray-600 dark:text-slate-400">
+             @if(ticket().sentiment === 'positive') {
+                <app-icon name="smile" class="w-5 h-5 text-green-500" title="Positive Sentiment"></app-icon>
+            } @else if (ticket().sentiment === 'negative') {
+                <app-icon name="frown" class="w-5 h-5 text-red-500" title="Negative Sentiment"></app-icon>
+            } @else {
+                <app-icon name="meh" class="w-5 h-5 text-gray-400" title="Neutral Sentiment"></app-icon>
+            }
+          </div>
         </div>
-        
-        @if (slaInfo(); as sla) {
-          @if (ticket().status !== 'resolved' && ticket().status !== 'closed') {
-            <div class="mt-3 flex space-x-4">
-              <div [class]="'inline-flex items-center space-x-2 px-3 py-1 rounded-lg ' + {'ok': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', 'warning': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', 'breached': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300', 'met': 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[sla.responseStatus]">
-                <app-icon name="clock" class="w-4 h-4"></app-icon>
-                <span class="text-xs font-medium">{{ sla.responseStatus === 'met' ? 'First Response: Met' : 'Respond in: ' + formatTimeLeft(sla.responseTimeLeft) }}</span>
-              </div>
-              <div [class]="'inline-flex items-center space-x-2 px-3 py-1 rounded-lg ' + {'ok': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', 'warning': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', 'breached': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300', 'met': 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[sla.resolutionStatus]">
-                <app-icon name="checkcircle" class="w-4 h-4"></app-icon>
-                <span class="text-xs font-medium">Resolve in: {{ formatTimeLeft(sla.resolutionTimeLeft) }}</span>
-              </div>
-            </div>
-          }
-        }
-        
-        <div class="flex flex-wrap gap-2 mt-3">
-          @for(tag of ticket().tags; track tag) {
-            <span class="inline-flex items-center space-x-1 px-3 py-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-full text-sm"><app-icon name="tag" class="w-3 h-3"></app-icon><span>{{ tag }}</span></span>
-          }
-          <button (click)="openTagEditor()" class="inline-flex items-center space-x-1 px-3 py-1 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-full text-sm hover:bg-gray-50 dark:hover:bg-slate-700"><app-icon name="plus" class="w-3 h-3"></app-icon><span>Add Tag</span></button>
-          <button (click)="showActivity.set(!showActivity())" class="inline-flex items-center space-x-1 px-3 py-1 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-full text-sm hover:bg-gray-50 dark:hover:bg-slate-700"><app-icon name="history" class="w-3 h-3"></app-icon><span>Activity</span></button>
-        </div>
-        <div class="mt-4">
-            <h4 class="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">Watchers</h4>
-            <div class="flex items-center space-x-2">
-                @for(watcher of watcherAgents(); track watcher.id) {
-                    <div class="relative group">
-                        <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs" [title]="watcher.name">
-                            {{ getInitials(watcher.name) }}
-                        </div>
-                        <button (click)="onRemoveWatcher(watcher.id)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <app-icon name="x" class="w-3 h-3"></app-icon>
-                        </button>
-                    </div>
-                }
-                <div class="relative">
-                    <button (click)="showAddWatcher.set(!showAddWatcher())" class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-slate-700">
-                        <app-icon name="plus" class="w-5 h-5"></app-icon>
+        <div class="flex items-center space-x-2">
+            <button (click)="showLinkModal.set(true)" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
+                <app-icon name="link" class="w-4 h-4"></app-icon><span>Link</span>
+            </button>
+            <button (click)="showMergeModal.set(true)" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
+                <app-icon name="merge" class="w-4 h-4"></app-icon><span>Merge</span>
+            </button>
+            <div class="relative">
+                <button (click)="showMacros.set(!showMacros())" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
+                <app-icon name="play-circle" class="w-4 h-4"></app-icon><span>Macros</span>
+                </button>
+                @if (showMacros()) {
+                <div class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20">
+                    @for(macro of macros(); track macro.id) {
+                    <button (click)="handleMacro(macro)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition">
+                        <div class="font-medium text-sm text-gray-900 dark:text-slate-200">{{ macro.name }}</div>
                     </button>
-                    @if(showAddWatcher()) {
-                        <div class="absolute left-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-                            @for(agent of availableAgentsToAdd(); track agent.id) {
-                                <button (click)="onAddWatcher(agent.id)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-3">
-                                    <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">
-                                        {{ getInitials(agent.name) }}
-                                    </div>
-                                    <span class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ agent.name }}</span>
-                                </button>
-                            }
-                            @if(availableAgentsToAdd().length === 0) {
-                                <p class="p-3 text-sm text-gray-500 dark:text-slate-400">All agents are watching.</p>
-                            }
-                        </div>
                     }
                 </div>
+                }
             </div>
         </div>
       </div>
     </div>
-    
-    <div class="flex items-center space-x-4">
-      <select [ngModel]="ticket().status" (change)="onStatusChange($event)" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize bg-white dark:bg-slate-700 dark:text-slate-200">
-        <option value="open">Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option>
-      </select>
-      <select class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200">
-        <option>{{ ticket().assignedTo }}</option><option>Sarah Johnson</option><option>Mike Chen</option><option>Unassigned</option>
-      </select>
-      <select class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize bg-white dark:bg-slate-700 dark:text-slate-200">
-        <option [value]="ticket().priority">{{ ticket().priority }}</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option>
-      </select>
-      <button (click)="showMergeModal.set(true)" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-        <app-icon name="merge" class="w-4 h-4"></app-icon><span>Merge</span>
-      </button>
-      <button (click)="showLogTimeModal.set(true)" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-        <app-icon name="clock" class="w-4 h-4"></app-icon><span>Log Time</span>
-      </button>
-      <div class="relative">
-        <button (click)="showMacros.set(!showMacros())" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-          <app-icon name="play-circle" class="w-4 h-4"></app-icon><span>Macros</span>
-        </button>
-        @if (showMacros()) {
-          <div class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20">
-            @for(macro of macros(); track macro.id) {
-              <button (click)="handleMacro(macro)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition">
-                <div class="font-medium text-sm text-gray-900 dark:text-slate-200">{{ macro.name }}</div>
-              </button>
-            }
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-slate-900">
+      @if (parentTicket(); as parent) {
+      <div class="bg-gray-100 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 mb-4">
+        <p class="text-sm text-gray-600 dark:text-slate-300">
+          This ticket is a child of: 
+          <a href="#" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">#{{ parent.id }} - {{ parent.subject }}</a>
+        </p>
+      </div>
+      }
+      @if (childTickets().length > 0) {
+          <div class="bg-gray-100 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 mb-4">
+              <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-2">Child Tickets</h3>
+              <ul class="list-disc list-inside space-y-1">
+                  @for (child of childTickets(); track child.id) {
+                      <li class="text-sm text-gray-600 dark:text-slate-300">
+                          <a href="#" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">#{{ child.id }} - {{ child.subject }}</a> ({{child.status}})
+                      </li>
+                  }
+              </ul>
           </div>
-        }
-      </div>
-    </div>
-  </div>
-
-  <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-slate-900">
-    @if (ticket().customFields && customFieldDefinitions().length > 0) {
-      <div class="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 mb-4">
-         <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-3">Custom Fields</h3>
-         <div class="grid grid-cols-3 gap-4 text-sm">
-            @for(field of customFieldDefinitions(); track field.id) {
-              @if(ticket().customFields?.[field.id]) {
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 dark:text-slate-400">{{field.name}}</label>
-                  <p class="text-gray-800 dark:text-slate-200 mt-1">{{ticket().customFields?.[field.id]}}</p>
-                </div>
-              }
-            }
-         </div>
-      </div>
-    }
-
-    @if (showActivity()) {
+      }
+      @if (showActivity()) {
       <div class="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 mb-4">
         <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center space-x-2"><app-icon name="history" class="w-5 h-5"></app-icon><span>Activity Timeline</span></h3>
-        <div class="space-y-3">
+        <div class="space-y-3 max-h-96 overflow-y-auto">
           @for(activity of ticket().activity.slice().reverse(); track $index) {
             <div class="flex items-start space-x-3">
               <div class="flex-shrink-0 w-8 h-8 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300">
-                <app-icon [name]="{created: 'plus', assigned: 'user', status_changed: 'checkcircle', tag_added: 'tag', tag_removed: 'tag', reply_sent: 'messagesquare', customer_replied: 'messagesquare', note_added: 'lock', csat_submitted: 'star', time_logged: 'clock', merged: 'merge', priority_changed: 'trendingup', split_to: 'split', split_from: 'split', watcher_added: 'user-plus', watcher_removed: 'user-minus'}[activity.type] || 'history'" class="w-4 h-4"></app-icon>
+                <app-icon [name]="{created: 'plus', assigned: 'user', status_changed: 'checkcircle', tag_added: 'tag', tag_removed: 'tag', reply_sent: 'messagesquare', customer_replied: 'messagesquare', note_added: 'lock', csat_submitted: 'star', time_logged: 'clock', merged: 'merge', priority_changed: 'trendingup', split_to: 'split', split_from: 'split', watcher_added: 'user-plus', watcher_removed: 'user-minus', linked: 'link'}[activity.type] || 'history'" class="w-4 h-4"></app-icon>
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm text-gray-900 dark:text-slate-200">{{ activity.details }}</p>
@@ -156,79 +92,238 @@
           }
         </div>
       </div>
-    }
-
-    @for (item of conversationItems(); track $index) {
-      @if (item.itemType === 'message') {
-        <div [class]="'group relative ' + (item.type === 'customer' ? 'ml-0' : 'ml-12')">
-          <button (click)="openSplitTicketModal(item)" class="absolute top-2 right-2 p-1 bg-gray-100 dark:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" title="Split into new ticket">
-            <app-icon name="split" class="w-4 h-4"></app-icon>
-          </button>
-          <div [class]="'p-4 rounded-lg ' + (item.type === 'customer' ? 'bg-white dark:bg-slate-800' : 'bg-indigo-50 dark:bg-indigo-900/50')">
-            <div class="flex items-center justify-between mb-2"><span class="font-medium text-gray-900 dark:text-slate-100">{{ item.from }}</span><span class="text-xs text-gray-500 dark:text-slate-400">{{ formatDate(item.timestamp.toISOString()) }}</span></div>
-            <p class="text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{{ item.content }}</p>
-            @if (item.attachments && item.attachments.length > 0) {
-              <div class="mt-3 flex flex-wrap gap-2">
-                @for(file of item.attachments; track $index) {
-                  <div class="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-slate-700 rounded-lg text-sm"><app-icon name="paperclip" class="w-4 h-4 text-gray-500 dark:text-slate-400"></app-icon><span class="text-gray-700 dark:text-slate-300">{{ file }}</span></div>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      } @else if (item.itemType === 'note') {
-        <div class="mx-12">
-          <div class="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-700">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center space-x-2"><app-icon name="lock" class="w-4 h-4 text-yellow-700 dark:text-yellow-400"></app-icon><span class="font-medium text-yellow-900 dark:text-yellow-200">Internal Note - {{ item.from }}</span></div>
-              <span class="text-xs text-yellow-700 dark:text-yellow-400">{{ formatDate(item.timestamp.toISOString()) }}</span>
-            </div>
-            <p class="text-yellow-900 dark:text-yellow-200 whitespace-pre-wrap">{{ item.content }}</p>
-          </div>
-        </div>
       }
-    }
-  </div>
 
-  <div class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 p-6">
-    <div class="mb-3 flex items-center justify-between">
-      <div class="flex space-x-2">
-        <button (click)="replyMode.set('customer')" [class]="'px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ' + (replyMode() === 'customer' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600')"><app-icon name="messagesquare" class="w-4 h-4"></app-icon><span>Reply to Customer</span></button>
-        <button (click)="replyMode.set('internal')" [class]="'px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ' + (replyMode() === 'internal' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600')"><app-icon name="lock" class="w-4 h-4"></app-icon><span>Internal Note</span></button>
-      </div>
-      <div class="relative">
-        <button (click)="showCannedResponses.set(!showCannedResponses())" class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-2"><app-icon name="filetext" class="w-4 h-4"></app-icon><span>Canned Responses</span></button>
-        @if (showCannedResponses()) {
-          <div class="absolute right-0 bottom-full mb-2 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg flex flex-col max-h-80 z-10">
-            <div class="p-2 border-b border-gray-200 dark:border-slate-700">
-                <input 
-                  type="text" 
-                  placeholder="Search responses..."
-                  class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
-                  [ngModel]="cannedResponseFilter()"
-                  (ngModelChange)="cannedResponseFilter.set($event)"
-                />
-            </div>
-            <div class="overflow-y-auto">
-                <div class="p-2">
-                    @for(response of filteredCannedResponses(); track response.id) {
-                    <button (click)="handleCannedResponse(response.content)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition">
-                        <div class="font-medium text-sm text-gray-900 dark:text-slate-200 mb-1">{{ response.name }}</div>
-                        <div class="text-xs text-gray-500 dark:text-slate-400 line-clamp-2">{{ response.content }}</div>
-                    </button>
-                    }
-                    @if(filteredCannedResponses().length === 0) {
-                        <p class="text-center text-sm text-gray-500 dark:text-slate-400 p-4">No responses found.</p>
-                    }
+      @for (item of conversationItems(); track $index) {
+        @if (item.itemType === 'message') {
+          <div [class]="'group relative ' + (item.type === 'customer' ? 'ml-0' : 'ml-12')">
+            <button (click)="openSplitTicketModal(item)" class="absolute top-2 right-2 p-1 bg-gray-100 dark:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" title="Split into new ticket">
+              <app-icon name="split" class="w-4 h-4"></app-icon>
+            </button>
+            <div [class]="'p-4 rounded-lg ' + (item.type === 'customer' ? 'bg-white dark:bg-slate-800' : 'bg-indigo-50 dark:bg-indigo-900/50')">
+              <div class="flex items-center justify-between mb-2"><span class="font-medium text-gray-900 dark:text-slate-100">{{ item.from }}</span><span class="text-xs text-gray-500 dark:text-slate-400">{{ formatDate(item.timestamp.toISOString()) }}</span></div>
+              <p class="text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{{ item.content }}</p>
+              @if (item.attachments && item.attachments.length > 0) {
+                <div class="mt-3 flex flex-wrap gap-2">
+                  @for(file of item.attachments; track $index) {
+                    <div class="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-slate-700 rounded-lg text-sm"><app-icon name="paperclip" class="w-4 h-4 text-gray-500 dark:text-slate-400"></app-icon><span class="text-gray-700 dark:text-slate-300">{{ file }}</span></div>
+                  }
                 </div>
+              }
+            </div>
+          </div>
+        } @else if (item.itemType === 'note') {
+          <div class="mx-12">
+            <div class="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-700">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2"><app-icon name="lock" class="w-4 h-4 text-yellow-700 dark:text-yellow-400"></app-icon><span class="font-medium text-yellow-900 dark:text-yellow-200">Internal Note - {{ item.from }}</span></div>
+                <span class="text-xs text-yellow-700 dark:text-yellow-400">{{ formatDate(item.timestamp.toISOString()) }}</span>
+              </div>
+              <p class="text-yellow-900 dark:text-yellow-200 whitespace-pre-wrap">{{ item.content }}</p>
             </div>
           </div>
         }
+      }
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 p-6">
+      <div class="flex items-center space-x-2 mb-2">
+          <button (click)="summarize()" [disabled]="isSummarizing()" class="px-3 py-1.5 border border-gray-300 dark:border-slate-600 rounded-md text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-wait">
+              <app-icon name="sparkles" class="w-4 h-4 text-indigo-500"></app-icon>
+              <span>{{ isSummarizing() ? 'Summarizing...' : 'Summarize with AI' }}</span>
+          </button>
+      </div>
+       @if(ticketSummary()) {
+          <div class="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/50 mb-4 border border-indigo-200 dark:border-indigo-800">
+              <h4 class="font-semibold text-indigo-900 dark:text-indigo-200 mb-2 text-sm flex items-center space-x-2">
+                  <app-icon name="sparkles" class="w-4 h-4"></app-icon>
+                  <span>AI Summary</span>
+              </h4>
+              <p class="text-indigo-800 dark:text-indigo-300 text-sm whitespace-pre-wrap">{{ ticketSummary() }}</p>
+          </div>
+      }
+      <div class="mb-3 flex items-center justify-between">
+        <div class="flex space-x-2">
+          <button (click)="replyMode.set('customer')" [class]="'px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ' + (replyMode() === 'customer' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600')"><app-icon name="messagesquare" class="w-4 h-4"></app-icon><span>Reply (R)</span></button>
+          <button (click)="replyMode.set('internal')" [class]="'px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ' + (replyMode() === 'internal' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600')"><app-icon name="lock" class="w-4 h-4"></app-icon><span>Note (I)</span></button>
+        </div>
+        <div class="relative">
+          <button (click)="showCannedResponses.set(!showCannedResponses())" class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-2"><app-icon name="filetext" class="w-4 h-4"></app-icon><span>Canned Responses</span></button>
+          @if (showCannedResponses()) {
+            <div class="absolute right-0 bottom-full mb-2 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg flex flex-col max-h-80 z-10">
+              <div class="p-2 border-b border-gray-200 dark:border-slate-700">
+                  <input 
+                    type="text" 
+                    placeholder="Search responses..."
+                    class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+                    [ngModel]="cannedResponseFilter()"
+                    (ngModelChange)="cannedResponseFilter.set($event)"
+                  />
+              </div>
+              <div class="overflow-y-auto">
+                  <div class="p-2">
+                      @for(response of filteredCannedResponses(); track response.id) {
+                      <button (click)="handleCannedResponse(response.content)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition">
+                          <div class="font-medium text-sm text-gray-900 dark:text-slate-200 mb-1">{{ response.name }}</div>
+                          <div class="text-xs text-gray-500 dark:text-slate-400 line-clamp-2">{{ response.content }}</div>
+                      </button>
+                      }
+                      @if(filteredCannedResponses().length === 0) {
+                          <p class="text-center text-sm text-gray-500 dark:text-slate-400 p-4">No responses found.</p>
+                      }
+                  </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <textarea #replyTextarea [ngModel]="replyText()" (ngModelChange)="replyText.set($event)" [placeholder]="replyMode() === 'customer' ? 'Type your reply...' : 'Add an internal note... (use @ to mention agents)'" class="w-full p-4 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-slate-700 dark:text-slate-200" rows="4"></textarea>
+       @if (replyMode() === 'customer') {
+          <div class="mt-2 flex items-center justify-between">
+              <button (click)="suggestReplies()" [disabled]="isSuggestingReplies()" class="px-3 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-md flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-wait">
+                  <app-icon name="sparkles" class="w-3.5 h-3.5"></app-icon>
+                  <span>{{ isSuggestingReplies() ? 'Generating...' : 'Suggest Replies' }}</span>
+              </button>
+          </div>
+          @if (suggestedReplies().length > 0) {
+              <div class="mt-2 space-y-2">
+                  @for(reply of suggestedReplies(); track reply) {
+                      <button (click)="useSuggestedReply(reply)" class="w-full text-left p-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg text-sm text-gray-800 dark:text-slate-300 transition">
+                          {{ reply }}
+                      </button>
+                  }
+              </div>
+          }
+      }
+      <div class="mt-4 flex justify-end items-center">
+        <button (click)="handleReply()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">{{ replyMode() === 'customer' ? 'Send Reply' : 'Add Note' }}</button>
       </div>
     </div>
-    <textarea [ngModel]="replyText()" (ngModelChange)="replyText.set($event)" [placeholder]="replyMode() === 'customer' ? 'Type your reply...' : 'Add an internal note...'" class="w-full p-4 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-slate-700 dark:text-slate-200" rows="4"></textarea>
-    <div class="mt-4 flex justify-end items-center">
-      <button (click)="handleReply()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">{{ replyMode() === 'customer' ? 'Send Reply' : 'Add Note' }}</button>
+  </div>
+
+  <!-- Right Sidebar -->
+  <div class="w-96 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col">
+     <div class="border-b border-gray-200 dark:border-slate-700">
+        <nav class="-mb-px flex">
+            <button (click)="activeTab.set('details')" [class]="'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ' + (activeTab() === 'details' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600')">
+                Details
+            </button>
+            <button (click)="activeTab.set('customer')" [class]="'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ' + (activeTab() === 'customer' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600')">
+                Customer
+            </button>
+        </nav>
+    </div>
+    <div class="flex-1 overflow-y-auto p-6">
+    @if(activeTab() === 'details') {
+        <div class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Status (S)</label>
+                <select #statusSelect [ngModel]="ticket().status" (change)="onStatusChange($event)" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize bg-white dark:bg-slate-700 dark:text-slate-200">
+                    <option value="open">Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Assignee</label>
+                <select class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200">
+                    <option>{{ ticket().assignedTo }}</option>
+                    @for(agent of allAgents(); track agent.id) {
+                        <option [value]="agent.name">{{ agent.name }}</option>
+                    }
+                    <option>Unassigned</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Priority</label>
+                <select class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize bg-white dark:bg-slate-700 dark:text-slate-200">
+                    <option [value]="ticket().priority">{{ ticket().priority }}</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option>
+                </select>
+            </div>
+            <hr class="dark:border-slate-700">
+            <div>
+                <h4 class="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">Watchers</h4>
+                <div class="flex items-center flex-wrap gap-2">
+                    @for(watcher of watcherAgents(); track watcher.id) {
+                        <div class="relative group">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs" [title]="watcher.name">
+                                {{ getInitials(watcher.name) }}
+                            </div>
+                            <button (click)="onRemoveWatcher(watcher.id)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <app-icon name="x" class="w-3 h-3"></app-icon>
+                            </button>
+                        </div>
+                    }
+                    <div class="relative">
+                        <button (click)="showAddWatcher.set(!showAddWatcher())" class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-slate-700">
+                            <app-icon name="plus" class="w-5 h-5"></app-icon>
+                        </button>
+                        @if(showAddWatcher()) {
+                            <div class="absolute right-0 bottom-full mb-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
+                                @for(agent of availableAgentsToAdd(); track agent.id) {
+                                    <button (click)="onAddWatcher(agent.id)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-3">
+                                        <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">
+                                            {{ getInitials(agent.name) }}
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ agent.name }}</span>
+                                    </button>
+                                }
+                                @if(availableAgentsToAdd().length === 0) {
+                                    <p class="p-3 text-sm text-gray-500 dark:text-slate-400">All agents are watching.</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            @if (ticket().customFields && customFieldDefinitions().length > 0) {
+                <hr class="dark:border-slate-700">
+                <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-3">Custom Fields</h3>
+                <div class="space-y-4 text-sm">
+                    @for(field of customFieldDefinitions(); track field.id) {
+                    @if(ticket().customFields?.[field.id]) {
+                        <div>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-slate-400">{{field.name}}</label>
+                        <p class="text-gray-800 dark:text-slate-200 mt-1">{{ticket().customFields?.[field.id]}}</p>
+                        </div>
+                    }
+                    }
+                </div>
+            }
+             <hr class="dark:border-slate-700">
+             <button (click)="showActivity.set(!showActivity())" class="w-full inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700"><app-icon name="history" class="w-4 h-4"></app-icon><span>{{ showActivity() ? 'Hide' : 'Show' }} Activity Log</span></button>
+             <button (click)="showLogTimeModal.set(true)" class="w-full inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700">
+                <app-icon name="clock" class="w-4 h-4"></app-icon><span>Log Time</span>
+             </button>
+        </div>
+    } @else {
+        <div>
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-3xl mx-auto">
+                    {{ getInitials(ticket().customer) }}
+                </div>
+                <h3 class="mt-4 text-xl font-semibold text-gray-900 dark:text-slate-100">{{ ticket().customer }}</h3>
+                <p class="text-sm text-gray-500 dark:text-slate-400">{{ ticket().email }}</p>
+            </div>
+            
+            <h4 class="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-3">Ticket History ({{ customerTicketHistory().length }})</h4>
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+                @for(histTicket of customerTicketHistory(); track histTicket.id) {
+                    <div class="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                        <div class="flex justify-between items-center">
+                             <p class="font-medium text-gray-800 dark:text-slate-200 text-sm truncate pr-2">#{{ histTicket.id }} - {{ histTicket.subject }}</p>
+                             <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ' + 
+                                     { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[histTicket.status]">
+                                        {{ histTicket.status.replace('-', ' ') }}
+                             </span>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ formatDate(histTicket.created) }}</p>
+                    </div>
+                }
+                 @if(customerTicketHistory().length === 0) {
+                    <p class="text-sm text-gray-500 dark:text-slate-400">No previous tickets from this customer.</p>
+                }
+            </div>
+        </div>
+    }
     </div>
   </div>
 
@@ -256,6 +351,15 @@
         (close)="showMergeModal.set(false)"
         (merge)="handleMerge($event)">
     </app-merge-ticket-modal>
+  }
+
+   @if(showLinkModal()) {
+    <app-link-ticket-modal
+        [currentTicket]="ticket()"
+        [allTickets]="allTickets()"
+        (close)="showLinkModal.set(false)"
+        (link)="handleLink($event)">
+    </app-link-ticket-modal>
   }
 
   @if(showLogTimeModal()) {

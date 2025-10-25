@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ticket, CannedResponse, SlaInfo, Macro, CustomFieldDefinition, Message, Agent } from '../../models';
@@ -6,12 +6,14 @@ import { IconComponent } from '../icon/icon.component';
 import { MergeTicketModalComponent } from '../merge-ticket-modal/merge-ticket-modal.component';
 import { LogTimeModalComponent } from '../log-time-modal/log-time-modal.component';
 import { SplitTicketModalComponent } from '../split-ticket-modal/split-ticket-modal.component';
+import { LinkTicketModalComponent } from '../link-ticket-modal/link-ticket-modal.component';
+import { GeminiService } from '../../gemini.service';
 
 @Component({
   selector: 'app-ticket-detail',
   templateUrl: './ticket-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, IconComponent, MergeTicketModalComponent, LogTimeModalComponent, SplitTicketModalComponent],
+  imports: [CommonModule, FormsModule, IconComponent, MergeTicketModalComponent, LogTimeModalComponent, SplitTicketModalComponent, LinkTicketModalComponent],
 })
 export class TicketDetailComponent {
   ticket = input.required<Ticket>();
@@ -23,6 +25,7 @@ export class TicketDetailComponent {
   macros = input.required<Macro[]>();
   customFieldDefinitions = input.required<CustomFieldDefinition[]>();
   allAgents = input.required<Agent[]>();
+  customerTicketHistory = input.required<Ticket[]>();
 
   statusChange = output<{ ticketId: number; newStatus: 'open' | 'in-progress' | 'resolved' | 'closed' }>();
   tagsChange = output<{ ticketId: number; newTags: string[] }>();
@@ -34,6 +37,12 @@ export class TicketDetailComponent {
   splitTicket = output<{ sourceTicketId: number; message: Message; newSubject: string }>();
   addWatcher = output<number>();
   removeWatcher = output<number>();
+  linkTicket = output<number>();
+
+  @ViewChild('replyTextarea') replyTextarea!: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('statusSelect') statusSelect!: ElementRef<HTMLSelectElement>;
+
+  private geminiService = inject(GeminiService);
 
   replyText = signal('');
   replyMode = signal<'customer' | 'internal'>('customer');
@@ -49,6 +58,14 @@ export class TicketDetailComponent {
   showSplitTicketModal = signal(false);
   messageToSplit = signal<Message | null>(null);
   showAddWatcher = signal(false);
+  showLinkModal = signal(false);
+  activeTab = signal<'details' | 'customer'>('details');
+
+  // AI Signals
+  isSummarizing = signal(false);
+  ticketSummary = signal<string | null>(null);
+  isSuggestingReplies = signal(false);
+  suggestedReplies = signal<string[]>([]);
   
   conversationItems = computed(() => {
     const currentTicket = this.ticket();
@@ -94,6 +111,53 @@ export class TicketDetailComponent {
     const agents = this.allAgents();
     return agents.filter(agent => !watcherIds.includes(agent.id));
   });
+
+  parentTicket = computed(() => {
+    const parentId = this.ticket().parentId;
+    if (!parentId) return null;
+    return this.allTickets().find(t => t.id === parentId);
+  });
+
+  childTickets = computed(() => {
+    const childIds = this.ticket().childTicketIds || [];
+    if (childIds.length === 0) return [];
+    return this.allTickets().filter(t => childIds.includes(t.id));
+  });
+
+  @HostListener('window:keydown', ['$event'])
+  handleKeyboardEvent(event: KeyboardEvent) {
+    // Let AppComponent handle global shortcuts like 'n' or '?'
+    if (event.key === 'n' || event.key === '?') return;
+
+    // Handle component-specific shortcuts
+    const target = event.target as HTMLElement;
+    const isEditingText = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+    
+    if (isEditingText && target !== this.replyTextarea.nativeElement) return;
+    
+    switch (event.key) {
+      case 'r':
+        if(!isEditingText) {
+            event.preventDefault();
+            this.replyMode.set('customer');
+            this.replyTextarea.nativeElement.focus();
+        }
+        break;
+      case 'i':
+        if(!isEditingText) {
+            event.preventDefault();
+            this.replyMode.set('internal');
+            this.replyTextarea.nativeElement.focus();
+        }
+        break;
+      case 's':
+        if(!isEditingText) {
+            event.preventDefault();
+            this.statusSelect.nativeElement.focus();
+        }
+        break;
+    }
+  }
 
   getInitials(name: string): string {
     if (!name) return '';
@@ -208,5 +272,34 @@ export class TicketDetailComponent {
 
   onRemoveWatcher(agentId: number) {
     this.removeWatcher.emit(agentId);
+  }
+
+  handleLink(childTicketId: number) {
+    this.linkTicket.emit(childTicketId);
+    this.showLinkModal.set(false);
+  }
+
+  // AI Methods
+  summarize() {
+    this.isSummarizing.set(true);
+    this.ticketSummary.set(null);
+    this.geminiService.summarizeTicket(this.ticket()).then(summary => {
+      this.ticketSummary.set(summary);
+      this.isSummarizing.set(false);
+    });
+  }
+
+  suggestReplies() {
+    this.isSuggestingReplies.set(true);
+    this.suggestedReplies.set([]);
+    this.geminiService.generateReplySuggestions(this.ticket()).then(replies => {
+      this.suggestedReplies.set(replies);
+      this.isSuggestingReplies.set(false);
+    });
+  }
+
+  useSuggestedReply(reply: string) {
+    this.replyText.set(reply);
+    this.suggestedReplies.set([]);
   }
 }

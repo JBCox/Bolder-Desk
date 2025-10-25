@@ -83,6 +83,9 @@ export interface Ticket {
   watchers?: number[]; // Agent IDs
   cc?: string[]; // External emails
   channel: 'web' | 'email' | 'chat';
+  parentId?: number;
+  childTicketIds?: number[];
+  sentiment?: 'positive' | 'neutral' | 'negative';
 }
 
 export type AutomationTrigger =
@@ -228,9 +231,29 @@ export interface ChatSession {
 
 export interface Notification {
   id: string;
-  type: 'new_ticket' | 'customer_reply' | 'sla_breach';
+  type: 'new_ticket' | 'customer_reply' | 'sla_breach' | 'mention';
   message: string;
   ticketId: number;
   isRead: boolean;
   timestamp: string;
+}
+
+// Integrations
+export interface SlackSettings {
+  enabled: boolean;
+  channel: string;
+}
+
+export interface SlackMessage {
+  id: string;
+  author: string;
+  authorIcon: string;
+  timestamp: string;
+  content?: string;
+  attachment?: {
+    color: string;
+    title: string;
+    title_link: string;
+    fields: { title: string; value: string; short: boolean }[];
+  };
 }

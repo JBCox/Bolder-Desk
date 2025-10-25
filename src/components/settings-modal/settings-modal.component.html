@@ -21,6 +21,9 @@
             <button (click)="activeTab.set('groups')" [class]="'py-3 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'groups' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600')">
                 Groups
             </button>
+            <button (click)="activeTab.set('integrations')" [class]="'py-3 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'integrations' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600')">
+                Integrations
+            </button>
         </nav>
     </div>
     
@@ -89,6 +92,36 @@
                         }
                     </tbody>
                 </table>
+            }
+            @case('integrations') {
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Slack Integration</h3>
+                    <div class="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-slate-200">Enable Slack Notifications</h4>
+                                <p class="text-sm text-gray-500 dark:text-slate-400">Post a notification to a Slack channel when a new ticket is created.</p>
+                            </div>
+                            <button (click)="toggleSlackEnabled()" [class]="'w-12 h-6 rounded-full transition ' + (slackSettings().enabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-600')">
+                                <div [class]="'w-5 h-5 bg-white rounded-full shadow transform transition ' + (slackSettings().enabled ? 'translate-x-6' : 'translate-x-1')"></div>
+                            </button>
+                        </div>
+                        @if(slackSettings().enabled) {
+                            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-600">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Channel Name</label>
+                                <div class="relative">
+                                     <span class="absolute left-3 top-2.5 text-gray-400 dark:text-slate-500 text-sm">#</span>
+                                    <input 
+                                        type="text"
+                                        [ngModel]="slackSettings().channel"
+                                        (ngModelChange)="updateSlackChannel($event)"
+                                        class="w-full pl-6 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+                                    >
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
             }
         }
     </div>

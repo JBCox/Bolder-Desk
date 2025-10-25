@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CustomFieldDefinition } from '../../models';
+import { CustomFieldDefinition, KnowledgeBaseArticle } from '../../models';
 
 @Component({
   selector: 'app-new-ticket-modal',
@@ -12,6 +12,7 @@ import { CustomFieldDefinition } from '../../models';
 export class NewTicketModalComponent {
   availableTags = input.required<string[]>();
   customFieldDefinitions = input.required<CustomFieldDefinition[]>();
+  knowledgeBaseArticles = input.required<KnowledgeBaseArticle[]>();
   close = output<void>();
   submit = output<any>();
 
@@ -24,6 +25,19 @@ export class NewTicketModalComponent {
     tags: [] as string[],
     category: 'General',
     customFields: {} as { [key: string]: any }
+  });
+
+  suggestedArticles = computed(() => {
+    const subject = this.formData().subject.toLowerCase().trim();
+    if (subject.length < 4) {
+      return [];
+    }
+    return this.knowledgeBaseArticles()
+      .filter(article => 
+        article.title.toLowerCase().includes(subject) ||
+        article.content.toLowerCase().includes(subject)
+      )
+      .slice(0, 3);
   });
 
   constructor() {
