@@ -86,6 +86,7 @@ export interface Ticket {
   parentId?: number;
   childTicketIds?: number[];
   sentiment?: 'positive' | 'neutral' | 'negative';
+  serviceRequestId?: string;
 }
 
 export type AutomationTrigger =
@@ -227,6 +228,7 @@ export interface ChatSession {
   messages: ChatMessage[];
   pageUrl?: string;
   ticketId?: number;
+  browserInfo?: string;
 }
 
 export interface Notification {
@@ -256,4 +258,13 @@ export interface SlackMessage {
     title_link: string;
     fields: { title: string; value: string; short: boolean }[];
   };
+}
+
+// Self-Service
+export interface ServiceRequestType {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Icon name from IconComponent
+  customFieldIds: string[];
 }

@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, computed, WritableSignal, Signal, effect, Injector, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ticket, AutomationRule, CannedResponse, SlaRules, SlaInfo, AdvancedFilters, AnalyticsData, KnowledgeBaseArticle, KnowledgeBaseCategory, Activity, TimeLog, CustomFieldDefinition, Macro, Message, Agent, Role, Group, AutomationAction, AutomationTrigger, MockEmail, ChatSession, ChatMessage, Notification, View, SlackSettings, SlackMessage } from './models';
+import { Ticket, AutomationRule, CannedResponse, SlaRules, SlaInfo, AdvancedFilters, AnalyticsData, KnowledgeBaseArticle, KnowledgeBaseCategory, Activity, TimeLog, CustomFieldDefinition, Macro, Message, Agent, Role, Group, AutomationAction, AutomationTrigger, MockEmail, ChatSession, ChatMessage, Notification, View, SlackSettings, SlackMessage, ServiceRequestType } from './models';
 import { AnalyticsDashboardComponent } from './components/analytics-dashboard/analytics-dashboard.component';
 import { TicketDetailComponent } from './components/ticket-detail/ticket-detail.component';
 import { NewTicketModalComponent } from './components/new-ticket-modal/new-ticket-modal.component';
@@ -404,6 +404,37 @@ export class AppComponent {
     { id: 'purchase_date', name: 'Purchase Date', type: 'date', defaultValue: '' }
   ]);
 
+  serviceRequestTypes = signal<ServiceRequestType[]>([
+    {
+      id: 'report_bug',
+      name: 'Report a Bug',
+      description: 'Something is broken or not working as expected.',
+      icon: 'bug',
+      customFieldIds: ['product_area']
+    },
+    {
+      id: 'billing_inquiry',
+      name: 'Billing Inquiry',
+      description: 'Questions about invoices, payments, or subscriptions.',
+      icon: 'credit-card',
+      customFieldIds: ['order_id']
+    },
+    {
+      id: 'feature_request',
+      name: 'Feature Request',
+      description: 'Suggest a new feature or enhancement for our product.',
+      icon: 'sparkles',
+      customFieldIds: ['product_area']
+    },
+    {
+      id: 'general_question',
+      name: 'General Question',
+      description: 'For any other questions you might have.',
+      icon: 'help-circle',
+      customFieldIds: []
+    }
+  ]);
+
   cannedResponses = signal<CannedResponse[]>([
     { id: 1, name: 'Welcome Message', content: 'Thank you for contacting our support team! We have received your request and will get back to you shortly.' },
     { id: 2, name: 'Password Reset', content: 'I can help you reset your password. Please click the "Forgot Password" link on the login page and follow the instructions sent to your email.' },
@@ -432,9 +463,9 @@ export class AppComponent {
 
   tickets = signal<Ticket[]>([
     { id: 1, subject: 'Cannot login to account', customer: 'John Smith', email: 'john.smith@email.com', status: 'open', priority: 'high', assignedTo: 'Unassigned', created: '2025-10-18T10:30:00', lastUpdate: '2025-10-18T14:20:00', firstResponseAt: null, tags: ['Technical', 'Account'], category: 'Technical', messages: [{ from: 'John Smith', content: 'I cannot login to my account. I keep getting an error message.', timestamp: '2025-10-18T10:30:00', type: 'customer', attachments: [], channel: 'web' }], internalNotes: [], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-18T10:30:00', details: 'Ticket created' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 3600, timeLogs: [], customFields: { order_id: 'ORD-12345', product_area: 'Website', purchase_date: '2025-10-15' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'negative' },
-    { id: 2, subject: 'Feature request: Dark mode', customer: 'Emily Davis', email: 'emily.davis@email.com', status: 'in-progress', priority: 'medium', assignedTo: 'Mike Chen', created: '2025-10-17T09:15:00', lastUpdate: '2025-10-18T11:00:00', firstResponseAt: '2025-10-17T10:30:00', tags: ['Feature Request'], category: 'Feature Request', messages: [{ from: 'Emily Davis', content: 'Would love to see a dark mode option in the app.', timestamp: '2025-10-17T09:15:00', type: 'customer', attachments: [], channel: 'web' }, { from: 'Mike Chen', content: 'Thank you for the suggestion! We are adding this to our roadmap.', timestamp: '2025-10-18T11:00:00', type: 'agent', attachments: [], channel: 'web' }], internalNotes: [{ from: 'Mike Chen', content: 'Adding to Q1 2026 roadmap. UI team to review.', timestamp: '2025-10-18T11:05:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-17T09:15:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-17T09:16:00', details: 'Assigned to Mike Chen' }, { type: 'status_changed', user: 'Mike Chen', timestamp: '2025-10-17T10:30:00', details: 'Status changed to In Progress' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 900, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'positive' },
-    { id: 3, subject: 'Billing question', customer: 'Robert Wilson', email: 'robert.w@email.com', status: 'resolved', priority: 'low', assignedTo: 'Sarah Johnson', created: '2025-10-16T14:00:00', lastUpdate: '2025-10-17T16:30:00', firstResponseAt: '2025-10-16T15:00:00', resolvedAt: '2025-10-17T16:30:00', tags: ['Billing'], category: 'Billing', messages: [{ from: 'Robert Wilson', content: 'I was charged twice this month.', timestamp: '2025-10-16T14:00:00', type: 'customer', attachments: [], channel: 'email' }, { from: 'Sarah Johnson', content: 'I have reviewed your account and processed a refund for the duplicate charge.', timestamp: '2025-10-17T16:30:00', type: 'agent', attachments: [], channel: 'email' }], internalNotes: [{ from: 'Sarah Johnson', content: 'Refund processed: $49.99. Reference: REF-2834', timestamp: '2025-10-17T16:28:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-16T14:00:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-16T14:01:00', details: 'Assigned to Sarah Johnson' }, { type: 'status_changed', user: 'Sarah Johnson', timestamp: '2025-10-17T16:30:00', details: 'Status changed to Resolved' }], csatRating: 5, viewingAgents: [], timeTrackedSeconds: 1200, timeLogs: [], customFields: {}, isPrivate: true, watchers: [1], cc: ['billing@company.com'], channel: 'email', sentiment: 'neutral' },
-    { id: 4, subject: 'App crashes on startup', customer: 'Lisa Chen', email: 'lisa.chen@email.com', status: 'open', priority: 'urgent', assignedTo: 'Unassigned', created: '2025-10-18T13:00:00', lastUpdate: '2025-10-18T13:00:00', firstResponseAt: null, tags: ['Bug', 'Technical'], category: 'Bug', messages: [{ from: 'Lisa Chen', content: 'The app crashes immediately when I try to open it. I have tried restarting my phone.', timestamp: '2025-10-18T13:00:00', type: 'customer', attachments: ['crash_log.txt'], channel: 'web' }], internalNotes: [], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-18T13:00:00', details: 'Ticket created' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 0, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'negative' }
+    { id: 2, subject: 'Feature request: Dark mode', customer: 'Emily Davis', email: 'emily.davis@email.com', status: 'in-progress', priority: 'medium', assignedTo: 'Mike Chen', created: '2025-10-17T09:15:00', lastUpdate: '2025-10-18T11:00:00', firstResponseAt: '2025-10-17T10:30:00', tags: ['Feature Request'], category: 'Feature Request', messages: [{ from: 'Emily Davis', content: 'Would love to see a dark mode option in the app.', timestamp: '2025-10-17T09:15:00', type: 'customer', attachments: [], channel: 'web' }, { from: 'Mike Chen', content: 'Thank you for the suggestion! We are adding this to our roadmap.', timestamp: '2025-10-18T11:00:00', type: 'agent', attachments: [], channel: 'web' }], internalNotes: [{ from: 'Mike Chen', content: 'Adding to Q1 2026 roadmap. UI team to review.', timestamp: '2025-10-18T11:05:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-17T09:15:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-17T09:16:00', details: 'Assigned to Mike Chen' }, { type: 'status_changed', user: 'Mike Chen', timestamp: '2025-10-17T10:30:00', details: 'Status changed to In Progress' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 900, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'positive', serviceRequestId: 'feature_request' },
+    { id: 3, subject: 'Billing question', customer: 'Robert Wilson', email: 'robert.w@email.com', status: 'resolved', priority: 'low', assignedTo: 'Sarah Johnson', created: '2025-10-16T14:00:00', lastUpdate: '2025-10-17T16:30:00', firstResponseAt: '2025-10-16T15:00:00', resolvedAt: '2025-10-17T16:30:00', tags: ['Billing'], category: 'Billing', messages: [{ from: 'Robert Wilson', content: 'I was charged twice this month.', timestamp: '2025-10-16T14:00:00', type: 'customer', attachments: [], channel: 'email' }, { from: 'Sarah Johnson', content: 'I have reviewed your account and processed a refund for the duplicate charge.', timestamp: '2025-10-17T16:30:00', type: 'agent', attachments: [], channel: 'email' }], internalNotes: [{ from: 'Sarah Johnson', content: 'Refund processed: $49.99. Reference: REF-2834', timestamp: '2025-10-17T16:28:00' }], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-16T14:00:00', details: 'Ticket created' }, { type: 'assigned', user: 'System', timestamp: '2025-10-16T14:01:00', details: 'Assigned to Sarah Johnson' }, { type: 'status_changed', user: 'Sarah Johnson', timestamp: '2025-10-17T16:30:00', details: 'Status changed to Resolved' }], csatRating: 5, viewingAgents: [], timeTrackedSeconds: 1200, timeLogs: [], customFields: {}, isPrivate: true, watchers: [1], cc: ['billing@company.com'], channel: 'email', sentiment: 'neutral', serviceRequestId: 'billing_inquiry' },
+    { id: 4, subject: 'App crashes on startup', customer: 'Lisa Chen', email: 'lisa.chen@email.com', status: 'open', priority: 'urgent', assignedTo: 'Unassigned', created: '2025-10-18T13:00:00', lastUpdate: '2025-10-18T13:00:00', firstResponseAt: null, tags: ['Bug', 'Technical'], category: 'Bug', messages: [{ from: 'Lisa Chen', content: 'The app crashes immediately when I try to open it. I have tried restarting my phone.', timestamp: '2025-10-18T13:00:00', type: 'customer', attachments: ['crash_log.txt'], channel: 'web' }], internalNotes: [], activity: [{ type: 'created', user: 'System', timestamp: '2025-10-18T13:00:00', details: 'Ticket created' }], csatRating: null, viewingAgents: [], timeTrackedSeconds: 0, timeLogs: [], customFields: { product_area: 'App' }, isPrivate: false, watchers: [], cc: [], channel: 'web', sentiment: 'negative', serviceRequestId: 'report_bug' }
   ]);
 
   knowledgeBaseCategories = signal<KnowledgeBaseCategory[]>([
@@ -710,7 +741,8 @@ export class AppComponent {
       isPrivate: false,
       watchers: [],
       cc: [],
-      channel: 'web'
+      channel: 'web',
+      serviceRequestId: formData.serviceRequestId,
     };
     
     let updatedTicket = this.runAutomationRules(newTicket, 'ticket_created');
@@ -1334,7 +1366,7 @@ export class AppComponent {
     setTimeout(() => this.selectedTicket.set(updatedTicket), 0);
   }
   
-  handleStartChat(event: { initialMessage: string }) {
+  handleStartChat(event: { initialMessage: string, browserInfo: string, pageUrl: string }) {
     const user = this.currentUser();
     if('roleId' in user) return;
 
@@ -1344,7 +1376,9 @@ export class AppComponent {
       customerEmail: user.email,
       status: 'pending',
       startedAt: new Date().toISOString(),
-      messages: [{from: 'customer', name: user.name, content: event.initialMessage, timestamp: new Date().toISOString()}]
+      messages: [{from: 'customer', name: user.name, content: event.initialMessage, timestamp: new Date().toISOString()}],
+      pageUrl: event.pageUrl,
+      browserInfo: event.browserInfo
     };
     this.chatSessions.update(sessions => [...sessions, newChat]);
   }
@@ -1412,6 +1446,7 @@ export class AppComponent {
   handleConvertToTicketFromChat(chat: ChatSession) {
     const newTicketId = this.tickets().length + 1;
     const chatTranscript = chat.messages.map(m => `[${new Date(m.timestamp).toLocaleTimeString()}] ${m.name}: ${m.content}`).join('\n');
+    const contextNote = `Chat started on: ${chat.pageUrl || 'N/A'}\nBrowser: ${chat.browserInfo || 'N/A'}`;
     const newTicket: Ticket = {
       id: newTicketId,
       subject: `Chat with ${chat.customerName} from ${chat.pageUrl || 'site'}`,
@@ -1426,7 +1461,7 @@ export class AppComponent {
       tags: ['Chat'],
       category: 'General',
       messages: [{ from: chat.customerName, content: `Chat transcript attached:\n\n${chatTranscript}`, timestamp: chat.startedAt, type: 'customer', attachments: [], channel: 'chat' }],
-      internalNotes: [],
+      internalNotes: [{ from: 'System', content: contextNote, timestamp: new Date().toISOString() }],
       activity: [{ type: 'created', user: 'System', timestamp: new Date().toISOString(), details: 'Ticket created from Live Chat' }],
       csatRating: null,
       viewingAgents: [],

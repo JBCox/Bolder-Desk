@@ -238,6 +238,12 @@
                     <option [value]="ticket().priority">{{ ticket().priority }}</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option>
                 </select>
             </div>
+             @if(ticket().serviceRequestId) {
+              <div>
+                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Request Type</label>
+                <p class="text-gray-800 dark:text-slate-200 mt-1">{{ serviceRequestTypeName() }}</p>
+              </div>
+            }
             <hr class="dark:border-slate-700">
             <div>
                 <h4 class="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">Watchers</h4>

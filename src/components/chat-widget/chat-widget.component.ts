@@ -12,7 +12,7 @@ import { IconComponent } from '../icon/icon.component';
 export class ChatWidgetComponent {
   customer = input.required<{name: string, email: string}>();
   session = input.required<ChatSession | null>();
-  startChat = output<{ initialMessage: string }>();
+  startChat = output<{ initialMessage: string, pageUrl: string, browserInfo: string }>();
   sendMessage = output<{ chatId: string, content: string }>();
 
   isOpen = signal(false);
@@ -40,7 +40,11 @@ export class ChatWidgetComponent {
       if (this.session()) {
         this.sendMessage.emit({ chatId: this.session()!.id, content: this.messageText() });
       } else {
-        this.startChat.emit({ initialMessage: this.messageText() });
+        this.startChat.emit({ 
+            initialMessage: this.messageText(),
+            pageUrl: window.location.pathname,
+            browserInfo: navigator.userAgent
+        });
       }
       this.messageText.set('');
     }

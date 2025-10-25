@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ticket, CannedResponse, SlaInfo, Macro, CustomFieldDefinition, Message, Agent } from '../../models';
+import { Ticket, CannedResponse, SlaInfo, Macro, CustomFieldDefinition, Message, Agent, ServiceRequestType } from '../../models';
 import { IconComponent } from '../icon/icon.component';
 import { MergeTicketModalComponent } from '../merge-ticket-modal/merge-ticket-modal.component';
 import { LogTimeModalComponent } from '../log-time-modal/log-time-modal.component';
@@ -26,6 +26,7 @@ export class TicketDetailComponent {
   customFieldDefinitions = input.required<CustomFieldDefinition[]>();
   allAgents = input.required<Agent[]>();
   customerTicketHistory = input.required<Ticket[]>();
+  serviceRequestTypes = input.required<ServiceRequestType[]>();
 
   statusChange = output<{ ticketId: number; newStatus: 'open' | 'in-progress' | 'resolved' | 'closed' }>();
   tagsChange = output<{ ticketId: number; newTags: string[] }>();
@@ -122,6 +123,12 @@ export class TicketDetailComponent {
     const childIds = this.ticket().childTicketIds || [];
     if (childIds.length === 0) return [];
     return this.allTickets().filter(t => childIds.includes(t.id));
+  });
+  
+  serviceRequestTypeName = computed(() => {
+    const serviceId = this.ticket()?.serviceRequestId;
+    if (!serviceId) return 'N/A';
+    return this.serviceRequestTypes().find(s => s.id === serviceId)?.name || 'Unknown';
   });
 
   @HostListener('window:keydown', ['$event'])
