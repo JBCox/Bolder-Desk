@@ -1,0 +1,74 @@
+<div class="h-full bg-white dark:bg-slate-900">
+    @if (!selectedTicket()) {
+        <div class="p-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-6">My Tickets</h1>
+            <div class="border border-gray-200 dark:border-slate-700 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+                    <thead class="bg-gray-50 dark:bg-slate-800">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Subject</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Last Updated</th>
+                            <th scope="col" class="relative px-6 py-3"><span class="sr-only">View</span></th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800/50 divide-y divide-gray-200 dark:divide-slate-700">
+                        @for(ticket of tickets(); track ticket.id) {
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-200">#{{ticket.id}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-slate-300">{{ticket.subject}}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + 
+                                     { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[ticket.status]">
+                                        {{ ticket.status.replace('-', ' ') }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ formatDate(ticket.lastUpdate) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button (click)="viewTicket(ticket)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">View</button>
+                                </td>
+                            </tr>
+                        }
+                         @if(tickets().length === 0) {
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-slate-400">You haven't submitted any tickets yet.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    } @else {
+        @let ticket = selectedTicket()!;
+        <div class="p-8 flex flex-col h-full">
+            <div>
+                <button (click)="goBackToList()" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center space-x-2 mb-4">
+                    <app-icon name="mail" class="w-4 h-4"></app-icon>
+                    <span>Back to all tickets</span>
+                </button>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100">{{ ticket.subject }}</h1>
+                <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-slate-400 mt-2">
+                    <span>Created on: {{ formatDate(ticket.created) }}</span>
+                    <span>Status: 
+                         <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + 
+                                     { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[ticket.status]">
+                                        {{ ticket.status.replace('-', ' ') }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto mt-6 space-y-4 border-t border-gray-200 dark:border-slate-700 pt-6">
+                 @for(message of ticket.messages; track $index) {
+                     <div [class]="'p-4 rounded-lg ' + (message.type === 'customer' ? 'bg-gray-100 dark:bg-slate-800' : 'bg-indigo-50 dark:bg-indigo-900/50')">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-gray-900 dark:text-slate-200">{{ message.from }}</span>
+                            <span class="text-xs text-gray-500 dark:text-slate-400">{{ formatDate(message.timestamp) }}</span>
+                        </div>
+                        <p class="text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{{ message.content }}</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

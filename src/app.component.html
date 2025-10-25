@@ -1,0 +1,630 @@
+<div class="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col">
+  <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <span class="text-white font-bold text-lg">B</span>
+        </div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-slate-100">BoldDesk</h1>
+      </div>
+      <div class="flex items-center space-x-4">
+        @if (activeView() !== 'customer-portal') {
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 text-gray-400 dark:text-slate-500">
+              <app-icon name="search" class="w-5 h-5"></app-icon>
+            </span>
+            <input
+              type="text"
+              placeholder="Search tickets..."
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+              class="pl-10 pr-10 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-80 bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400"
+            />
+            <button
+              (click)="showAdvancedSearch.set(!showAdvancedSearch())"
+              class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              <app-icon name="filter" class="w-5 h-5"></app-icon>
+            </button>
+          </div>
+        }
+        <button (click)="toggleTheme()" class="p-2 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 focus:outline-none">
+          @if (theme() === 'light') {
+            <app-icon name="moon" class="w-6 h-6"></app-icon>
+          } @else {
+            <app-icon name="sun" class="w-6 h-6"></app-icon>
+          }
+        </button>
+        <div class="relative">
+            <button (click)="toggleNotifications()" class="relative p-2 rounded-full text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 hover:text-gray-700 dark:hover:text-slate-200 focus:outline-none">
+                <app-icon name="bell" class="w-6 h-6"></app-icon>
+                @if (unreadNotificationsCount() > 0) {
+                <span class="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
+                }
+            </button>
+
+            @if (showNotifications()) {
+                <div class="absolute right-0 mt-2 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-200 dark:border-slate-700 z-50">
+                <div class="p-3 flex items-center justify-between border-b dark:border-slate-700">
+                    <h3 class="font-semibold text-gray-800 dark:text-slate-200">Notifications</h3>
+                    @if(unreadNotificationsCount() > 0) {
+                    <button (click)="markAllAsRead()" class="text-sm text-indigo-600 hover:underline dark:text-indigo-400">Mark all as read</button>
+                    }
+                </div>
+                <div class="max-h-96 overflow-y-auto">
+                    @for (notification of notifications().slice(0, 15); track notification.id) {
+                    <div (click)="viewNotification(notification)" [class]="'p-3 flex items-start space-x-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer ' + (!notification.isRead ? 'bg-indigo-50 dark:bg-indigo-900/50' : '')">
+                        <div [class]="'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ' +
+                            (notification.type === 'new_ticket' ? 'bg-blue-100 text-blue-600' :
+                            notification.type === 'customer_reply' ? 'bg-green-100 text-green-600' :
+                            'bg-red-100 text-red-600')">
+                        <app-icon [name]="{
+                            new_ticket: 'mail',
+                            customer_reply: 'messagesquare',
+                            sla_breach: 'alertcircle'
+                        }[notification.type]" class="w-5 h-5"></app-icon>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-700 dark:text-slate-300">{{ notification.message }}</p>
+                        <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">{{ formatDate(notification.timestamp) }}</p>
+                        </div>
+                        @if (!notification.isRead) {
+                            <div class="flex-shrink-0 w-2 h-2 bg-indigo-500 rounded-full mt-1.5 self-center"></div>
+                        }
+                    </div>
+                    }
+                    @if (notifications().length === 0) {
+                        <div class="p-6 text-center text-sm text-gray-500 dark:text-slate-400">
+                            You're all caught up!
+                        </div>
+                    }
+                </div>
+                </div>
+            }
+        </div>
+        <div class="flex items-center space-x-2">
+           <app-icon name="user" class="w-5 h-5 text-gray-500 dark:text-slate-400"></app-icon>
+            <select [ngModel]="currentUser().id" (ngModelChange)="updateCurrentUser(+$event)" class="text-sm border-none bg-transparent focus:ring-0 text-gray-900 dark:text-slate-100 dark:bg-slate-800">
+                @for(user of allUsers(); track user.id) {
+                    <option [value]="user.id">{{ user.name }}</option>
+                }
+            </select>
+        </div>
+        <button
+          (click)="showNewTicket.set(true)"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-indigo-700 transition"
+        >
+          <app-icon name="plus" class="w-5 h-5"></app-icon>
+          <span>New Ticket</span>
+        </button>
+      </div>
+    </div>
+
+    @if (showAdvancedSearch() && activeView() !== 'customer-portal') {
+      <div class="mt-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-200 dark:border-slate-700">
+        <div class="grid grid-cols-5 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Customer</label>
+            <input
+              type="text"
+              placeholder="Customer name..."
+              [ngModel]="advancedFilters().customer"
+              (ngModelChange)="updateAdvancedFilterCustomer($event)"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Agent</label>
+            <select
+              [ngModel]="advancedFilters().agent"
+              (ngModelChange)="updateAdvancedFilterAgent($event)"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+            >
+              <option value="">All Agents</option>
+              @for(agent of agents(); track agent.id) {
+                <option [value]="agent.name">{{ agent.name }}</option>
+              }
+              <option value="Unassigned">Unassigned</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Priority</label>
+            <select
+              [ngModel]="advancedFilters().priority"
+              (ngModelChange)="updateAdvancedFilterPriority($event)"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+            >
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">From Date</label>
+            <input
+              type="date"
+              [ngModel]="advancedFilters().dateFrom"
+              (ngModelChange)="updateAdvancedFilterDateFrom($event)"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">To Date</label>
+            <input
+              type="date"
+              [ngModel]="advancedFilters().dateTo"
+              (ngModelChange)="updateAdvancedFilterDateTo($event)"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+            />
+          </div>
+        </div>
+        <div class="mt-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <span class="text-xs font-medium text-gray-700 dark:text-slate-300">Presets:</span>
+                <button (click)="applyDatePreset('today')" class="px-2 py-1 text-xs bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 rounded hover:bg-gray-300 dark:hover:bg-slate-500 transition">Today</button>
+                <button (click)="applyDatePreset('last7days')" class="px-2 py-1 text-xs bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 rounded hover:bg-gray-300 dark:hover:bg-slate-500 transition">Last 7 Days</button>
+                <button (click)="applyDatePreset('thismonth')" class="px-2 py-1 text-xs bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 rounded hover:bg-gray-300 dark:hover:bg-slate-500 transition">This Month</button>
+                <button (click)="applyDatePreset('lastmonth')" class="px-2 py-1 text-xs bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 rounded hover:bg-gray-300 dark:hover:bg-slate-500 transition">Last Month</button>
+            </div>
+            <button (click)="clearAdvancedFilters()" class="text-sm text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200">
+                Clear Filters
+            </button>
+        </div>
+        @if (customFieldDefinitions().length > 0) {
+            <hr class="my-4 border-gray-200 dark:border-slate-600">
+            <div class="grid grid-cols-5 gap-4">
+                @for (field of customFieldDefinitions(); track field.id) {
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">{{ field.name }}</label>
+                        @switch (field.type) {
+                            @case ('text') {
+                                <input
+                                    type="text"
+                                    [placeholder]="field.name + '...'"
+                                    [ngModel]="advancedFilters().customFilters[field.id] || ''"
+                                    (ngModelChange)="updateAdvancedFilterCustomField(field.id, $event)"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+                                />
+                            }
+                            @case ('number') {
+                                <input
+                                    type="number"
+                                    [placeholder]="field.name + '...'"
+                                    [ngModel]="advancedFilters().customFilters[field.id] || ''"
+                                    (ngModelChange)="updateAdvancedFilterCustomField(field.id, $event)"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+                                />
+                            }
+                            @case ('date') {
+                                <input
+                                    type="date"
+                                    [ngModel]="advancedFilters().customFilters[field.id] || ''"
+                                    (ngModelChange)="updateAdvancedFilterCustomField(field.id, $event)"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+                                />
+                            }
+                            @case ('dropdown') {
+                                <select
+                                    [ngModel]="advancedFilters().customFilters[field.id] || 'all'"
+                                    (ngModelChange)="updateAdvancedFilterCustomField(field.id, $event)"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+                                >
+                                    <option value="all">All</option>
+                                    @for (option of field.options || []; track option) {
+                                        <option [value]="option">{{ option }}</option>
+                                    }
+                                </select>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+      </div>
+    }
+  </header>
+
+  <div class="flex flex-1 overflow-hidden">
+    @if (!('roleId' in currentUser())) {
+        <!-- Customer Portal View (no sidebar) -->
+        <main class="flex-1">
+             <app-customer-portal [tickets]="customerTickets()"></app-customer-portal>
+        </main>
+    } @else {
+        <!-- Agent/Admin View -->
+        <aside class="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 p-4 overflow-y-auto">
+          <nav class="space-y-1 mb-6">
+             <button
+              (click)="activeView.set('inbox')"
+              [class]="'w-full text-left px-4 py-2 rounded-lg transition flex items-center space-x-2 ' + (activeView() === 'inbox' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700')"
+            >
+              <app-icon name="inbox" class="w-4 h-4"></app-icon>
+              <span>Inbox</span>
+            </button>
+            <button
+              (click)="activeView.set('chat')"
+              [class]="'w-full text-left px-4 py-2 rounded-lg transition flex items-center space-x-2 ' + (activeView() === 'chat' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700')"
+            >
+              <app-icon name="message-circle" class="w-4 h-4"></app-icon>
+              <span>Live Chat</span>
+            </button>
+            <button
+              (click)="activeView.set('tickets')"
+              [class]="'w-full text-left px-4 py-2 rounded-lg transition flex items-center space-x-2 ' + (activeView() === 'tickets' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700')"
+            >
+              <app-icon name="mail" class="w-4 h-4"></app-icon>
+              <span>Tickets</span>
+            </button>
+            <button
+              (click)="activeView.set('knowledge-base')"
+              [class]="'w-full text-left px-4 py-2 rounded-lg transition flex items-center space-x-2 ' + (activeView() === 'knowledge-base' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700')"
+            >
+              <app-icon name="library" class="w-4 h-4"></app-icon>
+              <span>Knowledge Base</span>
+            </button>
+            <button
+              (click)="activeView.set('analytics')"
+              [class]="'w-full text-left px-4 py-2 rounded-lg transition flex items-center space-x-2 ' + (activeView() === 'analytics' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700')"
+            >
+              <app-icon name="barchart3" class="w-4 h-4"></app-icon>
+              <span>Analytics</span>
+            </button>
+             @if(hasPermission('manage_settings')) {
+                <hr class="my-2 dark:border-slate-700">
+                <button (click)="showAutomation.set(true)" class="w-full text-left px-4 py-2 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center space-x-2">
+                    <app-icon name="zap" class="w-4 h-4"></app-icon>
+                    <span>Automation</span>
+                </button>
+                <button (click)="showSlaManagement.set(true)" class="w-full text-left px-4 py-2 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center space-x-2">
+                    <app-icon name="sliders" class="w-4 h-4"></app-icon>
+                    <span>SLA Policies</span>
+                </button>
+                <button (click)="showSettings.set(true)" class="w-full text-left px-4 py-2 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center space-x-2">
+                    <app-icon name="settings" class="w-4 h-4"></app-icon>
+                    <span>Settings</span>
+                </button>
+            }
+          </nav>
+
+          <div class="mb-6">
+              <h3 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Views</h3>
+              <div class="space-y-1">
+                  <button
+                      (click)="applyView('all')"
+                      [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (activeViewId() === 'all' ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900/50 dark:text-indigo-400 font-medium' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                  >
+                      <span>All Tickets</span>
+                  </button>
+                  @for (view of savedViews(); track view.id) {
+                      <button
+                          (click)="applyView(view.id)"
+                          [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition group relative ' + (activeViewId() === view.id ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900/50 dark:text-indigo-400 font-medium' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                      >
+                          <span>{{ view.name }}</span>
+                          <span (click)="$event.stopPropagation(); deleteView(view.id)" class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:inline-block p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50 text-red-500">
+                              <app-icon name="x" class="w-3 h-3"></app-icon>
+                          </span>
+                      </button>
+                  }
+              </div>
+          </div>
+    
+          <div class="mb-6">
+            <h3 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Status</h3>
+            <div class="space-y-1">
+              @for (status of ['all', 'open', 'in-progress', 'resolved', 'closed']; track status) {
+                <button
+                  (click)="filterStatus.set(status)"
+                  [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterStatus() === status ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                >
+                  <span class="capitalize">{{ status.replace('-', ' ') }}</span>
+                  <span class="float-right text-gray-400 dark:text-slate-500">{{ statusCounts()[status] }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Priority</h3>
+            <div class="space-y-1">
+              @for (priority of ['all', 'urgent', 'high', 'medium', 'low']; track priority) {
+                <button
+                  (click)="filterPriority.set(priority)"
+                  [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterPriority() === priority ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                >
+                  <span class="capitalize">{{ priority }}</span>
+                  <span class="float-right text-gray-400 dark:text-slate-500">{{ priorityCounts()[priority] }}</span>
+                </button>
+              }
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <h3 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Assignee</h3>
+            <div class="space-y-1">
+              <button
+                (click)="filterAssignee.set('all')"
+                [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterAssignee() === 'all' ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+              >
+                All Assignees
+                <span class="float-right text-gray-400 dark:text-slate-500">{{ tickets().length }}</span>
+              </button>
+              @if ('roleId' in currentUser()) {
+                <button
+                  (click)="filterAssignee.set('me')"
+                  [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterAssignee() === 'me' ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                >
+                  Assigned to Me
+                  <span class="float-right text-gray-400 dark:text-slate-500">{{ assigneeCounts()['me'] || 0 }}</span>
+                </button>
+              }
+              <button
+                (click)="filterAssignee.set('Unassigned')"
+                [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterAssignee() === 'Unassigned' ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+              >
+                Unassigned
+                <span class="float-right text-gray-400 dark:text-slate-500">{{ assigneeCounts()['Unassigned'] || 0 }}</span>
+              </button>
+              
+              <hr class="!my-2 dark:border-slate-700">
+
+              @for (agent of agents(); track agent.id) {
+                <button
+                  (click)="filterAssignee.set(agent.name)"
+                  [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterAssignee() === agent.name ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                >
+                  {{ agent.name }}
+                  <span class="float-right text-gray-400 dark:text-slate-500">{{ assigneeCounts()[agent.name] || 0 }}</span>
+                </button>
+              }
+            </div>
+          </div>
+    
+          <div>
+            <h3 class="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">Tags</h3>
+            <div class="space-y-1">
+              <button
+                (click)="filterTag.set('all')"
+                [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterTag() === 'all' ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+              >
+                All Tags
+                <span class="float-right text-gray-400 dark:text-slate-500">{{ tickets().length }}</span>
+              </button>
+              @for (tag of availableTags(); track tag) {
+                <button
+                  (click)="filterTag.set(tag)"
+                  [class]="'w-full text-left px-4 py-2 rounded-lg text-sm transition ' + (filterTag() === 'all' ? 'bg-gray-100 text-gray-900 dark:bg-slate-700 dark:text-slate-100' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                >
+                  {{ tag }}
+                  <span class="float-right text-gray-400 dark:text-slate-500">{{ tagCounts()[tag] }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        </aside>
+    
+        <main class="flex-1 bg-white dark:bg-slate-900">
+          @switch (activeView()) {
+             @case ('inbox') {
+              <app-inbox 
+                [emails]="mockEmails()"
+                (convertToTicket)="handleConvertToTicketFromEmail($event)"
+              ></app-inbox>
+            }
+             @case ('chat') {
+              <app-chat
+                [chatSessions]="chatSessions()"
+                [currentAgent]="currentUser()"
+                (acceptChat)="handleAcceptChat($event)"
+                (sendMessage)="handleSendChatMessage({ chatId: $event.chatId, content: $event.content, from: 'agent' })"
+                (convertToTicket)="handleConvertToTicketFromChat($event)"
+              ></app-chat>
+            }
+            @case ('analytics') {
+              <app-analytics-dashboard [analytics]="analytics()"></app-analytics-dashboard>
+            }
+            @case ('knowledge-base') {
+              <app-knowledge-base [articles]="knowledgeBaseArticles()" [categories]="knowledgeBaseCategories()"></app-knowledge-base>
+            }
+            @case ('tickets') {
+              <div class="flex h-full flex-col">
+                @if (showBulkActions()) {
+                  <app-bulk-action-bar
+                    [selectedCount]="selectedTicketIds().length"
+                    [availableTags]="availableTags()"
+                    (action)="handleBulkAction($event)"
+                    (cancel)="selectedTicketIds.set([])"
+                  ></app-bulk-action-bar>
+                }
+                <div class="flex flex-1 overflow-hidden">
+                  <div class="w-1/3 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 overflow-y-auto">
+                    <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 z-10">
+                        <div class="flex items-center space-x-2">
+                             <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">Tickets ({{ filteredTickets().length }})</h2>
+                             <button (click)="saveCurrentView()" title="Save current filters as new view" class="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200">
+                                <app-icon name="plus-circle" class="w-5 h-5"></app-icon>
+                             </button>
+                             <button (click)="exportToCsv()" title="Export to CSV" class="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200">
+                                <app-icon name="download" class="w-4 h-4"></app-icon>
+                             </button>
+                        </div>
+                      <button
+                        (click)="toggleSelectAll()"
+                        class="text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center space-x-1"
+                      >
+                        @if (selectedTicketIds().length === filteredTickets().length && filteredTickets().length > 0) {
+                          <app-icon name="checksquare" class="w-4 h-4"></app-icon>
+                        } @else {
+                          <app-icon name="square" class="w-4 h-4"></app-icon>
+                        }
+                        <span>Select All</span>
+                      </button>
+                    </div>
+                    <div class="divide-y divide-gray-200 dark:divide-slate-700">
+                      @for (ticket of filteredTickets(); track ticket.id) {
+                        @let sla = calculateSLA(ticket);
+                        @let isSelected = selectedTicketIds().includes(ticket.id);
+                        <div [class]="'p-4 transition hover:bg-gray-50 dark:hover:bg-slate-700/50 ' + (selectedTicket()?.id === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50' : '')">
+                          <div class="flex items-start space-x-3">
+                            <button (click)="$event.stopPropagation(); toggleTicketSelection(ticket.id)" class="mt-1 flex-shrink-0">
+                                @if(isSelected) {
+                                  <app-icon name="checksquare" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></app-icon>
+                                } @else {
+                                  <app-icon name="square" class="w-5 h-5 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"></app-icon>
+                                }
+                            </button>
+                            <div class="flex-1 cursor-pointer" (click)="selectedTicket.set(ticket)">
+                              <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-900 dark:text-slate-100 line-clamp-1 flex items-center space-x-2">
+                                    <app-icon [name]="{ web: 'mail', email: 'inbox', chat: 'message-circle' }[ticket.channel]" [title]="'Channel: ' + ticket.channel" class="w-4 h-4 text-gray-400 dark:text-slate-500"></app-icon>
+                                    @if(ticket.isPrivate) {
+                                        <app-icon name="lock" class="w-4 h-4 text-gray-500 dark:text-slate-400" title="Private Ticket"></app-icon>
+                                    }
+                                    <span>{{ ticket.subject }}</span>
+                                </h3>
+                                 <div class="flex items-center space-x-2">
+                                    @if((ticket.viewingAgents?.length || 0) > 1 || ((ticket.viewingAgents?.length || 0) === 1 && ticket.viewingAgents?.[0] !== currentUser().name)) {
+                                    <app-icon name="eye" class="w-4 h-4 text-gray-400 dark:text-slate-500" title="Another agent is viewing this ticket"></app-icon>
+                                    }
+                                    <span [class]="'ml-2 px-2 py-1 rounded-full text-xs font-medium capitalize ' + 
+                                    { low: 'bg-gray-100 text-gray-700 dark:bg-slate-600 dark:text-slate-300', medium: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300', high: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300', urgent: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'}[ticket.priority]">
+                                    {{ ticket.priority }}
+                                    </span>
+                                </div>
+                              </div>
+                              <p class="text-sm text-gray-600 dark:text-slate-400 mb-2">{{ ticket.customer }}</p>
+                              
+                              @if (ticket.status !== 'resolved' && ticket.status !== 'closed') {
+                                <div class="mb-2 text-xs">
+                                  <div [class]="'flex items-center space-x-1 ' + 
+                                    { ok: 'text-green-600 dark:text-green-400', warning: 'text-yellow-600 dark:text-yellow-400', breached: 'text-red-600 dark:text-red-400', met: 'text-gray-400 dark:text-slate-500'}[sla.resolutionStatus]">
+                                    <app-icon name="clock" class="w-3 h-3"></app-icon>
+                                    <span>Resolve in: {{ sla.resolutionTimeLeft < 0 ? 'Breached' : (Math.floor(sla.resolutionTimeLeft / 3600000) + 'h ' + Math.floor((sla.resolutionTimeLeft % 3600000) / 60000) + 'm') }}</span>
+                                  </div>
+                                </div>
+                              }
+                              
+                              @if (ticket.tags.length > 0) {
+                                <div class="flex flex-wrap gap-1 mb-2">
+                                  @for (tag of ticket.tags.slice(0, 2); track tag) {
+                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300 rounded text-xs">
+                                      <app-icon name="tag" class="w-3 h-3"></app-icon>
+                                      <span>{{ tag }}</span>
+                                    </span>
+                                  }
+                                  @if (ticket.tags.length > 2) {
+                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300 rounded text-xs">
+                                      +{{ ticket.tags.length - 2 }}
+                                    </span>
+                                  }
+                                </div>
+                              }
+                              <div class="flex items-center justify-between">
+                                <span [class]="'inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium capitalize ' + 
+                                 { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[ticket.status]">
+                                  <app-icon [name]="{open: 'mail', 'in-progress': 'clock', resolved: 'checkcircle', closed: 'xcircle'}[ticket.status] || 'alertcircle'" class="w-4 h-4"></app-icon>
+                                  <span>{{ ticket.status.replace('-', ' ') }}</span>
+                                </span>
+                                <span class="text-xs text-gray-500 dark:text-slate-400">{{ formatDate(ticket.lastUpdate) }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+    
+                  <div class="flex-1 overflow-y-auto">
+                    @if (selectedTicket(); as ticket) {
+                      <app-ticket-detail
+                        [ticket]="ticket"
+                        [slaInfo]="selectedTicketSlaInfo()"
+                        [cannedResponses]="cannedResponses()"
+                        [availableTags]="availableTags()"
+                        [currentAgent]="currentUser()"
+                        [allTickets]="tickets()"
+                        [macros]="macros()"
+                        [customFieldDefinitions]="customFieldDefinitions()"
+                        [allAgents]="agents()"
+                        (statusChange)="updateTicketStatus($event)"
+                        (tagsChange)="updateTicketTags($event)"
+                        (reply)="addReply($event)"
+                        (internalNote)="addInternalNote($event)"
+                        (mergeTicket)="handleMergeTickets($event)"
+                        (logTime)="logTime($event)"
+                        (applyMacro)="applyMacro($event)"
+                        (splitTicket)="splitTicket($event)"
+                        (addWatcher)="handleAddWatcher({ ticketId: ticket.id, agentId: $event })"
+                        (removeWatcher)="handleRemoveWatcher({ ticketId: ticket.id, agentId: $event })"
+                      ></app-ticket-detail>
+                    } @else {
+                      <div class="h-full flex items-center justify-center text-gray-500 dark:text-slate-500">
+                        <div class="text-center">
+                          <app-icon name="mail" class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-slate-700"></app-icon>
+                          <p>Select a ticket to view details</p>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </main>
+    }
+  </div>
+
+  @if (showNewTicket()) {
+    <app-new-ticket-modal
+      [availableTags]="availableTags()"
+      [customFieldDefinitions]="customFieldDefinitions()"
+      (close)="showNewTicket.set(false)"
+      (submit)="handleNewTicket($event)"
+    ></app-new-ticket-modal>
+  }
+  
+  @if (showAutomation()) {
+    <app-automation-modal
+      [automationRules]="automationRules()"
+      [groups]="groups()"
+      (close)="showAutomation.set(false)"
+      (update)="automationRules.set($event)"
+    ></app-automation-modal>
+  }
+
+  @if (showSlaManagement()) {
+    <app-sla-management-modal
+      [slaRules]="slaRules()"
+      (close)="showSlaManagement.set(false)"
+      (update)="updateSlaRules($event)"
+    ></app-sla-management-modal>
+  }
+
+  @if (showSettings()) {
+    <app-settings-modal
+      [agents]="agents()"
+      [roles]="roles()"
+      [groups]="groups()"
+      (close)="showSettings.set(false)"
+    ></app-settings-modal>
+  }
+  
+  @if (showCSAT()) {
+    <app-csat-modal
+      [ticket]="csatTicket()!"
+      (close)="showCSAT.set(false)"
+      (submit)="submitCSAT($event)"
+    ></app-csat-modal>
+  }
+  
+  @if(showChatWidget()) {
+    <app-chat-widget
+        [customer]="currentUser()"
+        [session]="customerChatSession()"
+        (startChat)="handleStartChat($event)"
+        (sendMessage)="handleSendChatMessage({ chatId: $event.chatId, content: $event.content, from: 'customer' })"
+    ></app-chat-widget>
+  }
+</div>

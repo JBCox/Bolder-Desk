@@ -1,0 +1,5 @@
+{
+  "name": "BoldDesk Clone",
+  "description": "A feature-rich help desk application clone built with Angular and Tailwind CSS, providing ticket management, analytics, and automation features.",
+  "requestFramePermissions": []
+}

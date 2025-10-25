@@ -1,0 +1,58 @@
+<div class="flex h-full">
+  <!-- Email List -->
+  <div class="w-1/3 border-r border-gray-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-800">
+    <div class="p-4 border-b border-gray-200 dark:border-slate-700">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-slate-100">Inbox</h2>
+    </div>
+    <div class="flex-1 overflow-y-auto">
+      @for(email of emails(); track email.id) {
+        <div 
+          (click)="selectEmail(email)"
+          [class]="'p-4 cursor-pointer border-l-4 ' + (selectedEmail()?.id === email.id ? 'bg-indigo-50 dark:bg-indigo-900/50 border-indigo-500' : (email.isRead ? 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-700/50' : 'border-indigo-500 bg-white dark:bg-slate-800 font-semibold'))">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm text-gray-800 dark:text-slate-200 line-clamp-1">{{ email.from }}</span>
+            <span class="text-xs text-gray-500 dark:text-slate-400 flex-shrink-0">{{ formatDate(email.receivedAt) }}</span>
+          </div>
+          <p class="text-sm text-gray-800 dark:text-slate-300 line-clamp-1">{{ email.subject }}</p>
+          <p class="text-xs text-gray-500 dark:text-slate-400 line-clamp-2 mt-1">{{ email.body }}</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Email Content -->
+  <div class="flex-1 p-6 overflow-y-auto bg-white dark:bg-slate-900">
+    @if(selectedEmail(); as email) {
+      <div>
+        <div class="flex justify-between items-start">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2">{{ email.subject }}</h1>
+            @if(email.status === 'unprocessed') {
+                <button (click)="convertToTicket.emit(email)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-indigo-700 transition">
+                    <app-icon name="plus" class="w-5 h-5"></app-icon>
+                    <span>Convert to Ticket</span>
+                </button>
+            } @else {
+                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                    Ticket #{{email.ticketId}} Created
+                </span>
+            }
+        </div>
+        <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-slate-400 mb-6 border-b border-gray-200 dark:border-slate-700 pb-4">
+          <div><span class="font-semibold text-gray-700 dark:text-slate-300">From:</span> {{ email.from }}</div>
+          <div><span class="font-semibold text-gray-700 dark:text-slate-300">To:</span> {{ email.to }}</div>
+          <div><span class="font-semibold text-gray-700 dark:text-slate-300">Date:</span> {{ formatDate(email.receivedAt) }}</div>
+        </div>
+        <div class="prose max-w-none text-gray-800 dark:text-slate-300 whitespace-pre-wrap">
+          {{ email.body }}
+        </div>
+      </div>
+    } @else {
+      <div class="h-full flex items-center justify-center text-gray-500 dark:text-slate-400">
+        <div class="text-center">
+            <app-icon name="inbox" class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-slate-700"></app-icon>
+            <p>Select an email to read</p>
+        </div>
+      </div>
+    }
+  </div>
+</div>

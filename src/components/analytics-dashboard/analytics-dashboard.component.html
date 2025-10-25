@@ -1,0 +1,108 @@
+@if(analytics(); as data) {
+<div class="p-8 overflow-y-auto bg-gray-50 dark:bg-slate-900 h-full">
+  <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-8">Analytics Dashboard</h2>
+  
+  <div class="grid grid-cols-4 gap-6 mb-8">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600 dark:text-slate-400">Total Tickets</span>
+        <app-icon name="mail" class="w-5 h-5 text-indigo-600"></app-icon>
+      </div>
+      <p class="text-3xl font-bold text-gray-900 dark:text-slate-100">{{ data.total }}</p>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600 dark:text-slate-400">SLA Compliance</span>
+        <app-icon name="trendingup" class="w-5 h-5 text-green-600"></app-icon>
+      </div>
+      <p class="text-3xl font-bold text-gray-900 dark:text-slate-100">{{ data.slaCompliance }}</p>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600 dark:text-slate-400">Avg CSAT Score</span>
+        <app-icon name="star" class="w-5 h-5 text-yellow-600"></app-icon>
+      </div>
+      <p class="text-3xl font-bold text-gray-900 dark:text-slate-100">{{ data.avgCSAT }}/5</p>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-gray-600 dark:text-slate-400">Satisfaction</span>
+        <app-icon name="checkcircle" class="w-5 h-5 text-green-600"></app-icon>
+      </div>
+      <p class="text-3xl font-bold text-gray-900 dark:text-slate-100">{{ data.customerSatisfaction }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Tickets by Status</h3>
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-gray-600 dark:text-slate-400">Open</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ data.open }}</span>
+          </div>
+          <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+            <div class="bg-blue-600 h-2 rounded-full" [style.width.%]="(data.open / data.total) * 100"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-gray-600 dark:text-slate-400">In Progress</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ data.inProgress }}</span>
+          </div>
+          <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+            <div class="bg-yellow-600 h-2 rounded-full" [style.width.%]="(data.inProgress / data.total) * 100"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex justify-between mb-2">
+            <span class="text-sm text-gray-600 dark:text-slate-400">Resolved</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ data.resolved }}</span>
+          </div>
+          <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+            <div class="bg-green-600 h-2 rounded-full" [style.width.%]="(data.resolved / data.total) * 100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">Tickets by Priority</h3>
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-purple-500 rounded"></div>
+            <span class="text-sm text-gray-600 dark:text-slate-400">Urgent</span>
+          </div>
+          <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ data.byPriority.urgent }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-red-500 rounded"></div>
+            <span class="text-sm text-gray-600 dark:text-slate-400">High</span>
+          </div>
+          <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ data.byPriority.high }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-orange-500 rounded"></div>
+            <span class="text-sm text-gray-600 dark:text-slate-400">Medium</span>
+          </div>
+          <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ data.byPriority.medium }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-3 h-3 bg-gray-500 rounded"></div>
+            <span class="text-sm text-gray-600 dark:text-slate-400">Low</span>
+          </div>
+          <span class="text-sm font-medium text-gray-900 dark:text-slate-100">{{ data.byPriority.low }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+}
