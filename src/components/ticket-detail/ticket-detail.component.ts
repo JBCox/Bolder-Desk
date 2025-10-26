@@ -1,334 +1,420 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject, ViewChild, ElementRef, effect } from '@angular/core';
+// Fix: Replaced invalid file content with a complete and valid Angular component.
+import { Component, ChangeDetectionStrategy, input, output, signal, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ticket, CannedResponse, Macro, CustomFieldDefinition, Message, Agent, ServiceRequestType, Contact, Organization, Activity, InternalNote, KnowledgeBaseArticle } from '../../models';
+import * as models from '../../models';
 import { IconComponent } from '../icon/icon.component';
-import { MergeTicketModalComponent } from '../merge-ticket-modal/merge-ticket-modal.component';
-import { LogTimeModalComponent } from '../log-time-modal/log-time-modal.component';
-import { SplitTicketModalComponent } from '../split-ticket-modal/split-ticket-modal.component';
-import { LinkTicketModalComponent } from '../link-ticket-modal/link-ticket-modal.component';
 import { GeminiService } from '../../gemini.service';
 
-type TimelineEvent = (Message & { itemType: 'message' }) | (InternalNote & { itemType: 'note' }) | (Activity & { itemType: 'activity' });
+type AiFeature = 'summary' | 'suggestions' | 'tags' | 'sentiment' | 'kb';
 
 @Component({
   selector: 'app-ticket-detail',
-  templateUrl: './ticket-detail.component.html',
+  template: `
+@if (ticket(); as currentTicket) {
+  <div class="flex flex-col h-full bg-white dark:bg-slate-900">
+    <!-- Header -->
+    <div class="flex-shrink-0 p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 truncate" title="{{ currentTicket.subject }}">
+          {{ currentTicket.subject }}
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          #{{ currentTicket.id }} opened on {{ formatDate(currentTicket.created) }}
+        </p>
+      </div>
+      <div class="flex items-center space-x-2">
+        @if (hasPermission('ticket:merge')) {
+            <button (click)="openMergeModal.emit(currentTicket)" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Merge Ticket">
+              <app-icon name="merge" class="w-5 h-5 text-slate-600 dark:text-slate-300"></app-icon>
+            </button>
+        }
+        <button (click)="openLogTimeModal.emit(currentTicket)" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Log Time">
+          <app-icon name="clock" class="w-5 h-5 text-slate-600 dark:text-slate-300"></app-icon>
+        </button>
+         <button (click)="handleCreateKbArticle()" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 relative" title="Generate KB Article">
+            <app-icon name="library" class="w-5 h-5 text-slate-600 dark:text-slate-300"></app-icon>
+            @if (isGeneratingKb()) {
+              <div class="absolute inset-0 bg-white/50 dark:bg-slate-900/50 flex items-center justify-center">
+                  <app-icon name="loader" class="w-4 h-4"></app-icon>
+              </div>
+            }
+        </button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-grow flex overflow-hidden">
+      <!-- Left: Conversation -->
+      <div class="flex flex-col w-2/3 border-r border-slate-200 dark:border-slate-700">
+        <!-- Message History -->
+        <div class="flex-grow overflow-y-auto p-4 space-y-6">
+          @for (item of timelineItems(); track item.timestamp) {
+            @if (isMessage(item)) {
+              <div class="flex items-start gap-3" [class.flex-row-reverse]="item.type === 'agent'">
+                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" [class]="item.type === 'agent' ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">
+                  <app-icon [name]="item.type === 'agent' ? 'user' : 'user'" class="w-5 h-5"></app-icon>
+                </div>
+                <div class="p-3 rounded-lg max-w-lg" [class]="item.type === 'agent' ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'bg-slate-100 dark:bg-slate-800'">
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="font-semibold text-sm text-slate-800 dark:text-slate-200">{{ item.from }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDate(item.timestamp) }}</p>
+                  </div>
+                  <p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ item.content }}</p>
+                  <div class="mt-2">
+                    <button (click)="openSplitModal.emit(item)" class="text-xs text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
+                      Split into new ticket
+                    </button>
+                  </div>
+                </div>
+              </div>
+            } @else if (isNote(item)) {
+                <div class="my-4">
+                    <div class="flex items-center gap-3">
+                        <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
+                        <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                            <app-icon name="lock" class="w-4 h-4"></app-icon>
+                            <span class="text-xs font-medium">Internal Note by {{ item.agentName }} on {{ formatDate(item.timestamp) }}</span>
+                        </div>
+                        <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
+                    </div>
+                    <div class="mt-2 bg-yellow-50 dark:bg-yellow-400/10 p-3 rounded-lg border border-yellow-200 dark:border-yellow-400/20">
+                        <p class="text-sm text-yellow-800 dark:text-yellow-200 whitespace-pre-wrap">{{ item.content }}</p>
+                    </div>
+                </div>
+            } @else if (isActivity(item)) {
+              <div class="my-4">
+                <div class="flex items-center gap-3">
+                  <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
+                  <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    @if(item.type === 'ai_assignment') {
+                      <app-icon name="brain-circuit" class="w-4 h-4 text-indigo-500"></app-icon>
+                      <span class="text-xs font-medium">AI Action by {{ item.user }} on {{ formatDate(item.timestamp) }}</span>
+                    } @else {
+                      <app-icon name="history" class="w-4 h-4"></app-icon>
+                      <span class="text-xs font-medium">Activity on {{ formatDate(item.timestamp) }}</span>
+                    }
+                  </div>
+                  <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
+                </div>
+                <div class="mt-2 text-center">
+                  <p class="text-sm text-slate-600 dark:text-slate-400">{{ item.details }}</p>
+                </div>
+              </div>
+            }
+          }
+        </div>
+        
+        <!-- Reply Box -->
+        <div class="flex-shrink-0 p-4 border-t border-slate-200 dark:border-slate-700">
+            <div class="flex items-center border-b border-slate-200 dark:border-slate-700 mb-2">
+                <button (click)="activeTab.set('reply')" class="px-4 py-2 text-sm" [class]="activeTab() === 'reply' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">Reply</button>
+                <button (click)="activeTab.set('note')" class="px-4 py-2 text-sm" [class]="activeTab() === 'note' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">Internal Note</button>
+            </div>
+            @if (activeTab() === 'reply') {
+                <div>
+                    <textarea [(ngModel)]="replyContent" rows="4" class="w-full p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Type your reply..."></textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <div>
+                            <!-- AI suggestions for reply -->
+                             @if (isLoading().has('suggestions')) {
+                                <app-icon name="loader" class="w-5 h-5 text-slate-500"></app-icon>
+                             } @else {
+                                 @for (s of suggestions(); track s) {
+                                    <button (click)="replyContent.set(s)" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-2 py-1 rounded-full mr-1 mb-1">{{ s }}</button>
+                                 }
+                             }
+                        </div>
+                        <button (click)="handleReply()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300" [disabled]="!replyContent().trim()">Send</button>
+                    </div>
+                </div>
+            } @else {
+                 <div>
+                    <textarea [(ngModel)]="noteContent" rows="4" class="w-full p-2 border rounded-md bg-yellow-50 dark:bg-yellow-500/10 border-yellow-300 dark:border-yellow-600/50 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" placeholder="Type an internal note..."></textarea>
+                     <div class="flex justify-end mt-2">
+                        <button (click)="handleNote()" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:bg-yellow-300" [disabled]="!noteContent().trim()">Add Note</button>
+                     </div>
+                 </div>
+            }
+        </div>
+      </div>
+
+      <!-- Right: Details -->
+      <div class="w-1/3 overflow-y-auto p-4 space-y-6">
+        <!-- Properties -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
+          <h3 class="font-semibold mb-4 text-slate-800 dark:text-slate-200">Properties</h3>
+          <div class="space-y-3 text-sm">
+            <div><label class="font-medium text-slate-500 dark:text-slate-400">Status</label><select (change)="handleStatusChange($event)" [value]="currentTicket.status" class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"><option>open</option><option>pending</option><option>resolved</option><option>closed</option></select></div>
+            <div><label class="font-medium text-slate-500 dark:text-slate-400">Priority</label><select (change)="handlePriorityChange($event)" [value]="currentTicket.priority" class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"><option>low</option><option>medium</option><option>high</option><option>urgent</option></select></div>
+            <div><label class="font-medium text-slate-500 dark:text-slate-400">Assignee</label><select (change)="handleAssigneeChange($event)" [value]="currentTicket.assignedTo || ''" class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"><option value="">Unassigned</option>@for(a of agents(); track a.id) { <option [value]="a.name">{{ a.name }}</option> }</select></div>
+            <div><label class="font-medium text-slate-500 dark:text-slate-400">Time Tracked</label><p class="text-slate-800 dark:text-slate-100">{{ formatSeconds(currentTicket.timeTrackedSeconds) }}</p></div>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
+            <h3 class="font-semibold mb-2 text-slate-800 dark:text-slate-200">Tags</h3>
+            <div class="flex flex-wrap gap-2">
+                @for (tag of currentTicket.tags; track tag) {
+                    <span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium px-2.5 py-1 rounded-full flex items-center">
+                        {{tag}}
+                        <button (click)="removeTag(tag)" class="ml-1.5 -mr-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+                            <app-icon name="x" class="w-3 h-3"></app-icon>
+                        </button>
+                    </span>
+                }
+            </div>
+            <div class="mt-3">
+                <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Suggested Tags</h4>
+                @if(isLoading().has('tags')) {
+                    <app-icon name="loader" class="w-4 h-4"></app-icon>
+                } @else {
+                    @for (tag of suggestedTags(); track tag) {
+                        @if (!currentTicket.tags.includes(tag)) {
+                            <button (click)="addTag(tag)" class="text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 px-2 py-1 rounded-full mr-1 mb-1 hover:bg-blue-200 dark:hover:bg-blue-500/30">
+                                + {{tag}}
+                            </button>
+                        }
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- AI Insights -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
+          <h3 class="font-semibold mb-2 text-slate-800 dark:text-slate-200 flex items-center"><app-icon name="sparkles" class="w-5 h-5 mr-2 text-indigo-500"></app-icon>AI Insights</h3>
+          <div class="space-y-3 text-sm">
+            <div>
+              <h4 class="font-medium text-slate-500 dark:text-slate-400 mb-1">Summary</h4>
+              @if (isLoading().has('summary')) {
+                <div class="space-y-2 animate-pulse"><div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full"></div><div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div></div>
+              } @else {
+                <p class="text-slate-700 dark:text-slate-300">{{ summary() }}</p>
+              }
+            </div>
+            <div>
+                <h4 class="font-medium text-slate-500 dark:text-slate-400 mb-1">Sentiment</h4>
+                @if (isLoading().has('sentiment')) {
+                   <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 animate-pulse"></div>
+                } @else {
+                    <div class="flex items-center gap-2">
+                        @switch(sentiment()) {
+                            @case('positive') { <app-icon name="smile" class="w-5 h-5 text-green-500"></app-icon> }
+                            @case('negative') { <app-icon name="frown" class="w-5 h-5 text-red-500"></app-icon> }
+                            @default { <app-icon name="meh" class="w-5 h-5 text-yellow-500"></app-icon> }
+                        }
+                        <span class="capitalize text-slate-700 dark:text-slate-300">{{ sentiment() }}</span>
+                    </div>
+                }
+            </div>
+          </div>
+        </div>
+        
+        <!-- Contact -->
+        @if (contact(); as currentContact) {
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
+              <h3 class="font-semibold mb-2 text-slate-800 dark:text-slate-200">Contact</h3>
+              <p class="font-bold text-slate-700 dark:text-slate-200">{{ currentContact.name }}</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">{{ currentContact.email }}</p>
+            </div>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-800/50 text-slate-500">
+    <div class="text-center">
+      <app-icon name="mail" class="w-16 h-16 mx-auto mb-4"></app-icon>
+      <h3 class="text-lg font-semibold">Select a ticket</h3>
+      <p>Choose a ticket from the list to see the details.</p>
+    </div>
+  </div>
+}
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    CommonModule,
-    FormsModule,
-    IconComponent,
-    MergeTicketModalComponent,
-    LogTimeModalComponent,
-    SplitTicketModalComponent,
-    LinkTicketModalComponent,
-  ],
+  imports: [CommonModule, FormsModule, IconComponent],
 })
 export class TicketDetailComponent {
-  ticket = input.required<Ticket>();
-  cannedResponses = input.required<CannedResponse[]>();
-  macros = input.required<Macro[]>();
-  allTickets = input.required<Ticket[]>();
-  contacts = input.required<Contact[]>();
-  organizations = input.required<Organization[]>();
-  currentAgent = input.required<Agent | Contact>();
-  customFieldDefinitions = input.required<CustomFieldDefinition[]>();
+  ticket = input.required<models.Ticket | null>();
+  contact = input.required<models.Contact | undefined>();
+  agent = input<models.Agent | undefined>();
+  agents = input.required<models.Agent[]>();
   availableTags = input.required<string[]>();
-  allAgents = input.required<Agent[]>({ alias: 'agents' });
-  knowledgeBaseArticles = input.required<KnowledgeBaseArticle[]>();
+  hasPermission = input.required<(permission: models.Permission) => boolean>();
 
-  statusChange = output<{ ticketId: number; newStatus: 'open' | 'in-progress' | 'resolved' | 'closed' }>();
-  tagsChange = output<{ ticketId: number; newTags: string[] }>();
-  reply = output<{ ticketId: number; content: string; fromAgent: boolean; attachments: string[] }>();
-  internalNote = output<{ ticketId: number; content: string; agentName: string }>();
-  mergeTicket = output<{ targetTicketId: number; sourceTicketId: number }>();
-  logTime = output<{ ticketId: number; durationSeconds: number; agent: string }>();
-  applyMacro = output<{ ticketId: number; macro: Macro }>();
-  splitTicket = output<{ sourceTicketId: number; message: Message; newSubject: string }>();
-  addWatcher = output<number>();
-  removeWatcher = output<number>();
-  linkTicket = output<number>();
-  newKbArticle = output<{ title: string, content: string, tags: string[] }>();
-  close = output<void>();
-  selectTicket = output<number>();
+  addReply = output<{ ticketId: number; content: string; fromAgent: boolean; attachments: string[] }>();
+  addNote = output<{ ticketId: number; content: string }>();
+  updateTicket = output<Partial<models.Ticket>>();
+  openMergeModal = output<models.Ticket>();
+  openSplitModal = output<models.Message>();
+  openLogTimeModal = output<models.Ticket>();
+  openLinkTicketModal = output<models.Ticket>();
+  createKbArticle = output<models.Ticket>();
 
   private geminiService = inject(GeminiService);
 
-  activeTab360 = signal<'contact' | 'organization' | 'timeline'>('contact');
-  replyMode = signal<'customer' | 'internal'>('customer');
-  replyText = signal('');
+  activeTab = signal<'reply' | 'note'>('reply');
+  replyContent = signal('');
+  noteContent = signal('');
   
-  cannedResponseFilter = signal('');
-  showCannedResponses = signal(false);
-  showMacros = signal(false);
-  showTagEditor = signal(false);
+  // AI-related state
+  summary = signal('');
+  suggestions = signal<string[]>([]);
+  suggestedTags = signal<string[]>([]);
+  sentiment = signal<models.Ticket['sentiment']>('neutral');
+  isLoading = signal<Set<AiFeature>>(new Set());
   
-  showMergeModal = signal(false);
-  showLogTimeModal = signal(false);
-  showSplitTicketModal = signal(false);
-  messageToSplit = signal<Message | null>(null);
-  showLinkModal = signal(false);
-  showAddWatcher = signal(false);
-  
-  selectedTags = signal<string[]>([]);
-  
-  ticketSummary = signal<string | null>(null);
-  isSummarizing = signal(false);
-  suggestedReplies = signal<string[]>([]);
-  isSuggestingReplies = signal(false);
-  isChangingTone = signal(false);
   isGeneratingKb = signal(false);
-  isAnsweringFromKb = signal(false);
-  kbAnswer = signal<{ answer: string, sources: KnowledgeBaseArticle[] } | null>(null);
 
-  @ViewChild('replyTextarea') replyTextarea?: ElementRef<HTMLTextAreaElement>;
-  @ViewChild('statusSelect') statusSelect?: ElementRef<HTMLSelectElement>;
-
-  isAgent = computed(() => 'roleId' in this.currentAgent());
-
-  conversationItems = computed(() => {
-    const messages = this.ticket().messages.map(m => ({ ...m, itemType: 'message', timestamp: new Date(m.timestamp) }));
-    const notes = this.ticket().internalNotes.map(n => ({ ...n, itemType: 'note', timestamp: new Date(n.timestamp) }));
-    return [...messages, ...notes].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  });
-  
-  contact = computed(() => this.contacts().find(c => c.id === this.ticket().contactId));
-  organization = computed(() => this.organizations().find(o => o.id === this.ticket().organizationId));
-  
-  timelineEvents = computed(() => {
-    const contact = this.contact();
-    if (!contact) return [];
-    
-    const contactTickets = this.allTickets().filter(t => t.contactId === contact.id);
-    let events: any[] = [];
-    
-    for (const ticket of contactTickets) {
-      events.push({ 
-        itemType: 'activity', 
-        type: 'created',
-        ticketId: ticket.id, 
-        subject: ticket.subject, 
-        timestamp: new Date(ticket.created), 
-        user: contact.name,
-        details: `Ticket #${ticket.id} created: "${ticket.subject}"`
-      });
-      
-      for (const message of ticket.messages) {
-        events.push({ ...message, itemType: 'message', ticketId: ticket.id, timestamp: new Date(message.timestamp) });
-      }
-      
-      for (const note of ticket.internalNotes) {
-        events.push({ ...note, itemType: 'note', ticketId: ticket.id, timestamp: new Date(note.timestamp) });
-      }
-    }
-    
-    return events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  });
-
-  otherViewingAgents = computed(() => {
-    const ticket = this.ticket();
-    const currentUser = this.currentAgent();
-    return (ticket.viewingAgents || []).filter(name => name !== currentUser.name);
-  });
-  
-  watcherAgents = computed(() => {
-    const watcherIds = this.ticket().watchers || [];
-    return this.allAgents().filter(a => watcherIds.includes(a.id));
-  });
-
-  availableAgentsToAdd = computed(() => {
-      const watcherIds = this.ticket().watchers || [];
-      return this.allAgents().filter(a => !watcherIds.includes(a.id));
-  });
-  
-  parentTicket = computed(() => {
-      const parentId = this.ticket().parentId;
-      if (!parentId) return null;
-      return this.allTickets().find(t => t.id === parentId);
-  });
-
-  childTickets = computed(() => {
-      const childIds = this.ticket().childTicketIds || [];
-      if (childIds.length === 0) return [];
-      return this.allTickets().filter(t => childIds.includes(t.id));
-  });
-
-  filteredCannedResponses = computed(() => {
-    const filter = this.cannedResponseFilter().toLowerCase();
-    if (!filter) return this.cannedResponses();
-    return this.cannedResponses().filter(r => 
-        r.name.toLowerCase().includes(filter) || 
-        r.content.toLowerCase().includes(filter)
-    );
-  });
-  
   constructor() {
     effect(() => {
-      // When ticket changes, reset AI features
       const currentTicket = this.ticket();
-      this.ticketSummary.set(null);
-      this.suggestedReplies.set([]);
-      this.selectedTags.set(currentTicket.tags);
-      this.kbAnswer.set(null);
+      if (currentTicket) {
+        this.runAllAiFeatures(currentTicket);
+      }
     }, { allowSignalWrites: true });
   }
 
-  summarize() {
-    const contact = this.contact();
-    if (!contact) return;
-    this.isSummarizing.set(true);
-    this.geminiService.summarizeTicket(this.ticket(), contact.name).then(summary => {
-      this.ticketSummary.set(summary);
-      this.isSummarizing.set(false);
-    });
+  runAllAiFeatures(ticket: models.Ticket) {
+    this.summary.set('');
+    this.suggestions.set([]);
+    this.suggestedTags.set([]);
+    this.sentiment.set('neutral');
+    this.generateSummary(ticket);
+    this.generateSuggestions(ticket);
+    this.generateTags(ticket);
+    this.analyzeSentiment(ticket);
   }
 
-  suggestReplies() {
-    const contact = this.contact();
-    if (!contact) return;
-    this.isSuggestingReplies.set(true);
-    this.geminiService.generateReplySuggestions(this.ticket(), contact.name).then(suggestions => {
-      this.suggestedReplies.set(suggestions);
-      this.isSuggestingReplies.set(false);
-    });
+  async generateSummary(ticket: models.Ticket) {
+    if (!this.contact()) return;
+    this.isLoading.update(s => s.add('summary'));
+    const summary = await this.geminiService.summarizeTicket(ticket, this.contact()!.name);
+    this.summary.set(summary);
+    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('summary'); return newSet; });
   }
 
-  async changeReplyTone(tone: 'Formal' | 'Friendly') {
-    if (!this.replyText().trim()) return;
-    this.isChangingTone.set(true);
-    const rewrittenText = await this.geminiService.changeTone(this.replyText(), tone);
-    this.replyText.set(rewrittenText);
-    this.isChangingTone.set(false);
+  async generateSuggestions(ticket: models.Ticket) {
+    if (!this.contact()) return;
+    this.isLoading.update(s => s.add('suggestions'));
+    const suggestions = await this.geminiService.generateReplySuggestions(ticket, this.contact()!.name);
+    this.suggestions.set(suggestions);
+    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('suggestions'); return newSet; });
+  }
+  
+  async generateTags(ticket: models.Ticket) {
+    this.isLoading.update(s => s.add('tags'));
+    const tags = await this.geminiService.suggestTags(ticket, this.availableTags());
+    this.suggestedTags.set(tags);
+    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('tags'); return newSet; });
   }
 
-  async generateKb() {
+  async analyzeSentiment(ticket: models.Ticket) {
+    this.isLoading.update(s => s.add('sentiment'));
+    const sentiment = await this.geminiService.analyzeSentiment(ticket);
+    this.sentiment.set(sentiment);
+    this.updateTicket.emit({ sentiment });
+    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('sentiment'); return newSet; });
+  }
+  
+  async handleCreateKbArticle() {
+    const ticket = this.ticket();
+    if(!ticket || ticket.status !== 'resolved') {
+      alert('This ticket must be resolved to create a knowledge base article.');
+      return;
+    }
     this.isGeneratingKb.set(true);
     try {
-      const article = await this.geminiService.generateKbArticle(this.ticket());
-      this.newKbArticle.emit(article);
-    } catch (e) {
-      console.error(e);
-      // You could show an error to the user here
-    } finally {
-      this.isGeneratingKb.set(false);
-    }
-  }
+        const article = await this.geminiService.generateKbArticle(ticket);
+        // In a real app, this would emit an event to create the article
+        alert(`KB Article Draft Created:\n\nTitle: ${article.title}\n\nTags: ${article.tags.join(', ')}`);
 
-  async getAnswerFromKb() {
-    const lastCustomerMessage = this.ticket().messages.filter(m => m.type === 'customer').pop();
-    if (!lastCustomerMessage) return;
-
-    this.isAnsweringFromKb.set(true);
-    try {
-      const result = await this.geminiService.answerFromKb(lastCustomerMessage.content, this.knowledgeBaseArticles());
-      const sourceArticles = this.knowledgeBaseArticles().filter(a => result.sourceIds.includes(a.id));
-      this.kbAnswer.set({ answer: result.answer, sources: sourceArticles });
+    } catch(e) {
+        alert('Failed to generate knowledge base article.');
+        console.error(e);
     } finally {
-      this.isAnsweringFromKb.set(false);
+        this.isGeneratingKb.set(false);
     }
   }
   
-  useSuggestedReply(suggestion: string) {
-    this.replyText.set(suggestion);
-    this.replyTextarea?.nativeElement.focus();
-    this.suggestedReplies.set([]);
+  timelineItems = computed(() => {
+    const t = this.ticket();
+    if (!t) return [];
+    
+    const items: (models.Message | models.InternalNote | models.Activity)[] = [
+        ...t.messages,
+        ...t.internalNotes,
+        ...t.activities
+    ];
+    
+    return items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  });
+
+  isMessage(item: any): item is models.Message {
+    return 'from' in item && 'type' in item && 'content' in item;
   }
   
-  formatDate(dateString: string | Date): string {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleString();
+  isNote(item: any): item is models.InternalNote {
+    return 'agentName' in item;
+  }
+  
+  isActivity(item: any): item is models.Activity {
+    return 'user' in item && 'details' in item;
+  }
+
+  formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleString();
+  }
+  
+  formatSeconds(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    if (minutes < 60) return `${minutes}m ${remainingSeconds}s`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours}h ${remainingMinutes}m`;
   }
 
   handleReply() {
-    if (this.replyText().trim()) {
-      if (this.replyMode() === 'customer') {
-        this.reply.emit({
-          ticketId: this.ticket().id,
-          content: this.replyText(),
-          fromAgent: this.isAgent(),
-          attachments: [],
-        });
-      } else {
-        this.internalNote.emit({
-          ticketId: this.ticket().id,
-          content: this.replyText(),
-          agentName: this.currentAgent().name,
-        });
-      }
-      this.replyText.set('');
+    if (this.replyContent().trim() && this.ticket()) {
+      this.addReply.emit({ ticketId: this.ticket()!.id, content: this.replyContent(), fromAgent: true, attachments: [] });
+      this.replyContent.set('');
     }
   }
 
-  handleCannedResponse(content: string) {
-    this.replyText.update(current => `${current}${content}`);
-    this.showCannedResponses.set(false);
-    this.replyTextarea?.nativeElement.focus();
-  }
-  
-  handleMacro(macro: Macro) {
-    this.applyMacro.emit({ ticketId: this.ticket().id, macro });
-    this.showMacros.set(false);
-  }
-
-  handleTagSave() {
-    this.tagsChange.emit({ ticketId: this.ticket().id, newTags: this.selectedTags() });
-    this.showTagEditor.set(false);
-  }
-  
-  toggleTag(tag: string) {
-    this.selectedTags.update(tags => 
-      tags.includes(tag) ? tags.filter(t => t !== tag) : [...tags, tag]
-    );
-  }
-
-  handleMerge(sourceTicketId: number) {
-    this.mergeTicket.emit({ targetTicketId: this.ticket().id, sourceTicketId });
-    this.showMergeModal.set(false);
-  }
-  
-  handleLogTime(durationSeconds: number) {
-    this.logTime.emit({ ticketId: this.ticket().id, durationSeconds, agent: this.currentAgent().name });
-    this.showLogTimeModal.set(false);
-  }
-  
-  openSplitTicketModal(message: Message) {
-    this.messageToSplit.set(message);
-    this.showSplitTicketModal.set(true);
-  }
-
-  handleSplitTicket(newSubject: string) {
-    if(this.messageToSplit()) {
-      this.splitTicket.emit({ sourceTicketId: this.ticket().id, message: this.messageToSplit()!, newSubject });
+  handleNote() {
+    if (this.noteContent().trim() && this.ticket()) {
+      this.addNote.emit({ ticketId: this.ticket()!.id, content: this.noteContent() });
+      this.noteContent.set('');
     }
-    this.showSplitTicketModal.set(false);
-    this.messageToSplit.set(null);
   }
 
-  handleLink(childTicketId: number) {
-    this.linkTicket.emit(childTicketId);
-    this.showLinkModal.set(false);
-  }
-
-  onStatusChange(event: Event) {
-    const newStatus = (event.target as HTMLSelectElement).value as 'open' | 'in-progress' | 'resolved' | 'closed';
-    this.statusChange.emit({ ticketId: this.ticket().id, newStatus });
+  handleStatusChange(event: Event) {
+    const status = (event.target as HTMLSelectElement).value as models.Ticket['status'];
+    this.updateTicket.emit({ status });
   }
   
-  onAddWatcher(agentId: number) {
-    this.addWatcher.emit(agentId);
-    this.showAddWatcher.set(false);
-  }
-
-  onRemoveWatcher(agentId: number) {
-    this.removeWatcher.emit(agentId);
-  }
-
-  getInitials(name: string): string {
-    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '';
+  handlePriorityChange(event: Event) {
+    const priority = (event.target as HTMLSelectElement).value as models.Ticket['priority'];
+    this.updateTicket.emit({ priority });
   }
   
-  getCustomFieldDefinition(id: string): CustomFieldDefinition | undefined {
-      return this.customFieldDefinitions().find(def => def.id === id);
+  handleAssigneeChange(event: Event) {
+    const assignedTo = (event.target as HTMLSelectElement).value;
+    this.updateTicket.emit({ assignedTo });
+  }
+  
+  addTag(tag: string) {
+    if (!this.ticket()) return;
+    const newTags = [...new Set([...this.ticket()!.tags, tag])];
+    this.updateTicket.emit({ tags: newTags });
+  }
+
+  removeTag(tag: string) {
+    if (!this.ticket()) return;
+    const newTags = this.ticket()!.tags.filter(t => t !== tag);
+    this.updateTicket.emit({ tags: newTags });
   }
 }

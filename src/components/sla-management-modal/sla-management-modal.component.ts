@@ -15,7 +15,13 @@ export class SlaManagementModalComponent {
   close = output<void>();
   update = output<SlaRules>();
 
-  editableRules = signal<SlaRules>({});
+  // Fix: Initialize with a default object that matches the SlaRules type.
+  editableRules = signal<SlaRules>({
+    urgent: { responseTime: 0, resolutionTime: 0 },
+    high: { responseTime: 0, resolutionTime: 0 },
+    medium: { responseTime: 0, resolutionTime: 0 },
+    low: { responseTime: 0, resolutionTime: 0 },
+  });
 
   constructor() {
     effect(() => {
@@ -33,8 +39,8 @@ export class SlaManagementModalComponent {
     if (!isNaN(value)) {
         this.editableRules.update(rules => {
             const newRules = {...rules};
-            newRules[priority] = {
-                ...newRules[priority],
+            newRules[priority as keyof SlaRules] = {
+                ...newRules[priority as keyof SlaRules],
                 [type]: value
             };
             return newRules;

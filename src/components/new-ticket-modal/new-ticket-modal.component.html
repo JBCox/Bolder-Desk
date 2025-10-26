@@ -1,1 +1,52 @@
-full contents of src/components/new-ticket-modal/new-ticket-modal.component.html
+<div class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div class="p-6 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center">
+      <h2 class="text-2xl font-bold">New Ticket</h2>
+      <button (click)="close.emit()" class="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200">
+        <app-icon name="xcircle" class="w-6 h-6"></app-icon>
+      </button>
+    </div>
+    <div class="p-6 space-y-4 overflow-y-auto">
+      <!-- Step 1: Requester and Form Type -->
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Requester</label>
+            <select [ngModel]="selectedContactId()" (ngModelChange)="selectedContactId.set($event)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-slate-700">
+              <option [ngValue]="null" disabled>Select a contact</option>
+              @for (contact of contacts(); track contact.id) {
+                <option [value]="contact.id">{{ contact.name }} ({{ contact.email }})</option>
+              }
+            </select>
+        </div>
+         <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Service Request Type</label>
+            <select [ngModel]="selectedTemplateId()" (ngModelChange)="selectedTemplateId.set($event)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white dark:bg-slate-700">
+              <option [ngValue]="null" disabled>Select a form</option>
+              @for (template of formTemplates(); track template.id) {
+                <option [value]="template.id">{{ template.name }}</option>
+              }
+            </select>
+        </div>
+      </div>
+
+      <!-- Step 2: Dynamic Form -->
+      @if (selectedTemplate(); as template) {
+        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+            <app-form-renderer 
+                [formTemplate]="template"
+                (submit)="handleFormSubmit($event)"
+            ></app-form-renderer>
+        </div>
+      } @else if (selectedContactId()) {
+        <div class="text-center py-12 text-gray-500 dark:text-slate-400">
+            <p>Please select a service request type to continue.</p>
+        </div>
+      }
+    </div>
+    @if (!selectedTemplate()) {
+        <div class="p-6 bg-gray-50 dark:bg-slate-800/50 text-right border-t border-gray-200 dark:border-slate-700">
+          <button type="button" (click)="close.emit()" class="bg-white dark:bg-slate-700 py-2 px-4 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600">Cancel</button>
+        </div>
+    }
+  </div>
+</div>

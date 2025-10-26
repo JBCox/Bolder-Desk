@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
-import { Ticket, CustomFieldDefinition, KnowledgeBaseArticle } from './models';
+import { Ticket, CustomFieldDefinition, KnowledgeBaseArticle, Agent } from './models';
 
 @Injectable({
   providedIn: 'root',
@@ -229,6 +229,66 @@ export class GeminiService {
     } catch (error) {
       console.error('Error extracting fields:', error);
       return {};
+    }
+  }
+
+  async suggestAgentForTicket(ticket: Ticket, agents: Agent[]): Promise<Agent | null> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Mocking agent suggestion.');
+      // Return a random agent for mock purposes
+      const onlineAgents = agents.filter(a => a.onlineStatus === 'online');
+      return onlineAgents.length > 0 ? onlineAgents[Math.floor(Math.random() * onlineAgents.length)] : null;
+    }
+
+    try {
+      const ticketContent = `${ticket.subject}\n\n${ticket.messages.map(m => m.content).join('\n')}`;
+      const availableAgents = agents
+        .filter(a => a.onlineStatus === 'online')
+        .map(a => ({ name: a.name, skills: a.skills }));
+
+      if (availableAgents.length === 0) {
+        return null; // No agents available to assign
+      }
+
+      const prompt = `Based on the content of the following support ticket, choose the single best agent to assign it to from the list of available agents. Consider the agent's skills.
+      
+      Available Agents and their skills:
+      ---
+      ${JSON.stringify(availableAgents, null, 2)}
+      ---
+      
+      Ticket Content:
+      ---
+      ${ticketContent}
+      ---
+      
+      Respond with a JSON object containing a single key "agentName" with the name of the chosen agent. The name must be an exact match from the list. If no agent is a good fit, return null for the agentName.`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              agentName: { 
+                type: Type.STRING,
+              }
+            },
+            nullableProperties: ["agentName"]
+          }
+        }
+      });
+      
+      const result = JSON.parse(response.text);
+      if (result.agentName) {
+        return agents.find(a => a.name === result.agentName) || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error suggesting agent:', error);
+      return null;
     }
   }
 

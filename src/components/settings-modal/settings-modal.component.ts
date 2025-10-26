@@ -1,31 +1,56 @@
-// Fix: Implement SettingsModalComponent to replace placeholder content.
-import { Component, ChangeDetectionStrategy, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import * as models from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { SlaManagementModalComponent } from '../sla-management-modal/sla-management-modal.component';
+import { AutomationModalComponent } from '../automation-modal/automation-modal.component';
+import { FormBuilderComponent } from '../form-builder/form-builder.component';
+import { RolesPermissionsComponent } from '../roles-permissions/roles-permissions.component';
+import { SsoSettingsComponent } from '../sso-settings/sso-settings.component';
+
+type SettingsTab = 'profile' | 'roles' | 'automations' | 'slas' | 'forms' | 'authentication';
 
 @Component({
   selector: 'app-settings-modal',
-  template: `
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
-        <div class="p-6 border-b flex justify-between items-center">
-          <h2 class="text-2xl font-bold">Settings</h2>
-          <button (click)="close.emit()" class="text-gray-500 hover:text-gray-800">
-            <app-icon name="x"></app-icon>
-          </button>
-        </div>
-        <div class="p-6">
-          <p>Settings placeholder. Real settings would go here.</p>
-        </div>
-        <div class="p-6 bg-gray-50 text-right">
-          <button type="button" (click)="close.emit()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
-        </div>
-      </div>
-    </div>
-  `,
+  templateUrl: './settings-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, IconComponent],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    IconComponent, 
+    SlaManagementModalComponent, 
+    AutomationModalComponent, 
+    FormBuilderComponent,
+    RolesPermissionsComponent,
+    SsoSettingsComponent
+  ],
 })
 export class SettingsModalComponent {
   close = output<void>();
+  saveRoles = output<models.Role[]>();
+  saveSsoSettings = output<models.SsoSettings>();
+
+  roles = input.required<models.Role[]>();
+  allPermissions = input.required<models.Permission[]>();
+  automationRules = input.required<models.AutomationRule[]>();
+  groups = input.required<models.Group[]>();
+  slaRules = input.required<models.SlaRules>();
+  formTemplates = input.required<models.FormTemplate[]>();
+  currentAgent = input.required<models.Agent>();
+  ssoSettings = input.required<models.SsoSettings>();
+  
+  activeTab = signal<SettingsTab>('profile');
+
+  getTabClass(tab: SettingsTab) {
+    const base = 'flex items-center w-full text-left p-2 rounded-md text-sm';
+    if (this.activeTab() === tab) {
+      return base + ' bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300';
+    }
+    return base + ' hover:bg-slate-100 dark:hover:bg-slate-700';
+  }
+
+  noop() {
+    // Placeholder for child component outputs that are not fully implemented
+  }
 }

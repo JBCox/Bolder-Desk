@@ -1,33 +1,37 @@
-// Fix: Defining all the data models used throughout the application.
 export interface Ticket {
   id: number;
   subject: string;
   contactId: number;
-  organizationId: number | null;
-  status: 'open' | 'in-progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  assignedTo?: string; // Agent name
   created: string;
-  updated: string;
+  status: 'open' | 'pending' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  tags: string[];
   messages: Message[];
   internalNotes: InternalNote[];
-  tags: string[];
-  assignedTo: string | null;
-  watchers: number[]; // agent IDs
-  parentId: number | null;
-  childTicketIds: number[];
-  viewingAgents?: string[];
-  customFields: { [key: string]: any };
+  activities: Activity[];
+  timeTrackedSeconds: number;
+  sla?: {
+    breachAt: string;
+    status: 'ok' | 'risk' | 'breached';
+  };
+  customFields?: { [key: string]: any };
+  formValues?: { [key: string]: any };
+  sentiment?: 'positive' | 'neutral' | 'negative';
   resolvedAt?: string;
   satisfactionRating?: number;
   satisfactionComment?: string;
+  parentId?: number;
+  childTicketIds?: number[];
+  linkedTicketIds?: number[];
 }
 
 export interface Message {
-  from: string;
+  from: string; // "Customer" or agent name
   type: 'customer' | 'agent';
   content: string;
   timestamp: string;
-  attachments?: string[];
+  attachments: string[];
 }
 
 export interface InternalNote {
@@ -37,29 +41,39 @@ export interface InternalNote {
 }
 
 export interface Activity {
-  type: 'created' | 'status-change' | 'note-added' | 'reply-sent';
-  ticketId: number;
-  subject: string;
-  timestamp: Date;
-  user: string;
+  type: 'status_change' | 'assignment' | 'tag_add' | 'tag_remove' | 'created' | 'merged' | 'split' | 'ai_assignment';
+  user: string; // agent name or "System"
+  timestamp: string;
   details: string;
 }
 
-export interface CannedResponse {
+export interface Contact {
   id: number;
   name: string;
-  content: string;
+  email: string;
+  organizationId: number;
+  phone?: string;
 }
 
-export interface MacroAction {
-  type: 'set-status' | 'add-tag' | 'set-assignee';
-  value: any;
-}
-
-export interface Macro {
+export interface Organization {
   id: number;
   name: string;
-  actions: MacroAction[];
+  industry?: string;
+}
+
+export interface Agent {
+  id: number;
+  name: string;
+  email: string;
+  roleId: string;
+  skills: string[];
+  onlineStatus: 'online' | 'away' | 'offline';
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  memberIds: number[];
 }
 
 export interface CustomFieldDefinition {
@@ -69,25 +83,23 @@ export interface CustomFieldDefinition {
   options?: string[];
 }
 
-export interface Agent {
-  id: number;
-  name: string;
-  email: string;
-  roleId: number;
-  skills: string[];
+export interface SlaRules {
+  [key: string]: {
+    responseTime: number; // minutes
+    resolutionTime: number; // minutes
+  };
 }
 
-export interface Contact {
+export interface AutomationRule {
   id: number;
   name: string;
-  email: string;
-  organizationId: number | null;
-}
-
-export interface Organization {
-  id: number;
-  name: string;
-  domains: string[];
+  description: string;
+  enabled: boolean;
+  trigger: string;
+  action: {
+    type: string;
+    payload: any;
+  };
 }
 
 export interface KnowledgeBaseArticle {
@@ -96,7 +108,10 @@ export interface KnowledgeBaseArticle {
   content: string;
   category: string;
   tags: string[];
-  lastUpdated: string;
+  createdAt: string;
+  updatedAt: string;
+  author: string;
+  views: number;
   upvotes: number;
   downvotes: number;
 }
@@ -104,6 +119,7 @@ export interface KnowledgeBaseArticle {
 export interface KnowledgeBaseCategory {
   id: string;
   name: string;
+  description: string;
 }
 
 export interface KbFeedback {
@@ -111,39 +127,33 @@ export interface KbFeedback {
   vote: 'up' | 'down';
 }
 
+export interface FormTemplate {
+  id: string;
+  name: string;
+  fields: FormField[];
+}
+
+export interface FormField {
+  id: string;
+  name: string;
+  label: string;
+  type: 'text' | 'textarea' | 'dropdown' | 'checkbox' | 'radio' | 'date';
+  required: boolean;
+  options?: string[];
+  conditionalLogic?: {
+    fieldId: string;
+    value: any;
+  } | null;
+}
+
 export interface AnalyticsData {
   ticketsCreated: number;
   ticketsResolved: number;
-  firstResponseTime: number; // in hours
+  avgFirstResponseTime: number; // in minutes
   avgResolutionTime: number; // in hours
   satisfactionScore: number;
-  ticketsByChannel: { channel: string, count: number }[];
-  ticketsByPriority: { priority: string, count: number }[];
-  busiestTimeOfDay: { hour: number, count: number }[];
+  topPerformingAgent: string;
 }
-
-export interface AutomationRule {
-    id: number;
-    name: string;
-    description: string;
-    enabled: boolean;
-    trigger: { type: string, value: any };
-    action: { type: string, value: any };
-}
-
-export interface Group {
-    id: number;
-    name: string;
-}
-
-export type SlaRules = {
-  [key: string]: {
-    responseTime: number; // in minutes
-    resolutionTime: number; // in minutes
-  }
-};
-
-export type ServiceRequestType = 'incident' | 'question' | 'problem';
 
 export interface MockEmail {
   id: string;
@@ -157,78 +167,84 @@ export interface ChatSession {
   id: string;
   customerName: string;
   customerEmail: string;
-  status: 'pending' | 'active' | 'closed';
-  agentId: number | null;
-  messages: ChatMessage[];
+  initialMessage: string;
+  status: 'pending' | 'active' | 'ended';
+  agentId?: number;
+  transcript: { sender: 'customer' | 'agent', content: string, timestamp: string }[];
   createdAt: string;
-  pageUrl: string;
-  browserInfo: string;
-}
-
-export interface ChatMessage {
-  sender: 'customer' | 'agent';
-  content: string;
-  timestamp: string;
+  pageUrl?: string;
+  browserInfo?: string;
 }
 
 export interface SlackMessage {
-  id: string;
-  user: string;
-  text: string;
-  timestamp: string;
-  channel: string;
-  relatedTicketId?: number;
+    id: string;
+    channel: string;
+    user: string;
+    text: string;
+    timestamp: string;
+    isSupportRequest: boolean;
+    linkedTicket?: string; // e.g., "Ticket #12345"
 }
 
 export interface SlackSettings {
-    channel: string;
-    notificationsEnabled: boolean;
+    connected: boolean;
+    supportChannel: string;
+    notificationRules: {
+        newTicket: boolean;
+        ticketResolved: boolean;
+        slaBreach: boolean;
+    };
 }
 
 export interface WallboardData {
-    openTickets: number;
-    todaysResolved: number;
-    slaBreachRisks: number;
-    customerSatisfaction: number;
-    topAgents: { name: string, resolved: number }[];
-    channelBreakdown: { channel: string, count: number }[];
+  openTickets: number;
+  todaysResolved: number;
+  slaBreachRisks: number;
+  agentStatus: { name: string, status: 'online' | 'away' | 'offline', tickets: number }[];
+  customerSatisfaction: { score: number, trend: 'up' | 'down' | 'stable' };
 }
 
 export interface QARubric {
-    id: string;
-    name: string;
-    criteria: QACriterion[];
+  id: string;
+  name: string;
+  criteria: QACriterion[];
 }
 
 export interface QACriterion {
-    id: string;
-    name: string;
-    description: string;
-    maxScore: number;
+  id: string;
+  name: string;
+  description: string;
+  maxScore: number;
 }
 
 export interface QAReview {
-    id: string;
-    ticketId: number;
-    rubricId: string;
-    reviewerId: number;
-    agentId: number;
-    scores: { [key: string]: number };
-    feedback: string;
-    reviewDate: string;
-    totalScore: number;
+  id: string;
+  ticketId: number;
+  rubricId: string;
+  reviewerId: number;
+  agentId: number;
+  scores: { [criterionId: string]: number };
+  feedback: string;
+  reviewDate: string;
+  totalScore: number;
 }
 
-export interface FormField {
-    id: string;
-    label: string;
-    type: 'text' | 'textarea' | 'dropdown' | 'checkbox' | 'radio';
-    options?: string[];
-    required: boolean;
-}
+export type Permission = 
+  'ticket:merge' |
+  'view:tickets' | 'edit:tickets' | 'delete:tickets' |
+  'view:customers' | 'edit:customers' |
+  'view:reports' | 'view:settings' | 'manage:agents' | 'manage:billing';
 
-export interface FormDefinition {
+export interface Role {
     id: string;
     name: string;
-    fields: FormField[];
+    description: string;
+    permissions: Permission[];
+}
+
+export interface SsoSettings {
+  enabled: boolean;
+  providerUrl: string;
+  clientId: string;
+  clientSecret: string;
 }

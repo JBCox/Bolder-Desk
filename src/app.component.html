@@ -1,254 +1,267 @@
-<div class="h-screen w-screen bg-gray-100 dark:bg-slate-900 flex text-gray-800 dark:text-slate-200 font-sans">
-  <!-- Sidebar -->
-  <aside [class]="'flex flex-col bg-gray-800 text-white transition-all duration-300 ' + (sidebarCollapsed() ? 'w-16' : 'w-64')">
-    <div class="p-4 border-b border-gray-700 flex items-center" [class.justify-center]="sidebarCollapsed()">
-      <app-icon name="sparkles" class="mr-2 flex-shrink-0 text-indigo-400" [class.mr-0]="sidebarCollapsed()"></app-icon>
-      @if(!sidebarCollapsed()) {
-        <h1 class="text-xl font-bold">HelpDesk AI</h1>
-      }
-    </div>
-    <nav class="flex-grow p-2">
-      @for (item of menuItems; track item.id) {
-        <a href="#" 
-           (click)="activeView.set(item.id); $event.preventDefault()"
-           [title]="item.label"
-           [class]="'flex items-center px-4 py-2 rounded-md hover:bg-gray-700 ' + (activeView() === item.id ? 'bg-gray-900' : '') + (sidebarCollapsed() ? ' justify-center' : '')">
-          <app-icon [name]="item.icon" [class]="sidebarCollapsed() ? '' : 'mr-3'"></app-icon>
-          @if(!sidebarCollapsed()) {
-            <span>{{ item.label }}</span>
-          }
-        </a>
-      }
-    </nav>
-    <div class="p-4 border-t border-gray-700">
-       <button (click)="sidebarCollapsed.set(!sidebarCollapsed())" class="w-full flex items-center text-gray-400 hover:text-white" [class.justify-center]="sidebarCollapsed()">
-          <app-icon [name]="sidebarCollapsed() ? 'chevrons-right' : 'chevrons-left'" class="h-5 w-5"></app-icon>
-          @if(!sidebarCollapsed()) {
-            <span class="ml-2 text-sm">Collapse</span>
-          }
-       </button>
-    </div>
-    <div class="p-4 border-t border-gray-700">
-      <div class="flex items-center" [class.justify-center]="sidebarCollapsed()">
-        <div [title]="currentAgent().name" class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center font-bold text-white flex-shrink-0" [class.mr-3]="!sidebarCollapsed()">
-          {{ getInitials(currentAgent().name) }}
-        </div>
-        @if(!sidebarCollapsed()) {
-          <div>
-            <p class="font-semibold">{{ currentAgent().name }}</p>
-            <p class="text-sm text-gray-400">Agent</p>
-          </div>
-        }
+<!-- Main App Container -->
+<div [class]="(sidebarCollapsed() ? 'ml-0' : 'md:ml-56') + ' transition-all duration-300 h-screen flex flex-col'">
+  
+  <!-- Header -->
+  <header class="flex-shrink-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center justify-between px-6">
+    <div class="flex items-center">
+      <button (click)="sidebarCollapsed.set(!sidebarCollapsed())" class="md:hidden mr-4 text-gray-500 dark:text-slate-400">
+        <app-icon name="chevrons-right" class="w-6 h-6"></app-icon>
+      </button>
+      <div class="relative w-96">
+        <app-icon name="search" class="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-slate-500"></app-icon>
+        <input 
+          type="text" 
+          placeholder="Search tickets, customers, articles..." 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event)"
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
       </div>
     </div>
-  </aside>
+    <div class="flex items-center space-x-4">
+      <button (click)="openModal.set('newTicket')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg flex items-center space-x-2 text-sm font-semibold hover:bg-indigo-700">
+        <app-icon name="plus" class="w-5 h-5"></app-icon>
+        <span>New Ticket</span>
+      </button>
+      <button (click)="toggleDarkMode()" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+        <app-icon [name]="isDarkMode() ? 'sun' : 'moon'" class="w-6 h-6"></app-icon>
+      </button>
+       <button class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 relative">
+        <app-icon name="bell" class="w-6 h-6"></app-icon>
+        <span class="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+      </button>
+      <button (click)="openModal.set('settings')" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+        <app-icon name="settings" class="w-6 h-6"></app-icon>
+      </button>
+    </div>
+  </header>
 
   <!-- Main Content -->
-  <main class="flex-1 flex flex-col h-screen">
-     <header class="flex-shrink-0 h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center px-6">
-        <h2 class="text-2xl font-bold capitalize">{{ activeView().replace('-', ' ') }}</h2>
-        <div class="flex items-center space-x-4">
-            <button (click)="toggleTheme()" [title]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 p-2 rounded-full">
-                <app-icon [name]="isDarkMode() ? 'sun' : 'moon'"></app-icon>
-            </button>
-            <button class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 p-2 rounded-full relative">
-                <app-icon name="bell"></app-icon>
-                <span class="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-800"></span>
-            </button>
-            <button (click)="showNewTicketModal.set(true)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center text-sm font-medium">
-                <app-icon name="plus" class="mr-2 w-5 h-5"></app-icon>
-                New Ticket
-            </button>
-        </div>
-    </header>
-
-    <div class="flex-1 p-6 overflow-y-auto bg-gray-50 dark:bg-slate-900">
-      @switch (activeView()) {
-        @case ('tickets') {
-          <div class="flex h-full gap-6">
-            <!-- Ticket List -->
-            <div class="w-1/3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 flex flex-col">
-              <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
-                <div class="flex items-center justify-between mb-4">
-                  <h3 class="text-lg font-semibold">Tickets ({{filteredTickets().length}})</h3>
-                   <div class="flex items-center space-x-1">
-                    <button [class]="'p-2 rounded-md ' + (showAdvancedSearch() ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600' : 'hover:bg-gray-100 dark:hover:bg-slate-700')" (click)="showAdvancedSearch.set(!showAdvancedSearch())" title="Advanced Search">
-                      <app-icon name="filter"></app-icon>
-                    </button>
-                  </div>
-                </div>
-                 <div class="relative">
-                    <span class="absolute left-3 top-2.5 text-gray-400 dark:text-slate-500">
-                        <app-icon name="search" class="w-5 h-5"></app-icon>
-                    </span>
-                    <input type="text" placeholder="Search tickets..." [(ngModel)]="basicSearchQuery" class="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200">
-                </div>
-              </div>
-               @if (showAdvancedSearch()) {
-                <div class="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-                    <h4 class="font-semibold mb-2">Advanced Filters</h4>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                         <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Customer</label>
-                            <input type="text" [(ngModel)]="advancedFilter.customer" class="w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Agent</label>
-                            <input type="text" [(ngModel)]="advancedFilter.agent" class="w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">From Date</label>
-                            <input type="date" [(ngModel)]="advancedFilter.dateFrom" class="w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                        </div>
-                         <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">To Date</label>
-                            <input type="date" [(ngModel)]="advancedFilter.dateTo" class="w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Priority</label>
-                            <select (ngModelChange)="updateAdvancedFilterPriority($event)" [ngModel]="advancedFilter.priority" class="w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                                <option value="all">All</option>
-                                <option value="urgent">Urgent</option>
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
-                            </select>
-                        </div>
-                         @for(field of customFieldDefinitions(); track field.id) {
-                             <div>
-                                <label class="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">{{ field.name }}</label>
-                                <input type="text" [(ngModel)]="advancedFilter.customFields[field.id]" class="w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700">
-                            </div>
-                         }
-                    </div>
-                </div>
-               }
-              <ul class="flex-1 overflow-y-auto">
-                @for (ticket of filteredTickets(); track ticket.id) {
-                  <li (click)="selectedTicket.set(ticket)"
-                      [class]="'p-4 border-b border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer ' + (selectedTicket()?.id === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50' : '')">
-                    <p class="font-semibold truncate">{{ ticket.subject }}</p>
-                    <p class="text-sm text-gray-600 dark:text-slate-400">#{{ ticket.id }} &middot; {{ getContact(ticket.contactId)?.name }}</p>
-                    <div class="mt-2 flex items-center justify-between">
-                       <div class="flex items-center space-x-2">
-                        <span [class]="'px-2 py-0.5 text-xs font-semibold rounded-full ' + getStatusClass(ticket.status)">{{ ticket.status.replace('-',' ') }}</span>
-                        <span class="text-xs text-gray-500 dark:text-slate-400 capitalize">{{ ticket.priority }}</span>
-                      </div>
-                      <span class="text-xs text-gray-400 dark:text-slate-500">{{ ticket.created | date:'short' }}</span>
-                    </div>
-                  </li>
-                }
-              </ul>
+  <main class="flex-1 overflow-hidden">
+    @switch (currentView()) {
+      @case ('tickets') {
+        <div class="flex h-full">
+          <!-- Ticket List -->
+          <div class="w-1/3 border-r border-gray-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-800">
+            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+                <h2 class="text-lg font-semibold">Tickets ({{ filteredTickets().length }})</h2>
             </div>
-
-            <!-- Ticket Detail -->
-            <div class="w-2/3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
-              @if (selectedTicket(); as ticket) {
-                <app-ticket-detail 
-                  [ticket]="ticket"
-                  [cannedResponses]="cannedResponses()"
-                  [macros]="macros()"
-                  [allTickets]="tickets()"
-                  [contacts]="contacts()"
-                  [organizations]="organizations()"
-                  [currentAgent]="currentAgent()"
-                  [customFieldDefinitions]="customFieldDefinitions()"
-                  [availableTags]="availableTags()"
-                  [agents]="agents()"
-                  [knowledgeBaseArticles]="knowledgeBaseArticles()"
-                  (close)="selectedTicket.set(null)"
-                  (selectTicket)="selectTicketById($event)"
-                  (newKbArticle)="handleNewKbArticle($event)"
-                />
-              } @else {
-                <div class="flex items-center justify-center h-full text-gray-500 dark:text-slate-400">
-                  <div class="text-center">
-                    <app-icon name="inbox" class="w-16 h-16 mx-auto text-gray-300 dark:text-slate-700"></app-icon>
-                    <p>Select a ticket to view details</p>
+            <div class="flex-1 overflow-y-auto">
+              @for (ticket of filteredTickets(); track ticket.id) {
+                <div 
+                    (click)="selectTicket(ticket.id)" 
+                    [class]="'p-4 cursor-pointer border-l-4 ' + (selectedTicketId() === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50 border-indigo-500' : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-700/50')"
+                >
+                  <div class="flex justify-between items-start">
+                    <p class="font-semibold text-gray-800 dark:text-slate-100 truncate pr-4">#{{ticket.id}} {{ ticket.subject }}</p>
+                    <span class="text-xs text-gray-500 dark:text-slate-400 flex-shrink-0">{{ ticket.created | date:'short' }}</span>
                   </div>
+                  <p class="text-sm text-gray-600 dark:text-slate-300">{{ getContact(ticket.contactId)?.name }}</p>
                 </div>
               }
             </div>
           </div>
-        }
-        @case ('customers') {
-          <app-customers [organizations]="organizations()" [contacts]="contacts()" [tickets]="tickets()"></app-customers>
-        }
-        @case ('knowledge-base') {
-            <app-knowledge-base [articles]="knowledgeBaseArticles()" [categories]="knowledgeBaseCategories()" (kbFeedback)="handleKbFeedback($event)"></app-knowledge-base>
-        }
-        @case ('reports') {
-          <app-reports [tickets]="tickets()" [agents]="agents()"></app-reports>
-        }
-        @case ('analytics') {
-          <app-analytics-dashboard [analytics]="analyticsData()"></app-analytics-dashboard>
-        }
-        @case ('quality-assurance') {
-          <app-quality-assurance [tickets]="tickets()" [agents]="agents()" [qaRubrics]="qaRubrics()" [qaReviews]="qaReviews()" (saveReview)="handleSaveReview($event)"></app-quality-assurance>
-        }
-        @case ('inbox') {
-          <app-inbox [emails]="emails()" (convertToTicket)="handleEmailToTicket($event)"></app-inbox>
-        }
-        @case ('chat') {
-          <app-chat [chatSessions]="chatSessions()" [currentAgent]="currentAgent()" (acceptChat)="acceptChat($event)" (sendMessage)="sendChatMessage($event)" (convertToTicket)="handleChatToTicket($event)"></app-chat>
-        }
-        @case ('slack') {
-          <app-slack-integration [messages]="slackMessages()" [settings]="slackSettings()" (createTicket)="handleSlackTicket($event)" (viewTicket)="selectTicketById($event)"></app-slack-integration>
-        }
-        @case ('wallboard') {
-          <app-wallboard [data]="wallboardData()"></app-wallboard>
-        }
-        @case ('dev-plan') {
-          <app-dev-plan></app-dev-plan>
-        }
+          <!-- Ticket Detail -->
+          <div class="flex-1">
+            <app-ticket-detail 
+              [ticket]="selectedTicket()"
+              [contact]="selectedContact()"
+              [agents]="agents()"
+              [availableTags]="availableTags()"
+              [hasPermission]="hasPermission()"
+              (addReply)="handleAddReply($event)"
+              (addNote)="handleAddNote($event)"
+              (updateTicket)="handleUpdateTicket($event)"
+              (openMergeModal)="openModalWithTicket('mergeTicket', $event)"
+              (openSplitModal)="openSplitModalWithMessage($event)"
+              (openLogTimeModal)="openModalWithTicket('logTime', $event)"
+              (openLinkTicketModal)="openModalWithTicket('linkTicket', $event)"
+              (createKbArticle)="handleCreateKbArticle($event)"
+            ></app-ticket-detail>
+          </div>
+        </div>
       }
-    </div>
+      @case ('analytics') {
+        <app-analytics-dashboard [data]="analyticsData()"></app-analytics-dashboard>
+      }
+      @case ('kb') {
+        <app-knowledge-base [articles]="kbArticles()" [categories]="kbCategories()" (kbFeedback)="handleKbFeedback($event)"></app-knowledge-base>
+      }
+      @case ('customers') {
+        <app-customers [organizations]="organizations()" [contacts]="contacts()" [tickets]="tickets()"></app-customers>
+      }
+       @case ('inbox') {
+        <app-inbox [emails]="emails()"></app-inbox>
+      }
+      @case ('chat') {
+        <app-chat [chatSessions]="chatSessions()" [currentAgent]="currentAgent()"></app-chat>
+      }
+      @case ('reports') {
+        <app-reports [tickets]="tickets()" [agents]="agents()"></app-reports>
+      }
+      @case ('slack') {
+        <app-slack-integration [messages]="slackMessages()" [settings]="slackSettings()"></app-slack-integration>
+      }
+       @case ('qa') {
+        <app-quality-assurance [tickets]="tickets()" [agents]="agents()" [qaRubrics]="qaRubrics()" [qaReviews]="qaReviews()"></app-quality-assurance>
+      }
+      @case ('wallboard') {
+        <app-wallboard [data]="wallboardData()"></app-wallboard>
+      }
+      @case ('devplan') {
+        <app-dev-plan></app-dev-plan>
+      }
+      @case ('portal') { 
+        <app-customer-portal 
+            [tickets]="customerPortalTickets()" 
+            [articles]="kbArticles()" 
+            [currentContact]="currentCustomer()"
+            (addReply)="handleAddReply($event)"
+            (kbFeedback)="handleKbFeedback($event)">
+        </app-customer-portal> 
+      }
+    }
   </main>
+</div>
 
-  @if (showNewTicketModal()) {
-    <app-new-ticket-modal 
+<!-- Sidebar -->
+<aside [class]="(sidebarCollapsed() ? '-translate-x-full' : 'translate-x-0') + ' fixed inset-y-0 left-0 bg-white dark:bg-slate-800 w-56 border-r border-gray-200 dark:border-slate-700 transform transition-transform duration-300 ease-in-out md:translate-x-0 z-40'">
+  <div class="flex items-center justify-center h-16 border-b border-gray-200 dark:border-slate-700">
+    <app-icon name="briefcase" class="w-8 h-8 text-indigo-600"></app-icon>
+    <span class="ml-2 text-xl font-bold text-gray-800 dark:text-slate-100">BoldDesk</span>
+  </div>
+  <nav class="mt-4 px-2">
+    <a (click)="currentView.set('tickets')" [class]="'flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+      <app-icon name="mail" class="w-5 h-5 mr-3"></app-icon> Tickets
+    </a>
+    <a (click)="currentView.set('analytics')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'analytics' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+      <app-icon name="barchart3" class="w-5 h-5 mr-3"></app-icon> Analytics
+    </a>
+    <a (click)="currentView.set('kb')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'kb' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+      <app-icon name="library" class="w-5 h-5 mr-3"></app-icon> Knowledge Base
+    </a>
+     <a (click)="currentView.set('customers')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'customers' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+      <app-icon name="users" class="w-5 h-5 mr-3"></app-icon> Customers
+    </a>
+     <a (click)="currentView.set('reports')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'reports' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+      <app-icon name="pie-chart" class="w-5 h-5 mr-3"></app-icon> Reports
+    </a>
+    <a (click)="currentView.set('qa')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'qa' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+      <app-icon name="award" class="w-5 h-5 mr-3"></app-icon> Quality Assurance
+    </a>
+    <a (click)="currentView.set('wallboard')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'wallboard' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+      <app-icon name="tv" class="w-5 h-5 mr-3"></app-icon> Wallboard
+    </a>
+
+    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
+        <h3 class="px-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Channels</h3>
+         <a (click)="currentView.set('inbox')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'inbox' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+          <app-icon name="inbox" class="w-5 h-5 mr-3"></app-icon> Inbox
+        </a>
+        <a (click)="currentView.set('chat')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'chat' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+          <app-icon name="message-circle" class="w-5 h-5 mr-3"></app-icon> Live Chat
+        </a>
+        <a (click)="currentView.set('slack')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'slack' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+          <app-icon name="slack" class="w-5 h-5 mr-3"></app-icon> Slack
+        </a>
+    </div>
+
+    <!-- Dev/Testing Links -->
+    <div class="absolute bottom-16 w-full px-2">
+       <a (click)="currentView.set('devplan')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'devplan' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+        <app-icon name="clipboard" class="w-5 h-5 mr-3"></app-icon> Dev Plan
+      </a>
+      <a (click)="currentView.set('portal')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'portal' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
+        <app-icon name="external-link" class="w-5 h-5 mr-3"></app-icon> Customer Portal
+      </a>
+    </div>
+
+  </nav>
+
+  <div class="absolute bottom-0 w-full p-4 border-t border-gray-200 dark:border-slate-700">
+    <div class="flex items-center">
+        <div class="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center font-bold text-indigo-700">
+            {{ currentAgent().name.charAt(0) }}
+        </div>
+        <div class="ml-3">
+            <p class="text-sm font-semibold text-gray-800 dark:text-slate-100">{{ currentAgent().name }}</p>
+            <p class="text-xs text-gray-500 dark:text-slate-400">{{ getRoleName(currentAgent().roleId) }}</p>
+        </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Modals -->
+@if (openModal(); as modal) {
+  @switch(modal) {
+    @case('newTicket') {
+      <app-new-ticket-modal
         [contacts]="contacts()"
         [organizations]="organizations()"
-        [customFieldDefinitions]="customFieldDefinitions()"
-        [formTemplates]="formDefinitions()"
-        [knowledgeBaseArticles]="knowledgeBaseArticles()"
-        (close)="showNewTicketModal.set(false)"
-        (create)="handleNewTicket($event)"
-    ></app-new-ticket-modal>
-  }
-   @if (showSettingsModal()) {
+        [customFieldDefinitions]="customFieldDefs()"
+        [formTemplates]="formTemplates()"
+        [knowledgeBaseArticles]="kbArticles()"
+        (close)="openModal.set(null)"
+        (create)="handleCreateTicket($event)"
+      ></app-new-ticket-modal>
+    }
+    @case('mergeTicket') {
+        <app-merge-ticket-modal
+            [currentTicket]="selectedTicketForModal()!"
+            [allTickets]="tickets()"
+            [contacts]="contacts()"
+            (close)="openModal.set(null)"
+            (merge)="handleMergeTickets($event)"
+        ></app-merge-ticket-modal>
+    }
+    @case('splitTicket') {
+        <app-split-ticket-modal
+            [messageToSplit]="selectedMessageForModal()!"
+            (close)="openModal.set(null)"
+            (split)="handleSplitTicket($event)"
+        ></app-split-ticket-modal>
+    }
+    @case('csat') {
+        <app-csat-modal
+            [ticket]="selectedTicketForModal()!"
+            (close)="openModal.set(null)"
+            (submit)="handleCsatSubmit($event)"
+        ></app-csat-modal>
+    }
+    @case('logTime') {
+        <app-log-time-modal
+            (close)="openModal.set(null)"
+            (logTime)="handleLogTime($event)"
+        ></app-log-time-modal>
+    }
+    @case('linkTicket') {
+        <app-link-ticket-modal
+            [currentTicket]="selectedTicketForModal()!"
+            [allTickets]="tickets()"
+            [contacts]="contacts()"
+            (close)="openModal.set(null)"
+        ></app-link-ticket-modal>
+    }
+    @case('settings') {
       <app-settings-modal 
-        [automationRules]="automationRules()" 
+        (close)="openModal.set(null)"
+        [roles]="roles()"
+        [allPermissions]="allPermissions()"
+        [automationRules]="automationRules()"
         [groups]="groups()"
         [slaRules]="slaRules()"
-        (close)="showSettingsModal.set(false)"
-        (openAutomations)="activeView.set('automations'); showSettingsModal.set(false)"
-        (openSla)="activeView.set('sla'); showSettingsModal.set(false)"
-        (openFormBuilder)="activeView.set('form-builder'); showSettingsModal.set(false)"
+        [formTemplates]="formTemplates()"
+        [currentAgent]="currentAgent()"
+        [ssoSettings]="ssoSettings()"
+        (saveRoles)="handleSaveRoles($event)"
+        (saveSsoSettings)="handleSaveSsoSettings($event)"
       ></app-settings-modal>
     }
-     @if(ticketForCSAT()) {
-      <app-csat-modal [ticket]="ticketForCSAT()!" (close)="ticketForCSAT.set(null)" (submit)="handleCsatSubmit($event)"></app-csat-modal>
+    @case('shortcuts') {
+      <app-keyboard-shortcuts-modal (close)="openModal.set(null)"></app-keyboard-shortcuts-modal>
     }
+  }
+}
 
-    @if(isCustomerView()) {
-      <app-customer-portal 
-        [tickets]="customerTickets()"
-        [articles]="knowledgeBaseArticles()"
-        [currentContact]="currentContact()"
-        (addReply)="handleCustomerReply($event)"
-        (kbFeedback)="handleKbFeedback($event)"
-      ></app-customer-portal>
-    } @else {
-      <app-chat-widget 
-        [customer]="currentContact()"
-        [session]="customerChatSession()"
-        (startChat)="handleStartChat($event)"
-        (sendMessage)="sendChatMessage($event)"
-      ></app-chat-widget>
-    }
-
-    @if(showKeyboardShortcuts()) {
-      <app-keyboard-shortcuts-modal (close)="showKeyboardShortcuts.set(false)"></app-keyboard-shortcuts-modal>
-    }
-</div>
+<!-- Chat Widget -->
+<app-chat-widget [customer]="currentCustomer()" [session]="currentChatSession()"></app-chat-widget>
