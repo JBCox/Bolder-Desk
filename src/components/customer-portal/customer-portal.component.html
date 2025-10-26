@@ -1,6 +1,6 @@
 <div class="h-full bg-white dark:bg-slate-900 flex flex-col">
     @if (!selectedTicket()) {
-        <div class="p-8">
+        <div class="p-8 overflow-y-auto">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-6">Support Center</h1>
             
             <div class="border-b border-gray-200 dark:border-slate-700 mb-6">
@@ -59,8 +59,31 @@
                                 <span class="absolute left-4 top-3.5 text-gray-400 dark:text-slate-500">
                                     <app-icon name="search" class="w-5 h-5"></app-icon>
                                 </span>
-                                <input type="text" [(ngModel)]="kbSearchQuery" placeholder="Search for answers..." class="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200 text-lg">
+                                <input type="text" [(ngModel)]="kbSearchQuery" (keydown.enter)="handleKbSearch()" placeholder="Ask a question..." class="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200 text-lg">
                             </div>
+                            
+                            @if(isSearchingKb()) {
+                                <div class="text-center py-10">
+                                    <app-icon name="loader" class="w-8 h-8 mx-auto text-indigo-500"></app-icon>
+                                    <p class="mt-2 text-sm text-gray-500 dark:text-slate-400">Finding an answer...</p>
+                                </div>
+                            }
+
+                            @if(kbAnswer(); as kb) {
+                                <div class="mb-8 p-6 bg-indigo-50 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 rounded-lg">
+                                  <h3 class="font-bold text-xl text-indigo-800 dark:text-indigo-200 mb-3 flex items-center gap-2"><app-icon name="sparkles" class="w-5 h-5 text-indigo-500"></app-icon> Answer</h3>
+                                  <p class="text-indigo-700 dark:text-indigo-300 mb-4">{{ kb.answer }}</p>
+                                  @if(kb.sources.length > 0) {
+                                    <div class="text-xs">
+                                      <span class="text-indigo-600 dark:text-indigo-400 font-semibold">Sources:</span>
+                                      @for(source of kb.sources; track source.id) {
+                                        <button (click)="viewKbArticle(source)" class="ml-2 text-indigo-600 dark:text-indigo-300 hover:underline">{{ source.title }}</button>
+                                      }
+                                    </div>
+                                  }
+                                </div>
+                            }
+
                             <div class="space-y-4">
                                 @for(article of filteredKbArticles(); track article.id) {
                                     <div (click)="viewKbArticle(article)" class="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-600 cursor-pointer transition">
@@ -68,7 +91,7 @@
                                         <p class="text-sm text-gray-600 dark:text-slate-400 line-clamp-2">{{ article.content }}</p>
                                     </div>
                                 }
-                                @if(filteredKbArticles().length === 0) {
+                                @if(filteredKbArticles().length === 0 && submittedKbSearchQuery()) {
                                      <div class="text-center py-12 text-gray-500 dark:text-slate-400">
                                         <app-icon name="file-question" class="w-12 h-12 mx-auto mb-2"></app-icon>
                                         <p>No articles found matching your search.</p>
@@ -89,6 +112,23 @@
                             </div>
                              <div class="prose max-w-none text-gray-800 dark:text-slate-300">
                                 {{ article.content }}
+                            </div>
+                            <div class="mt-8 pt-6 border-t border-gray-200 dark:border-slate-700">
+                                @if (!feedbackGiven()[article.id]) {
+                                    <div class="flex items-center space-x-4">
+                                        <p class="font-medium text-gray-700 dark:text-slate-300">Did this help?</p>
+                                        <button (click)="handleKbVote(article.id, 'up')" class="flex items-center space-x-2 px-3 py-1 border border-gray-300 dark:border-slate-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+                                            <app-icon name="thumbs-up" class="w-4 h-4"></app-icon>
+                                            <span>Yes</span>
+                                        </button>
+                                        <button (click)="handleKbVote(article.id, 'down')" class="flex items-center space-x-2 px-3 py-1 border border-gray-300 dark:border-slate-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+                                            <app-icon name="thumbs-down" class="w-4 h-4"></app-icon>
+                                            <span>No</span>
+                                        </button>
+                                    </div>
+                                } @else {
+                                    <p class="font-medium text-gray-700 dark:text-slate-300">Thank you for your feedback!</p>
+                                }
                             </div>
                         </div>
                      }
@@ -125,6 +165,17 @@
                     </div>
                 }
             </div>
+             @if (ticket.status === 'open' || ticket.status === 'in-progress') {
+              <div class="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-slate-100">Add a Reply</h3>
+                <div class="mt-4">
+                  <textarea [(ngModel)]="replyText" rows="4" placeholder="Type your reply here..." class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-slate-700 dark:text-slate-200"></textarea>
+                  <div class="mt-2 flex justify-end">
+                    <button (click)="handleReply()" [disabled]="!replyText().trim()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400">Submit Reply</button>
+                  </div>
+                </div>
+              </div>
+            }
         </div>
     }
 </div>

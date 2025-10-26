@@ -28,12 +28,13 @@
 
     <div class="flex-1 overflow-y-auto border border-gray-200 dark:border-slate-700 rounded-lg divide-y divide-gray-200 dark:divide-slate-700">
         @for(ticket of availableTickets(); track ticket.id) {
+            @let contact = getContactForTicket(ticket);
             <div 
                 (click)="selectedTicketId.set(ticket.id)"
                 [class]="'p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 flex justify-between items-center ' + (selectedTicketId() === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50' : '')">
                 <div>
                     <p class="font-medium text-gray-800 dark:text-slate-200">#{{ ticket.id }} - {{ ticket.subject }}</p>
-                    <p class="text-sm text-gray-500 dark:text-slate-400">{{ ticket.customer }}</p>
+                    <p class="text-sm text-gray-500 dark:text-slate-400">{{ contact?.name }}</p>
                 </div>
                 @if (selectedTicketId() === ticket.id) {
                     <app-icon name="checkcircle" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></app-icon>

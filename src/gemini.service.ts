@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
-import { Ticket } from './models';
+import { Ticket, CustomFieldDefinition, KnowledgeBaseArticle } from './models';
 
 @Injectable({
   providedIn: 'root',
@@ -16,11 +16,11 @@ export class GeminiService {
     }
   }
 
-  async summarizeTicket(ticket: Ticket): Promise<string> {
+  async summarizeTicket(ticket: Ticket, contactName: string): Promise<string> {
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock summary.');
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network latency
-      return `This is a mock summary for ticket #${ticket.id}. The customer, ${ticket.customer}, is experiencing an issue related to "${ticket.subject}". The last message was: "${ticket.messages[ticket.messages.length - 1].content}".`;
+      return `This is a mock summary for ticket #${ticket.id}. The customer, ${contactName}, is experiencing an issue related to "${ticket.subject}". The last message was: "${ticket.messages[ticket.messages.length - 1].content}".`;
     }
 
     try {
@@ -31,7 +31,7 @@ export class GeminiService {
       const prompt = `Summarize the following support ticket conversation into a few bullet points. Focus on the customer's problem and the last known status.
       
       Ticket Subject: ${ticket.subject}
-      Customer: ${ticket.customer}
+      Customer: ${contactName}
       Conversation:
       ---
       ${conversationHistory}
@@ -50,7 +50,7 @@ export class GeminiService {
     }
   }
 
-  async generateReplySuggestions(ticket: Ticket): Promise<string[]> {
+  async generateReplySuggestions(ticket: Ticket, contactName: string): Promise<string[]> {
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock replies.');
        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network latency
@@ -69,7 +69,7 @@ export class GeminiService {
 
       const lastCustomerMessage = ticket.messages.filter(m => m.type === 'customer').pop()?.content || '';
 
-      const prompt = `Based on the following support ticket conversation, generate 3 distinct, helpful, and concise reply suggestions for the agent to send to the customer. The agent needs to respond to the last customer message.
+      const prompt = `Based on the following support ticket conversation, generate 3 distinct, helpful, and concise reply suggestions for the agent to send to the customer (${contactName}). The agent needs to respond to the last customer message.
 
       Ticket Subject: ${ticket.subject}
       Last Customer Message: "${lastCustomerMessage}"
@@ -187,6 +187,260 @@ export class GeminiService {
     } catch (error) {
       console.error('Error suggesting tags:', error);
       return [];
+    }
+  }
+  
+  async extractFieldsFromContent(content: string, customFields: CustomFieldDefinition[]): Promise<{ [key: string]: any }> {
+    if (!this.ai || customFields.length === 0) {
+      console.warn('Gemini API key not configured or no custom fields defined. Skipping field extraction.');
+      return {};
+    }
+
+    try {
+      const schemaProperties: { [key: string]: any } = {};
+      customFields.forEach(field => {
+        schemaProperties[field.id] = { type: Type.STRING, description: `The value for the field "${field.name}"` };
+      });
+
+      const prompt = `Analyze the following text and extract the values for the defined fields. Only extract values that are explicitly mentioned in the text.
+
+      Text to analyze:
+      ---
+      ${content}
+      ---
+      
+      Fields to extract: ${customFields.map(f => `"${f.name}" (ID: ${f.id})`).join(', ')}
+      
+      Return the result as a JSON object where keys are the field IDs.`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: schemaProperties
+            }
+        }
+      });
+      
+      return JSON.parse(response.text);
+    } catch (error) {
+      console.error('Error extracting fields:', error);
+      return {};
+    }
+  }
+
+  async extractSkillsForTicket(ticket: Ticket, availableSkills: string[]): Promise<string[]> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock skills.');
+      return availableSkills.length > 1 ? [availableSkills[0]] : [];
+    }
+
+    try {
+      const content = `${ticket.subject}\n${ticket.messages.map(m => m.content).join('\n')}`;
+      const prompt = `Based on the following support ticket, identify which of the available skills are most relevant to resolving the issue. Suggest a maximum of two skills.
+
+      Available skills: ${availableSkills.join(', ')}
+
+      Ticket content:
+      ---
+      ${content}
+      ---
+      
+      Respond with a JSON object with a single key "skills" which is an array of the most relevant skill strings from the available list.`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    skills: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    }
+                }
+            }
+        }
+      });
+      
+      const json = JSON.parse(response.text);
+      return (json.skills || []).filter((skill: string) => availableSkills.includes(skill));
+    } catch (error) {
+      console.error('Error extracting skills:', error);
+      return [];
+    }
+  }
+  
+  async analyzeCSATComment(comment: string): Promise<string> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock CSAT driver.');
+      return 'Other';
+    }
+    
+    const drivers = ['Product Quality', 'Customer Service', 'Pricing', 'Ease of Use', 'Other'];
+
+    try {
+      const prompt = `Analyze the following customer feedback comment and classify it into one of these categories: ${drivers.join(', ')}. Respond with only the category name.
+
+      Comment: "${comment}"
+      
+      Category:`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+      });
+
+      const driver = response.text.trim();
+      return drivers.includes(driver) ? driver : 'Other';
+    } catch (error) {
+      console.error('Error analyzing CSAT comment:', error);
+      return 'Other';
+    }
+  }
+
+  async generateKbArticle(ticket: Ticket): Promise<{ title: string, content: string, tags: string[] }> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock KB article.');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return {
+        title: `How to resolve: ${ticket.subject}`,
+        content: `This is a mock knowledge base article based on the resolution of ticket #${ticket.id}. The main solution was discussed in the final messages.`,
+        tags: [...ticket.tags, 'generated']
+      };
+    }
+    
+    try {
+      const conversation = ticket.messages.map(m => `${m.type === 'agent' ? 'Support Agent' : 'Customer'}: ${m.content}`).join('\n');
+      const prompt = `Analyze the following support ticket conversation, which has been marked as resolved. Generate a concise knowledge base article that explains the customer's problem and provides the solution.
+
+      Ticket Subject: ${ticket.subject}
+      Conversation:
+      ---
+      ${conversation}
+      ---
+      
+      Based on this, generate a JSON object with three keys:
+      1. "title": A clear, action-oriented title for the article.
+      2. "content": The article body, written clearly for other customers to understand. Explain the problem and the steps to solve it.
+      3. "tags": An array of 1-3 relevant keyword tags for the article.`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              content: { type: Type.STRING },
+              tags: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
+            }
+          }
+        }
+      });
+      
+      return JSON.parse(response.text);
+    } catch (error) {
+      console.error('Error generating KB article:', error);
+      throw new Error('Could not generate KB article.');
+    }
+  }
+
+  async changeTone(text: string, tone: 'Formal' | 'Friendly'): Promise<string> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning modified mock text.');
+      return `(${tone}) ${text}`;
+    }
+
+    try {
+      const prompt = `Rewrite the following text to have a more ${tone.toLowerCase()} tone. Respond only with the rewritten text.
+
+      Original text:
+      ---
+      ${text}
+      ---
+      
+      Rewritten text:`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+      });
+
+      return response.text.trim();
+    } catch (error) {
+      console.error('Error changing tone:', error);
+      return 'Error: Could not rewrite text.';
+    }
+  }
+
+  async answerFromKb(query: string, articles: KnowledgeBaseArticle[]): Promise<{ answer: string, sourceIds: number[] }> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock KB answer.');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return {
+        answer: `This is a mock answer for your question about "${query}". The most relevant article is "${articles[0].title}".`,
+        sourceIds: [articles[0].id]
+      };
+    }
+
+    try {
+      const context = articles.map(a => `
+        <article>
+          <id>${a.id}</id>
+          <title>${a.title}</title>
+          <content>${a.content}</content>
+        </article>
+      `).join('\n');
+
+      const prompt = `You are a helpful support assistant. Answer the user's question based *only* on the provided knowledge base articles. 
+      Your answer should be concise and directly address the question.
+      After the answer, you MUST cite the article IDs you used.
+
+      Available Articles:
+      ---
+      ${context}
+      ---
+      
+      User's Question: "${query}"
+
+      Respond with a JSON object with two keys:
+      1. "answer": A string containing the helpful answer.
+      2. "sourceIds": An array of numbers representing the IDs of the articles you used to formulate the answer.
+      `;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              answer: { type: Type.STRING },
+              sourceIds: { type: Type.ARRAY, items: { type: Type.NUMBER } }
+            }
+          }
+        }
+      });
+
+      return JSON.parse(response.text);
+    } catch (error) {
+      console.error('Error answering from KB:', error);
+      return {
+        answer: 'Sorry, I was unable to find an answer in the knowledge base.',
+        sourceIds: []
+      };
     }
   }
 }

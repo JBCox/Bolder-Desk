@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KnowledgeBaseArticle, KnowledgeBaseCategory } from '../../models';
+import { KnowledgeBaseArticle, KnowledgeBaseCategory, KbFeedback } from '../../models';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
@@ -13,10 +13,12 @@ import { IconComponent } from '../icon/icon.component';
 export class KnowledgeBaseComponent {
   articles = input.required<KnowledgeBaseArticle[]>();
   categories = input.required<KnowledgeBaseCategory[]>();
+  kbFeedback = output<KbFeedback>();
 
   selectedCategory = signal<string | 'all'>('all');
   searchQuery = signal('');
   selectedArticle = signal<KnowledgeBaseArticle | null>(null);
+  feedbackGiven = signal<{[articleId: number]: 'up' | 'down'}>({});
 
   filteredArticles = computed(() => {
     const query = this.searchQuery().toLowerCase();
@@ -42,5 +44,10 @@ export class KnowledgeBaseComponent {
 
   getCategoryName(categoryId: string): string {
     return this.categories().find(c => c.id === categoryId)?.name || '';
+  }
+
+  handleVote(articleId: number, vote: 'up' | 'down') {
+    this.kbFeedback.emit({ articleId, vote });
+    this.feedbackGiven.update(given => ({...given, [articleId]: vote }));
   }
 }

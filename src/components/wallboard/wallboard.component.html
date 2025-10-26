@@ -1,0 +1,47 @@
+<div class="p-8 h-full bg-slate-900 text-white flex flex-col">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-4xl font-bold flex items-center gap-4">
+        <app-icon name="tv" class="w-10 h-10"></app-icon>
+        <span>Support Wallboard</span>
+    </h1>
+    <div class="text-3xl font-mono">{{ currentTime() | date:'mediumTime' }}</div>
+  </div>
+
+  <!-- Main Metrics -->
+  <div class="grid grid-cols-4 gap-8 mb-8">
+    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center">
+      <h2 class="text-xl text-slate-400 mb-2">Open Tickets</h2>
+      <p class="text-7xl font-bold text-cyan-400">{{ displayOpenTickets() }}</p>
+    </div>
+    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center">
+      <h2 class="text-xl text-slate-400 mb-2">Today's Resolved</h2>
+      <p class="text-7xl font-bold text-green-400">{{ displayResolved() }}</p>
+    </div>
+    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center">
+      <h2 class="text-xl text-slate-400 mb-2">SLA Breach Risks</h2>
+      <p class="text-7xl font-bold text-yellow-400">{{ displaySlaRisks() }}</p>
+    </div>
+    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 text-center">
+      <h2 class="text-xl text-slate-400 mb-2">Longest Wait Time</h2>
+      <p class="text-5xl font-bold text-orange-400 pt-5">{{ data().longestWaitTime }}</p>
+    </div>
+  </div>
+
+  <!-- Agent Status -->
+  <div class="flex-1 bg-slate-800 p-6 rounded-lg border border-slate-700">
+    <h2 class="text-2xl font-bold mb-4">Agent Status ({{data().agentsOnline}} Online)</h2>
+    <div class="grid grid-cols-4 gap-4">
+        @for(agent of data().agentsStatus; track agent.name) {
+            <div [class]="'p-4 rounded-lg border-l-4 ' + (agent.status === 'Online' ? 'bg-slate-700 border-green-400' : 'bg-slate-700/50 border-slate-600 opacity-60')">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-semibold text-lg">{{ agent.name }}</h3>
+                    <span [class]="'text-sm font-bold ' + (agent.status === 'Online' ? 'text-green-400' : 'text-slate-400')">{{ agent.status }}</span>
+                </div>
+                <div class="text-sm text-slate-300 mt-2">
+                    Active Tickets: <span class="font-bold text-xl text-white">{{ agent.load }}</span>
+                </div>
+            </div>
+        }
+    </div>
+  </div>
+</div>

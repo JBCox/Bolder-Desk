@@ -1,386 +1,297 @@
-<div class="flex h-full">
-  <!-- Main Content -->
-  <div class="flex-1 flex flex-col">
-    <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-6">
+<div class="h-full flex flex-col bg-white dark:bg-slate-800">
+  <!-- Header -->
+  <div class="flex-shrink-0 h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-slate-700">
+    <div class="flex items-center space-x-2 min-w-0">
+      <span class="flex-shrink-0 p-1 rounded-full" [class]="'bg-' + ({web: 'blue', email: 'green', chat: 'purple'}[ticket().channel]) + '-100 dark:bg-' + ({web: 'blue', email: 'green', chat: 'purple'}[ticket().channel]) + '-900/50'">
+          <app-icon [name]="{web: 'help-circle', email: 'inbox', chat: 'message-circle'}[ticket().channel]" [class]="'w-5 h-5 text-' + ({web: 'blue', email: 'green', chat: 'purple'}[ticket().channel]) + '-600 dark:text-' + ({web: 'blue', email: 'green', chat: 'purple'}[ticket().channel]) + '-400'"></app-icon>
+      </span>
+      <div class="min-w-0">
+        <h2 class="text-lg font-bold truncate text-gray-900 dark:text-slate-100" [title]="ticket().subject">#{{ ticket().id }} - {{ ticket().subject }}</h2>
+      </div>
       @if (otherViewingAgents().length > 0) {
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 dark:bg-yellow-900/30 dark:border-yellow-600 dark:text-yellow-300 p-4 mb-4 rounded-r-lg" role="alert">
-          <div class="flex items-center">
-            <app-icon name="eye" class="w-5 h-5 mr-3"></app-icon>
-            <div>
-              <p class="font-bold">Heads up!</p>
-              <p class="text-sm">{{ otherViewingAgents().join(', ') }} is also viewing this ticket.</p>
-            </div>
-          </div>
+        <div class="flex items-center text-xs text-gray-500 dark:text-slate-400" [title]="'Also viewing: ' + otherViewingAgents().join(', ')">
+          <app-icon name="eye" class="w-4 h-4 mr-1"></app-icon>
+          <span>+{{ otherViewingAgents().length }}</span>
         </div>
       }
-      <div class="flex items-start justify-between">
-        <div class="flex-1">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
-            <app-icon [name]="{ web: 'mail', email: 'inbox', chat: 'message-circle' }[ticket().channel]" [title]="'Channel: ' + ticket().channel" class="w-6 h-6 text-gray-400 dark:text-slate-500"></app-icon>
-            <span>#{{ ticket().id }} - {{ ticket().subject }}</span>
-          </h2>
-          <div class="flex items-center space-x-4 text-sm text-gray-600 dark:text-slate-400">
-             @if(ticket().sentiment === 'positive') {
-                <app-icon name="smile" class="w-5 h-5 text-green-500" title="Positive Sentiment"></app-icon>
-            } @else if (ticket().sentiment === 'negative') {
-                <app-icon name="frown" class="w-5 h-5 text-red-500" title="Negative Sentiment"></app-icon>
-            } @else {
-                <app-icon name="meh" class="w-5 h-5 text-gray-400" title="Neutral Sentiment"></app-icon>
-            }
-          </div>
-        </div>
-        <div class="flex items-center space-x-2">
-            <button (click)="showLinkModal.set(true)" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-                <app-icon name="link" class="w-4 h-4"></app-icon><span>Link</span>
-            </button>
-            <button (click)="showMergeModal.set(true)" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-                <app-icon name="merge" class="w-4 h-4"></app-icon><span>Merge</span>
-            </button>
-            <div class="relative">
-                <button (click)="showMacros.set(!showMacros())" class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center space-x-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">
-                <app-icon name="play-circle" class="w-4 h-4"></app-icon><span>Macros</span>
-                </button>
-                @if (showMacros()) {
-                <div class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20">
-                    @for(macro of macros(); track macro.id) {
-                    <button (click)="handleMacro(macro)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition">
-                        <div class="font-medium text-sm text-gray-900 dark:text-slate-200">{{ macro.name }}</div>
-                    </button>
-                    }
-                </div>
-                }
-            </div>
-        </div>
-      </div>
     </div>
+    <div class="flex items-center space-x-2">
+       @if(ticket().status === 'resolved') {
+        <button (click)="generateKb()" [disabled]="isGeneratingKb()" class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md disabled:opacity-50 disabled:cursor-wait" title="Generate Knowledge Base Article">
+         <app-icon [name]="isGeneratingKb() ? 'loader' : 'file-question'" class="w-5 h-5"></app-icon>
+       </button>
+       }
+       <button (click)="showMergeModal.set(true)" class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md" title="Merge Ticket">
+         <app-icon name="merge" class="w-5 h-5"></app-icon>
+       </button>
+        <button (click)="showLogTimeModal.set(true)" class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md" title="Log Time">
+         <app-icon name="clock" class="w-5 h-5"></app-icon>
+       </button>
+        <button (click)="showLinkModal.set(true)" class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md" title="Link Ticket">
+         <app-icon name="link" class="w-5 h-5"></app-icon>
+       </button>
+       <button (click)="close.emit()" class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md" title="Close Ticket View">
+         <app-icon name="x" class="w-5 h-5"></app-icon>
+       </button>
+    </div>
+  </div>
 
-    <div class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-slate-900">
-      @if (parentTicket(); as parent) {
-      <div class="bg-gray-100 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 mb-4">
-        <p class="text-sm text-gray-600 dark:text-slate-300">
-          This ticket is a child of: 
-          <a href="#" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">#{{ parent.id }} - {{ parent.subject }}</a>
-        </p>
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Main Conversation -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- AI Tools -->
+      <div class="p-3 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700 flex items-center space-x-2 flex-wrap gap-y-2">
+        <app-icon name="sparkles" class="w-5 h-5 text-purple-500"></app-icon>
+        <span class="text-sm font-semibold">AI Tools:</span>
+        <button (click)="summarize()" [disabled]="isSummarizing()" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 disabled:cursor-wait">
+            @if(isSummarizing()) { <span>Summarizing...</span> } @else { <span>Summarize</span> }
+        </button>
+        <button (click)="suggestReplies()" [disabled]="isSuggestingReplies()" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 disabled:cursor-wait">
+            @if(isSuggestingReplies()) { <span>Suggesting...</span> } @else { <span>Suggest Replies</span> }
+        </button>
+         <button (click)="getAnswerFromKb()" [disabled]="isAnsweringFromKb()" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 disabled:cursor-wait">
+            @if(isAnsweringFromKb()) { <span>Answering...</span> } @else { <span>Answer from KB</span> }
+        </button>
       </div>
-      }
-      @if (childTickets().length > 0) {
-          <div class="bg-gray-100 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 mb-4">
-              <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-2">Child Tickets</h3>
-              <ul class="list-disc list-inside space-y-1">
-                  @for (child of childTickets(); track child.id) {
-                      <li class="text-sm text-gray-600 dark:text-slate-300">
-                          <a href="#" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">#{{ child.id }} - {{ child.subject }}</a> ({{child.status}})
-                      </li>
-                  }
-              </ul>
-          </div>
-      }
-      @if (showActivity()) {
-      <div class="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 mb-4">
-        <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center space-x-2"><app-icon name="history" class="w-5 h-5"></app-icon><span>Activity Timeline</span></h3>
-        <div class="space-y-3 max-h-96 overflow-y-auto">
-          @for(activity of ticket().activity.slice().reverse(); track $index) {
-            <div class="flex items-start space-x-3">
-              <div class="flex-shrink-0 w-8 h-8 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-gray-600 dark:text-slate-300">
-                <app-icon [name]="{created: 'plus', assigned: 'user', status_changed: 'checkcircle', tag_added: 'tag', tag_removed: 'tag', reply_sent: 'messagesquare', customer_replied: 'messagesquare', note_added: 'lock', csat_submitted: 'star', time_logged: 'clock', merged: 'merge', priority_changed: 'trendingup', split_to: 'split', split_from: 'split', watcher_added: 'user-plus', watcher_removed: 'user-minus', linked: 'link'}[activity.type] || 'history'" class="w-4 h-4"></app-icon>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm text-gray-900 dark:text-slate-200">{{ activity.details }}</p>
-                <p class="text-xs text-gray-500 dark:text-slate-400">{{ activity.user }} · {{ formatDate(activity.timestamp) }}</p>
-              </div>
-            </div>
-          }
+
+      <!-- AI Output -->
+      @if (ticketSummary()) {
+        <div class="p-4 bg-indigo-50 dark:bg-indigo-900/50 border-b border-indigo-200 dark:border-indigo-800">
+            <h4 class="font-semibold text-sm text-indigo-800 dark:text-indigo-300 mb-2">AI Summary</h4>
+            <div class="prose prose-sm text-indigo-700 dark:text-indigo-200" [innerHTML]="ticketSummary()"></div>
         </div>
-      </div>
       }
 
-      @for (item of conversationItems(); track $index) {
-        @if (item.itemType === 'message') {
-          <div [class]="'group relative ' + (item.type === 'customer' ? 'ml-0' : 'ml-12')">
-            <button (click)="openSplitTicketModal(item)" class="absolute top-2 right-2 p-1 bg-gray-100 dark:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" title="Split into new ticket">
-              <app-icon name="split" class="w-4 h-4"></app-icon>
-            </button>
-            <div [class]="'p-4 rounded-lg ' + (item.type === 'customer' ? 'bg-white dark:bg-slate-800' : 'bg-indigo-50 dark:bg-indigo-900/50')">
-              <div class="flex items-center justify-between mb-2"><span class="font-medium text-gray-900 dark:text-slate-100">{{ item.from }}</span><span class="text-xs text-gray-500 dark:text-slate-400">{{ formatDate(item.timestamp.toISOString()) }}</span></div>
-              <p class="text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{{ item.content }}</p>
-              @if (item.attachments && item.attachments.length > 0) {
-                <div class="mt-3 flex flex-wrap gap-2">
-                  @for(file of item.attachments; track $index) {
-                    <div class="flex items-center space-x-2 px-3 py-2 bg-gray-100 dark:bg-slate-700 rounded-lg text-sm"><app-icon name="paperclip" class="w-4 h-4 text-gray-500 dark:text-slate-400"></app-icon><span class="text-gray-700 dark:text-slate-300">{{ file }}</span></div>
-                  }
-                </div>
+       @if (kbAnswer(); as kb) {
+        <div class="p-4 bg-indigo-50 dark:bg-indigo-900/50 border-b border-indigo-200 dark:border-indigo-800">
+          <h4 class="font-semibold text-sm text-indigo-800 dark:text-indigo-300 mb-2">AI Answer from Knowledge Base</h4>
+          <p class="text-sm text-indigo-700 dark:text-indigo-200 mb-3">{{ kb.answer }}</p>
+          @if(kb.sources.length > 0) {
+            <div class="text-xs">
+              <span class="text-indigo-600 dark:text-indigo-400 font-semibold">Sources:</span>
+              @for(source of kb.sources; track source.id) {
+                <a href="#" class="ml-2 text-indigo-600 dark:text-indigo-300 hover:underline">{{ source.title }}</a>
               }
             </div>
-          </div>
-        } @else if (item.itemType === 'note') {
-          <div class="mx-12">
-            <div class="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 dark:border-yellow-700">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center space-x-2"><app-icon name="lock" class="w-4 h-4 text-yellow-700 dark:text-yellow-400"></app-icon><span class="font-medium text-yellow-900 dark:text-yellow-200">Internal Note - {{ item.from }}</span></div>
-                <span class="text-xs text-yellow-700 dark:text-yellow-400">{{ formatDate(item.timestamp.toISOString()) }}</span>
-              </div>
-              <p class="text-yellow-900 dark:text-yellow-200 whitespace-pre-wrap">{{ item.content }}</p>
-            </div>
-          </div>
-        }
-      }
-    </div>
-
-    <div class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 p-6">
-      <div class="flex items-center space-x-2 mb-2">
-          <button (click)="summarize()" [disabled]="isSummarizing()" class="px-3 py-1.5 border border-gray-300 dark:border-slate-600 rounded-md text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-wait">
-              <app-icon name="sparkles" class="w-4 h-4 text-indigo-500"></app-icon>
-              <span>{{ isSummarizing() ? 'Summarizing...' : 'Summarize with AI' }}</span>
-          </button>
-      </div>
-       @if(ticketSummary()) {
-          <div class="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/50 mb-4 border border-indigo-200 dark:border-indigo-800">
-              <h4 class="font-semibold text-indigo-900 dark:text-indigo-200 mb-2 text-sm flex items-center space-x-2">
-                  <app-icon name="sparkles" class="w-4 h-4"></app-icon>
-                  <span>AI Summary</span>
-              </h4>
-              <p class="text-indigo-800 dark:text-indigo-300 text-sm whitespace-pre-wrap">{{ ticketSummary() }}</p>
-          </div>
-      }
-      <div class="mb-3 flex items-center justify-between">
-        <div class="flex space-x-2">
-          <button (click)="replyMode.set('customer')" [class]="'px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ' + (replyMode() === 'customer' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600')"><app-icon name="messagesquare" class="w-4 h-4"></app-icon><span>Reply (R)</span></button>
-          <button (click)="replyMode.set('internal')" [class]="'px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 ' + (replyMode() === 'internal' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600')"><app-icon name="lock" class="w-4 h-4"></app-icon><span>Note (I)</span></button>
+          }
         </div>
-        <div class="relative">
-          <button (click)="showCannedResponses.set(!showCannedResponses())" class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-2"><app-icon name="filetext" class="w-4 h-4"></app-icon><span>Canned Responses</span></button>
-          @if (showCannedResponses()) {
-            <div class="absolute right-0 bottom-full mb-2 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg flex flex-col max-h-80 z-10">
-              <div class="p-2 border-b border-gray-200 dark:border-slate-700">
-                  <input 
-                    type="text" 
-                    placeholder="Search responses..."
-                    class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200"
-                    [ngModel]="cannedResponseFilter()"
-                    (ngModelChange)="cannedResponseFilter.set($event)"
-                  />
+       }
+
+       @if (suggestedReplies().length > 0) {
+        <div class="p-4 bg-gray-50 dark:bg-slate-900/50 border-b border-gray-200 dark:border-slate-700">
+            <h4 class="font-semibold text-sm mb-2">Suggested Replies</h4>
+            <div class="flex flex-wrap gap-2">
+                @for(reply of suggestedReplies(); track reply) {
+                    <button (click)="useSuggestedReply(reply)" class="text-sm text-left bg-white dark:bg-slate-700 p-2 rounded-md border hover:bg-gray-100 dark:hover:bg-slate-600">{{reply}}</button>
+                }
+            </div>
+        </div>
+      }
+
+      <!-- Conversation History -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        @for (item of conversationItems(); track item.timestamp) {
+          @if (item.itemType === 'message') {
+            @let message = item;
+            <div class="flex items-start space-x-3 group">
+              <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-white" [class]="message.type === 'agent' ? 'bg-indigo-500' : 'bg-gray-500'">
+                {{ getInitials(message.from) }}
               </div>
-              <div class="overflow-y-auto">
-                  <div class="p-2">
-                      @for(response of filteredCannedResponses(); track response.id) {
-                      <button (click)="handleCannedResponse(response.content)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition">
-                          <div class="font-medium text-sm text-gray-900 dark:text-slate-200 mb-1">{{ response.name }}</div>
-                          <div class="text-xs text-gray-500 dark:text-slate-400 line-clamp-2">{{ response.content }}</div>
-                      </button>
-                      }
-                      @if(filteredCannedResponses().length === 0) {
-                          <p class="text-center text-sm text-gray-500 dark:text-slate-400 p-4">No responses found.</p>
-                      }
+              <div class="flex-1 p-3 rounded-lg border" [class]="message.type === 'agent' ? 'bg-indigo-50 dark:bg-indigo-900/50 border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600'">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-semibold text-sm text-gray-900 dark:text-slate-100">{{ message.from }}</span>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs text-gray-500 dark:text-slate-400">{{ formatDate(message.timestamp) }}</span>
+                    <button (click)="openSplitTicketModal(message)" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-indigo-600" title="Split to New Ticket">
+                        <app-icon name="split" class="w-4 h-4"></app-icon>
+                    </button>
                   </div>
+                </div>
+                <p class="text-sm text-gray-800 dark:text-slate-300 whitespace-pre-wrap">{{ message.content }}</p>
+              </div>
+            </div>
+          } @else {
+            @let note = item;
+            <div class="flex items-start space-x-3">
+              <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-yellow-100 dark:bg-yellow-900/50">
+                <app-icon name="lock" class="w-4 h-4 text-yellow-600 dark:text-yellow-400"></app-icon>
+              </div>
+              <div class="flex-1 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-semibold text-sm text-yellow-800 dark:text-yellow-200">Internal Note by {{ note.from }}</span>
+                  <span class="text-xs text-yellow-600 dark:text-yellow-400">{{ formatDate(note.timestamp) }}</span>
+                </div>
+                <p class="text-sm text-yellow-800 dark:text-yellow-300 whitespace-pre-wrap">{{ note.content }}</p>
               </div>
             </div>
           }
-        </div>
+        }
       </div>
-      <textarea #replyTextarea [ngModel]="replyText()" (ngModelChange)="replyText.set($event)" [placeholder]="replyMode() === 'customer' ? 'Type your reply...' : 'Add an internal note... (use @ to mention agents)'" class="w-full p-4 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-slate-700 dark:text-slate-200" rows="4"></textarea>
-       @if (replyMode() === 'customer') {
-          <div class="mt-2 flex items-center justify-between">
-              <button (click)="suggestReplies()" [disabled]="isSuggestingReplies()" class="px-3 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-md flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-wait">
-                  <app-icon name="sparkles" class="w-3.5 h-3.5"></app-icon>
-                  <span>{{ isSuggestingReplies() ? 'Generating...' : 'Suggest Replies' }}</span>
-              </button>
-          </div>
-          @if (suggestedReplies().length > 0) {
-              <div class="mt-2 space-y-2">
-                  @for(reply of suggestedReplies(); track reply) {
-                      <button (click)="useSuggestedReply(reply)" class="w-full text-left p-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg text-sm text-gray-800 dark:text-slate-300 transition">
-                          {{ reply }}
-                      </button>
-                  }
-              </div>
-          }
-      }
-      <div class="mt-4 flex justify-end items-center">
-        <button (click)="handleReply()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">{{ replyMode() === 'customer' ? 'Send Reply' : 'Add Note' }}</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Right Sidebar -->
-  <div class="w-96 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col">
-     <div class="border-b border-gray-200 dark:border-slate-700">
-        <nav class="-mb-px flex">
-            <button (click)="activeTab.set('details')" [class]="'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ' + (activeTab() === 'details' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600')">
-                Details
-            </button>
-            <button (click)="activeTab.set('customer')" [class]="'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ' + (activeTab() === 'customer' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600')">
-                Customer
-            </button>
-        </nav>
-    </div>
-    <div class="flex-1 overflow-y-auto p-6">
-    @if(activeTab() === 'details') {
-        <div class="space-y-6">
-            <div>
-                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Status (S)</label>
-                <select #statusSelect [ngModel]="ticket().status" (change)="onStatusChange($event)" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize bg-white dark:bg-slate-700 dark:text-slate-200">
-                    <option value="open">Open</option><option value="in-progress">In Progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Assignee</label>
-                <select class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200">
-                    <option>{{ ticket().assignedTo }}</option>
-                    @for(agent of allAgents(); track agent.id) {
-                        <option [value]="agent.name">{{ agent.name }}</option>
-                    }
-                    <option>Unassigned</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Priority</label>
-                <select class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 capitalize bg-white dark:bg-slate-700 dark:text-slate-200">
-                    <option [value]="ticket().priority">{{ ticket().priority }}</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="urgent">Urgent</option>
-                </select>
-            </div>
-             @if(ticket().serviceRequestId) {
-              <div>
-                <label class="block text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">Request Type</label>
-                <p class="text-gray-800 dark:text-slate-200 mt-1">{{ serviceRequestTypeName() }}</p>
-              </div>
-            }
-            <hr class="dark:border-slate-700">
-            <div>
-                <h4 class="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">Watchers</h4>
-                <div class="flex items-center flex-wrap gap-2">
-                    @for(watcher of watcherAgents(); track watcher.id) {
-                        <div class="relative group">
-                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs" [title]="watcher.name">
-                                {{ getInitials(watcher.name) }}
-                            </div>
-                            <button (click)="onRemoveWatcher(watcher.id)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <app-icon name="x" class="w-3 h-3"></app-icon>
-                            </button>
-                        </div>
-                    }
-                    <div class="relative">
-                        <button (click)="showAddWatcher.set(!showAddWatcher())" class="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-slate-700">
-                            <app-icon name="plus" class="w-5 h-5"></app-icon>
-                        </button>
-                        @if(showAddWatcher()) {
-                            <div class="absolute right-0 bottom-full mb-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-                                @for(agent of availableAgentsToAdd(); track agent.id) {
-                                    <button (click)="onAddWatcher(agent.id)" class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center space-x-3">
-                                        <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs">
-                                            {{ getInitials(agent.name) }}
-                                        </div>
-                                        <span class="text-sm font-medium text-gray-800 dark:text-slate-200">{{ agent.name }}</span>
-                                    </button>
-                                }
-                                @if(availableAgentsToAdd().length === 0) {
-                                    <p class="p-3 text-sm text-gray-500 dark:text-slate-400">All agents are watching.</p>
-                                }
-                            </div>
+      <!-- Reply Box -->
+      <div class="flex-shrink-0 border-t border-gray-200 dark:border-slate-700 p-4 bg-gray-50 dark:bg-slate-900/50">
+        <div class="flex space-x-2 border-b border-gray-200 dark:border-slate-700 mb-2">
+          <button (click)="replyMode.set('customer')" [class]="'px-3 py-1.5 text-sm font-medium rounded-t-md ' + (replyMode() === 'customer' ? 'bg-white dark:bg-slate-800 text-indigo-600' : 'text-gray-500 hover:bg-white/50 dark:hover:bg-slate-800/50')">Reply to Customer</button>
+          <button (click)="replyMode.set('internal')" [class]="'px-3 py-1.5 text-sm font-medium rounded-t-md ' + (replyMode() === 'internal' ? 'bg-yellow-50 dark:bg-yellow-900/50 text-yellow-700' : 'text-gray-500 hover:bg-white/50 dark:hover:bg-slate-800/50')">Add Internal Note</button>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-b-md border border-gray-200 dark:border-slate-700">
+          <textarea #replyTextarea [(ngModel)]="replyText" class="w-full p-2 border-0 focus:ring-0 resize-none bg-transparent" [placeholder]="replyMode() === 'customer' ? 'Type your reply...' : 'Type your internal note...' " rows="4"></textarea>
+          <div class="p-2 border-t border-gray-200 dark:border-slate-700 flex justify-between items-center flex-wrap">
+            <div class="flex items-center space-x-1 flex-wrap">
+               <div class="relative">
+                <button (click)="showCannedResponses.set(!showCannedResponses())" class="flex items-center space-x-1 p-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md">
+                    <app-icon name="messagesquare" class="w-4 h-4"></app-icon>
+                    <span>Canned Responses</span>
+                    <app-icon name="chevrondown" class="w-4 h-4"></app-icon>
+                </button>
+                @if (showCannedResponses()) {
+                    <div class="absolute bottom-full left-0 mb-2 w-72 bg-white dark:bg-slate-800 rounded-lg shadow-lg border dark:border-slate-700 z-10 max-h-60 overflow-y-auto">
+                        @for (response of filteredCannedResponses(); track response.id) {
+                            <button (click)="handleCannedResponse(response.content)" class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700">{{ response.name }}</button>
                         }
                     </div>
-                </div>
-            </div>
-            @if (ticket().customFields && customFieldDefinitions().length > 0) {
-                <hr class="dark:border-slate-700">
-                <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-3">Custom Fields</h3>
-                <div class="space-y-4 text-sm">
-                    @for(field of customFieldDefinitions(); track field.id) {
-                    @if(ticket().customFields?.[field.id]) {
-                        <div>
-                        <label class="block text-xs font-medium text-gray-500 dark:text-slate-400">{{field.name}}</label>
-                        <p class="text-gray-800 dark:text-slate-200 mt-1">{{ticket().customFields?.[field.id]}}</p>
-                        </div>
-                    }
-                    }
-                </div>
-            }
-             <hr class="dark:border-slate-700">
-             <button (click)="showActivity.set(!showActivity())" class="w-full inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700"><app-icon name="history" class="w-4 h-4"></app-icon><span>{{ showActivity() ? 'Hide' : 'Show' }} Activity Log</span></button>
-             <button (click)="showLogTimeModal.set(true)" class="w-full inline-flex items-center justify-center space-x-2 px-3 py-2 border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-slate-700">
-                <app-icon name="clock" class="w-4 h-4"></app-icon><span>Log Time</span>
-             </button>
-        </div>
-    } @else {
-        <div>
-            <div class="text-center mb-6">
-                <div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-200 flex items-center justify-center font-bold text-3xl mx-auto">
-                    {{ getInitials(ticket().customer) }}
-                </div>
-                <h3 class="mt-4 text-xl font-semibold text-gray-900 dark:text-slate-100">{{ ticket().customer }}</h3>
-                <p class="text-sm text-gray-500 dark:text-slate-400">{{ ticket().email }}</p>
-            </div>
-            
-            <h4 class="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-3">Ticket History ({{ customerTicketHistory().length }})</h4>
-            <div class="space-y-3 max-h-96 overflow-y-auto">
-                @for(histTicket of customerTicketHistory(); track histTicket.id) {
-                    <div class="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-                        <div class="flex justify-between items-center">
-                             <p class="font-medium text-gray-800 dark:text-slate-200 text-sm truncate pr-2">#{{ histTicket.id }} - {{ histTicket.subject }}</p>
-                             <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ' + 
-                                     { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[histTicket.status]">
-                                        {{ histTicket.status.replace('-', ' ') }}
-                             </span>
-                        </div>
-                        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">{{ formatDate(histTicket.created) }}</p>
+                }
+               </div>
+               <div class="relative">
+                <button (click)="showMacros.set(!showMacros())" class="flex items-center space-x-1 p-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md">
+                    <app-icon name="play-circle" class="w-4 h-4"></app-icon>
+                    <span>Apply Macro</span>
+                    <app-icon name="chevrondown" class="w-4 h-4"></app-icon>
+                </button>
+                 @if (showMacros()) {
+                    <div class="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-lg border dark:border-slate-700 z-10">
+                        @for (macro of macros(); track macro.id) {
+                            <button (click)="handleMacro(macro)" class="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-700">{{ macro.name }}</button>
+                        }
                     </div>
                 }
-                 @if(customerTicketHistory().length === 0) {
-                    <p class="text-sm text-gray-500 dark:text-slate-400">No previous tickets from this customer.</p>
-                }
+               </div>
+               <div class="flex items-center space-x-1 pl-2 border-l border-gray-200 dark:border-slate-700">
+                  <span class="text-xs text-gray-500 dark:text-slate-400">Tone:</span>
+                  <button (click)="changeReplyTone('Friendly')" [disabled]="isChangingTone() || !replyText()" class="px-2 py-1 text-xs rounded-md bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-50">Friendly</button>
+                  <button (click)="changeReplyTone('Formal')" [disabled]="isChangingTone() || !replyText()" class="px-2 py-1 text-xs rounded-md bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-50">Formal</button>
+                  @if(isChangingTone()) { <app-icon name="loader" class="w-4 h-4 text-indigo-500"></app-icon> }
+               </div>
             </div>
-        </div>
-    }
-    </div>
-  </div>
-
-  @if (showTagEditor()) {
-    <div class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-      <div class="bg-white dark:bg-slate-800 rounded-lg max-w-md w-full p-6">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Edit Tags</h3>
-        <div class="flex flex-wrap gap-2 mb-6">
-          @for(tag of availableTags(); track tag) {
-            <button (click)="toggleTag(tag)" [class]="'px-3 py-2 rounded-lg text-sm transition ' + (selectedTags().includes(tag) ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400 border-2 border-indigo-500' : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300 border-2 border-transparent hover:bg-gray-200 dark:hover:bg-slate-600')">{{ tag }}</button>
-          }
-        </div>
-        <div class="flex justify-end space-x-3">
-          <button (click)="showTagEditor.set(false)" class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700">Cancel</button>
-          <button (click)="handleTagSave()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Tags</button>
+            <button (click)="handleReply()" [disabled]="!replyText().trim()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-400">Send</button>
+          </div>
         </div>
       </div>
     </div>
-  }
-  
-  @if(showMergeModal()) {
-    <app-merge-ticket-modal 
-        [currentTicket]="ticket()"
-        [allTickets]="allTickets()"
-        (close)="showMergeModal.set(false)"
-        (merge)="handleMerge($event)">
-    </app-merge-ticket-modal>
-  }
-
-   @if(showLinkModal()) {
-    <app-link-ticket-modal
-        [currentTicket]="ticket()"
-        [allTickets]="allTickets()"
-        (close)="showLinkModal.set(false)"
-        (link)="handleLink($event)">
-    </app-link-ticket-modal>
-  }
-
-  @if(showLogTimeModal()) {
-    <app-log-time-modal
-        (close)="showLogTimeModal.set(false)"
-        (logTime)="handleLogTime($event)">
-    </app-log-time-modal>
-  }
-
-  @if(showSplitTicketModal()) {
-    <app-split-ticket-modal
-        [messageToSplit]="messageToSplit()!"
-        (close)="showSplitTicketModal.set(false)"
-        (split)="handleSplitTicket($event)">
-    </app-split-ticket-modal>
-  }
-
+    <!-- Customer 360 Sidebar -->
+    <aside class="w-80 flex-shrink-0 border-l border-gray-200 dark:border-slate-700 flex flex-col">
+       <div class="border-b border-gray-200 dark:border-slate-700">
+        <nav class="-mb-px flex">
+            <button (click)="activeTab360.set('contact')" [class]="'w-1/3 py-3 text-sm font-medium text-center border-b-2 ' + (activeTab360() === 'contact' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700')">Contact</button>
+            <button (click)="activeTab360.set('organization')" [class]="'w-1/3 py-3 text-sm font-medium text-center border-b-2 ' + (activeTab360() === 'organization' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700')">Organization</button>
+            <button (click)="activeTab360.set('timeline')" [class]="'w-1/3 py-3 text-sm font-medium text-center border-b-2 ' + (activeTab360() === 'timeline' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 hover:text-gray-700')">Timeline</button>
+        </nav>
+       </div>
+       <div class="flex-1 overflow-y-auto p-4 space-y-6">
+        @switch (activeTab360()) {
+          @case ('contact') {
+            @if(contact(); as c) {
+              <div class="text-center">
+                <div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 mx-auto flex items-center justify-center text-3xl font-bold text-gray-600 dark:text-slate-300 mb-2">
+                  {{ getInitials(c.name) }}
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100">{{ c.name }}</h3>
+                <p class="text-sm text-gray-500 dark:text-slate-400">{{ c.title }}</p>
+              </div>
+              <div class="space-y-3 text-sm">
+                 <div>
+                    <span class="font-semibold text-gray-600 dark:text-slate-400">Email</span>
+                    <p class="text-gray-800 dark:text-slate-200">{{ c.email }}</p>
+                </div>
+                <div>
+                    <span class="font-semibold text-gray-600 dark:text-slate-400">Organization</span>
+                    <p class="text-indigo-600 dark:text-indigo-400">{{ organization()?.name }}</p>
+                </div>
+              </div>
+            }
+          }
+          @case ('organization') {
+            @if(organization(); as org) {
+               <div>
+                  <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">{{ org.name }}</h3>
+                   <div class="space-y-3 text-sm">
+                     <div>
+                        <span class="font-semibold text-gray-600 dark:text-slate-400">Industry</span>
+                        <p class="text-gray-800 dark:text-slate-200">{{ org.industry }}</p>
+                    </div>
+                     <div>
+                        <span class="font-semibold text-gray-600 dark:text-slate-400">SLA Tier</span>
+                        <p class="text-gray-800 dark:text-slate-200">{{ org.slaTier }}</p>
+                    </div>
+                     <div>
+                        <span class="font-semibold text-gray-600 dark:text-slate-400">VIP Status</span>
+                        @if(org.isVip) {
+                           <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">VIP</span>
+                        } @else {
+                           <p class="text-gray-800 dark:text-slate-200">Standard</p>
+                        }
+                    </div>
+                  </div>
+               </div>
+            }
+          }
+          @case ('timeline') {
+            <div>
+              <h3 class="text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Customer Timeline</h3>
+              <ul class="space-y-4">
+                @for(event of timelineEvents(); track $index) {
+                  <li class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" [ngClass]="{
+                        'bg-blue-100 dark:bg-blue-900/50': event.itemType === 'activity',
+                        'bg-green-100 dark:bg-green-900/50': event.itemType === 'message' && event.type === 'customer',
+                        'bg-indigo-100 dark:bg-indigo-900/50': event.itemType === 'message' && event.type === 'agent',
+                        'bg-yellow-100 dark:bg-yellow-900/50': event.itemType === 'note'
+                    }">
+                      <app-icon [name]="{activity: 'mail', message: 'messagesquare', note: 'lock'}[event.itemType]" class="w-4 h-4" [ngClass]="{
+                        'text-blue-600 dark:text-blue-400': event.itemType === 'activity',
+                        'text-green-600 dark:text-green-400': event.itemType === 'message' && event.type === 'customer',
+                        'text-indigo-600 dark:text-indigo-400': event.itemType === 'message' && event.type === 'agent',
+                        'text-yellow-600 dark:text-yellow-400': event.itemType === 'note'
+                      }"></app-icon>
+                    </div>
+                     <div class="flex-1 text-sm">
+                        @if(event.itemType === 'activity') {
+                            <p class="text-gray-800 dark:text-slate-200">
+                                <a (click)="selectTicket.emit(event.ticketId)" class="font-semibold hover:underline cursor-pointer">Ticket #{{event.ticketId}}</a> created: "{{event.subject}}"
+                            </p>
+                        } @else if(event.itemType === 'message') {
+                            <p class="text-gray-800 dark:text-slate-300 line-clamp-2" [title]="event.content">{{ event.content }}</p>
+                             <p class="text-xs text-gray-500 dark:text-slate-400">
+                                Reply from {{event.from}} on <a (click)="selectTicket.emit(event.ticketId)" class="hover:underline cursor-pointer">#{{event.ticketId}}</a>
+                            </p>
+                        } @else {
+                             <p class="text-yellow-800 dark:text-yellow-300 line-clamp-2" [title]="event.content">{{ event.content }}</p>
+                             <p class="text-xs text-yellow-600 dark:text-yellow-400">
+                                Note by {{event.from}} on <a (click)="selectTicket.emit(event.ticketId)" class="hover:underline cursor-pointer">#{{event.ticketId}}</a>
+                            </p>
+                        }
+                        <p class="text-xs text-gray-400 dark:text-slate-500">{{ formatDate(event.timestamp) }}</p>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        }
+       </div>
+    </aside>
+  </div>
 </div>
+
+@if (showMergeModal()) {
+    <app-merge-ticket-modal [currentTicket]="ticket()" [allTickets]="allTickets()" [contacts]="contacts()" (close)="showMergeModal.set(false)" (merge)="handleMerge($event)"></app-merge-ticket-modal>
+}
+@if (showLogTimeModal()) {
+    <app-log-time-modal (close)="showLogTimeModal.set(false)" (logTime)="handleLogTime($event)"></app-log-time-modal>
+}
+@if (showSplitTicketModal()) {
+    <app-split-ticket-modal [messageToSplit]="messageToSplit()!" (close)="showSplitTicketModal.set(false)" (split)="handleSplitTicket($event)"></app-split-ticket-modal>
+}
+@if (showLinkModal()) {
+    <app-link-ticket-modal [currentTicket]="ticket()" [allTickets]="allTickets()" [contacts]="contacts()" (close)="showLinkModal.set(false)" (link)="handleLink($event)"></app-link-ticket-modal>
+}

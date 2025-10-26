@@ -1,0 +1,116 @@
+<div class="flex h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <!-- Left Panel: Ticket Lists -->
+  <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-lg font-semibold">Quality Assurance</h2>
+    </div>
+    <div class="flex-grow overflow-y-auto">
+      <!-- Tickets to Review -->
+      <div class="p-2">
+        <h3 class="px-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Awaiting Review</h3>
+        @if (ticketsToReview().length > 0) {
+          <ul>
+            @for (ticket of ticketsToReview(); track ticket.id) {
+              <li (click)="selectTicket(ticket)" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" [class.bg-blue-100]="selectedTicket()?.id === ticket.id" [class.dark:bg-blue-900]="selectedTicket()?.id === ticket.id">
+                <div class="flex justify-between items-center">
+                  <p class="font-medium truncate">#{{ticket.id}} {{ticket.subject}}</p>
+                  <span class="text-xs text-gray-500">{{ formatDate(ticket.resolvedAt!) }}</span>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Agent: {{ticket.assignedTo}}</p>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="p-4 text-center text-gray-500">No tickets are awaiting review.</p>
+        }
+      </div>
+      <!-- Completed Reviews -->
+      <div class="p-2 mt-4">
+        <h3 class="px-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Completed Reviews</h3>
+        @if (reviews().length > 0) {
+        <ul>
+          @for (review of reviews(); track review.id) {
+            <li class="p-2 rounded-md">
+              <div class="flex justify-between items-center">
+                <p class="font-medium">Ticket #{{review.ticketId}}</p>
+                <span class="text-xs text-gray-500">{{ formatDate(review.reviewDate) }}</span>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Agent: {{ getAgentName(review.agentId) }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Score: {{ review.totalScore }}</p>
+            </li>
+          }
+        </ul>
+        } @else {
+          <p class="p-4 text-center text-gray-500">No reviews completed yet.</p>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Review Details -->
+  <div class="w-2/3 flex flex-col">
+    @if (selectedTicket(); as ticket) {
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-xl font-bold">Reviewing Ticket #{{ticket.id}}</h3>
+        <p class="text-gray-600 dark:text-gray-400">{{ticket.subject}}</p>
+        <p class="text-sm text-gray-500">Assigned to: {{ticket.assignedTo}}</p>
+      </div>
+      <div class="flex-grow p-6 overflow-y-auto">
+        <!-- Rubric Selection -->
+        <div class="mb-6">
+          <label for="rubric" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Rubric</label>
+          <select id="rubric" (change)="handleRubricChange($event)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-gray-700">
+            <option value="" disabled [selected]="!selectedRubricId()">-- Choose a rubric --</option>
+            @for (rubric of rubrics(); track rubric.id) {
+              <option [value]="rubric.id">{{rubric.name}}</option>
+            }
+          </select>
+        </div>
+
+        @if (selectedRubric(); as rubric) {
+          <!-- Scoring -->
+          <div class="space-y-4">
+            @for (criterion of rubric.criteria; track criterion.id) {
+              <div>
+                <label [for]="'crit-' + criterion.id" class="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span>{{criterion.text}}</span>
+                  <span>{{ currentReviewScores()[criterion.id] || 0 }} / {{criterion.maxScore}}</span>
+                </label>
+                <input type="range" [id]="'crit-' + criterion.id" [value]="currentReviewScores()[criterion.id] || 0" (input)="handleScoreInput(criterion.id, $event)" min="0" [max]="criterion.maxScore" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer mt-1">
+              </div>
+            }
+          </div>
+
+          <!-- Total Score -->
+          <div class="mt-6 text-right">
+            <span class="text-lg font-bold">Total Score: {{ totalScore() }} / {{ maxScore() }}</span>
+          </div>
+
+          <!-- Feedback -->
+          <div class="mt-6">
+            <label for="feedback" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Feedback for Agent</label>
+            <textarea id="feedback" name="feedback" rows="4" [(ngModel)]="currentReviewFeedback" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div class="mt-8 flex justify-end space-x-3">
+            <button (click)="selectTicket(null)" type="button" class="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Cancel
+            </button>
+            <button (click)="handleSaveReview()" type="button" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Save Review
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex-grow flex items-center justify-center">
+        <div class="text-center">
+          <app-icon name="award" class="mx-auto h-12 w-12 text-gray-400"></app-icon>
+          <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">Select a ticket to review</h3>
+          <p class="mt-1 text-sm text-gray-500">Choose a resolved ticket from the list to begin the QA process.</p>
+        </div>
+      </div>
+    }
+  </div>
+</div>
