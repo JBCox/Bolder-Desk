@@ -231,7 +231,6 @@ const MOCK_DATA: AppData = {
                       [ticket]="ticket"
                       [cannedResponses]="cannedResponses()"
                       [macros]="macros()"
-                      [allTickets]="tickets()"
                       [contacts]="contacts()"
                       [organizations]="organizations()"
                       [currentAgent]="currentAgent()"
