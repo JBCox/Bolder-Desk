@@ -1,1 +1,84 @@
-full contents of src/components/developer-settings/developer-settings.component.html
+<div class="p-6 max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <app-icon name="code" class="w-6 h-6"></app-icon>
+            Developer Settings
+        </h2>
+    </div>
+
+    <!-- API Keys -->
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">API Keys</h3>
+        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border dark:border-slate-700">
+            <div class="space-y-3">
+                @for(key of apiKeys(); track key.id) {
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="font-medium text-slate-900 dark:text-slate-100">{{key.name}}</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                                {{key.key.substring(0, 12)}}... &bull; Created: {{ formatDate(key.createdAt) }} &bull; Last used: {{ formatDate(key.lastUsedAt) }}
+                            </p>
+                        </div>
+                        <button (click)="revokeApiKey.emit(key.id)" class="text-sm text-red-600 hover:underline">Revoke</button>
+                    </div>
+                }
+            </div>
+            <div class="mt-4 pt-4 border-t dark:border-slate-600 flex items-center gap-2">
+                <input type="text" [(ngModel)]="newApiKeyName" placeholder="New key name..." class="flex-grow block w-full text-sm border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                <button (click)="handleCreateApiKey()" [disabled]="!newApiKeyName().trim()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">Create Key</button>
+            </div>
+        </div>
+    </div>
+    
+    @if(newlyGeneratedKey(); as newKey) {
+        <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" (click)="newlyGeneratedKey.set(null)">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-lg max-w-lg w-full" (click)="$event.stopPropagation()">
+                <h3 class="text-lg font-semibold">API Key Created</h3>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">Please copy this secret key and store it securely. You will not be able to see it again.</p>
+                <div class="mt-4 p-3 bg-slate-100 dark:bg-slate-900 rounded-md font-mono text-sm text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                    <span>{{newKey.key}}</span>
+                    <button (click)="copyToClipboard(newKey.key)" class="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">
+                        <app-icon name="clipboard" class="w-4 h-4"></app-icon>
+                    </button>
+                </div>
+                 <div class="mt-6 text-right">
+                    <button (click)="newlyGeneratedKey.set(null)" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold">Done</button>
+                 </div>
+            </div>
+        </div>
+    }
+
+    <!-- Webhooks -->
+    <div>
+        <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Webhooks</h3>
+        <div class="space-y-4">
+            @for(hook of editableWebhooks(); track hook.id) {
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border dark:border-slate-700">
+                    <div class="flex items-center justify-between mb-3">
+                        <input type="text" [(ngModel)]="hook.url" placeholder="https://example.com/webhook" class="flex-grow block w-full text-sm border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                        <button (click)="removeWebhook(hook.id)" class="ml-4 text-red-600 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50">
+                            <app-icon name="trash" class="w-5 h-5"></app-icon>
+                        </button>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Events</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            @for(event of allWebhookEvents; track event) {
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" [checked]="hook.events.includes(event)" (change)="toggleWebhookEvent(hook, event)" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-slate-700 dark:text-slate-300">{{event}}</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            <button (click)="addWebhook()" class="w-full text-center p-3 border-2 border-dashed rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 text-indigo-600 dark:text-indigo-400">
+                + Add Webhook
+            </button>
+        </div>
+        <div class="mt-6 flex justify-end">
+            <button (click)="handleSaveWebhooks()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Webhooks</button>
+        </div>
+    </div>
+</div>

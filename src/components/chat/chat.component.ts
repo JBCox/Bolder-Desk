@@ -1,20 +1,20 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatSession, Agent } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-chat',
+  standalone: true,
   templateUrl: './chat.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
 })
 export class ChatComponent {
-  chatSessions = input.required<ChatSession[]>();
-  currentAgent = input.required<Agent | { name: string }>();
-  acceptChat = output<string>();
-  sendMessage = output<{ chatId: string; content: string }>();
-  convertToTicket = output<ChatSession>();
+  private app = inject(AppComponent);
+  chatSessions = this.app.chatSessions;
+  currentAgent = this.app.currentAgent;
 
   selectedChat = signal<ChatSession | null>(null);
   replyText = signal('');
@@ -26,9 +26,21 @@ export class ChatComponent {
     this.selectedChat.set(chat);
   }
 
+  acceptChat(chatId: string) {
+    this.app.handleAcceptChat(chatId);
+  }
+
+  sendMessage(chatId: string, content: string) {
+    this.app.handleSendChatMessage({ chatId, content, from: 'agent' });
+  }
+
+  convertToTicket(chat: ChatSession) {
+    this.app.handleChatConvertToTicket(chat);
+  }
+
   handleSendMessage() {
     if (this.replyText().trim() && this.selectedChat()) {
-      this.sendMessage.emit({ chatId: this.selectedChat()!.id, content: this.replyText() });
+      this.sendMessage(this.selectedChat()!.id, this.replyText());
       this.replyText.set('');
     }
   }

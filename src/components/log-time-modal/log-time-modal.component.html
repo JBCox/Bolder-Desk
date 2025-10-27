@@ -1,1 +1,49 @@
-full contents of src/components/log-time-modal/log-time-modal.component.html
+<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-sm flex flex-col">
+    <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+      <h3 class="text-lg font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-100">
+        <app-icon name="clock" class="w-6 h-6"></app-icon>
+        <span>Log Time</span>
+      </h3>
+      <button (click)="close.emit()" class="p-1 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+        <app-icon name="x" class="w-5 h-5"></app-icon>
+      </button>
+    </div>
+    <div class="p-6">
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Enter the amount of time spent on this ticket.
+      </p>
+      <div class="flex items-center gap-4">
+        <div>
+          <label for="hours" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Hours</label>
+          <input 
+            type="number" 
+            id="hours"
+            min="0"
+            [ngModel]="hours()"
+            (ngModelChange)="hours.set($event)"
+            class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div>
+          <label for="minutes" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Minutes</label>
+          <input 
+            type="number" 
+            id="minutes"
+            min="0"
+            max="59"
+            [ngModel]="minutes()"
+            (ngModelChange)="minutes.set($event)"
+            class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+      </div>
+    </div>
+    <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2 border-t dark:border-slate-700">
+      <button (click)="close.emit()" class="px-4 py-2 text-sm rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600">Cancel</button>
+      <button (click)="handleLogTime()" [disabled]="hours() <= 0 && minutes() <= 0" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+        Log Time
+      </button>
+    </div>
+  </div>
+</div>

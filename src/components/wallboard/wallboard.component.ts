@@ -1,29 +1,30 @@
-import { Component, ChangeDetectionStrategy, input, signal, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal, OnInit, OnDestroy, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WallboardData } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-wallboard',
+  standalone: true,
   templateUrl: './wallboard.component.html',
   imports: [CommonModule, IconComponent],
 })
 export class WallboardComponent implements OnInit, OnDestroy {
-  data = input.required<WallboardData>();
+  private app = inject(AppComponent);
+  data = this.app.wallboardData;
   
   private dataFluctuationIntervalId: any;
   private timeUpdateIntervalId: any;
 
   currentTime = signal(new Date());
 
-  // Local signals for animation effect
   displayOpenTickets = signal(0);
   displayResolved = signal(0);
   displaySlaRisks = signal(0);
 
   constructor() {
     effect(() => {
-        // When input data changes, update the display signals
         this.displayOpenTickets.set(this.data().openTickets);
         this.displayResolved.set(this.data().todaysResolved);
         this.displaySlaRisks.set(this.data().slaBreachRisks);
@@ -31,12 +32,10 @@ export class WallboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Update the current time every second
     this.timeUpdateIntervalId = setInterval(() => {
       this.currentTime.set(new Date());
     }, 1000);
 
-    // Simulate live data fluctuations for visual effect
     this.dataFluctuationIntervalId = setInterval(() => {
       this.displayOpenTickets.update(v => this.fluctuate(v));
       this.displayResolved.update(v => this.fluctuate(v, 0.05));

@@ -1,16 +1,19 @@
-import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MockEmail } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-inbox',
+  standalone: true,
   templateUrl: './inbox.component.html',
   imports: [CommonModule, IconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InboxComponent {
-  emails = input.required<MockEmail[]>();
-  convertToTicket = output<MockEmail>();
+  private app = inject(AppComponent);
+  emails = this.app.emails;
 
   selectedEmail = signal<MockEmail | null>(null);
 
@@ -18,6 +21,10 @@ export class InboxComponent {
     this.selectedEmail.set(email);
   }
   
+  convertToTicket(email: MockEmail) {
+    this.app.handleConvertToTicket(email);
+  }
+
   formatDate(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();

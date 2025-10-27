@@ -1,1 +1,58 @@
-full contents of src/components/link-ticket-modal/link-ticket-modal.component.html
+<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+      <h3 class="text-lg font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-100">
+        <app-icon name="link" class="w-6 h-6"></app-icon>
+        <span>Link Child Ticket</span>
+      </h3>
+      <button (click)="close.emit()" class="p-1 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+        <app-icon name="x" class="w-5 h-5"></app-icon>
+      </button>
+    </div>
+    <div class="p-6 flex-1 overflow-y-auto">
+      <p class="text-sm text-slate-600 dark:text-slate-400">
+        You are linking a child ticket to this parent ticket: <span class="font-semibold text-indigo-600 dark:text-indigo-400">#{{ currentTicket().id }} "{{ currentTicket().subject }}"</span>.
+      </p>
+      <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">This is useful for tracking multiple incidents related to a single problem.</p>
+      
+      <div class="mt-6">
+        <label for="link-search" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Search for a child ticket</label>
+        <div class="relative mt-1">
+          <app-icon name="search" class="absolute left-3 top-2.5 w-5 h-5 text-slate-400"></app-icon>
+          <input 
+            type="text" 
+            id="link-search"
+            [ngModel]="searchQuery()" 
+            (ngModelChange)="searchQuery.set($event)"
+            placeholder="Search by ID, subject, or contact name..."
+            class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+      </div>
+      
+      <div class="mt-4 border rounded-lg dark:border-slate-600 max-h-64 overflow-y-auto">
+        @for (ticket of availableTickets(); track ticket.id) {
+          <div 
+            (click)="selectedTicketId.set(ticket.id)"
+            [class]="'p-3 cursor-pointer flex justify-between items-center border-b dark:border-slate-700 last:border-b-0 ' + (selectedTicketId() === ticket.id ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50')">
+            <div>
+              <p class="font-semibold text-slate-800 dark:text-slate-200">#{{ ticket.id }} - {{ ticket.subject }}</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400">{{ getContactForTicket(ticket)?.name }}</p>
+            </div>
+            @if(selectedTicketId() === ticket.id) {
+              <app-icon name="check-circle" class="w-5 h-5 text-indigo-600"></app-icon>
+            }
+          </div>
+        } @empty {
+          <p class="p-4 text-center text-sm text-slate-500">No available tickets found to link.</p>
+        }
+      </div>
+    </div>
+    <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2 border-t dark:border-slate-700">
+      <button (click)="close.emit()" class="px-4 py-2 text-sm rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600">Cancel</button>
+      <button (click)="handleLink()" [disabled]="!selectedTicketId()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+        Link Ticket
+      </button>
+    </div>
+  </div>
+</div>

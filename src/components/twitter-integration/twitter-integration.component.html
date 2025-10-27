@@ -36,13 +36,13 @@
             </div>
           </div>
           @if(thread.status === 'unprocessed') {
-              <button (click)="createTicket.emit(thread)" class="bg-sky-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-sky-600 transition text-sm">
+              <button (click)="createTicket(thread)" class="bg-sky-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-sky-600 transition text-sm">
                   <app-icon name="plus" class="w-4 h-4"></app-icon>
                   <span>Create Ticket</span>
               </button>
           } @else {
                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
-                  <a (click)="viewTicket.emit(thread.linkedTicketId!)" class="hover:underline cursor-pointer">Ticket #{{thread.linkedTicketId}}</a>
+                  <a (click)="viewTicket(thread.linkedTicketId!)" class="hover:underline cursor-pointer">Ticket #{{thread.linkedTicketId}}</a>
               </span>
           }
       </div>

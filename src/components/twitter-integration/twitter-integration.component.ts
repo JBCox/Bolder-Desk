@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TwitterThread } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-twitter-integration',
@@ -10,14 +11,21 @@ import { IconComponent } from '../icon/icon.component';
   imports: [CommonModule, IconComponent],
 })
 export class TwitterIntegrationComponent {
-  threads = input.required<TwitterThread[]>();
-  createTicket = output<TwitterThread>();
-  viewTicket = output<number>();
+  private app = inject(AppComponent);
+  threads = this.app.twitterThreads;
 
   selectedThread = signal<TwitterThread | null>(null);
 
   selectThread(thread: TwitterThread) {
     this.selectedThread.set(thread);
+  }
+
+  createTicket(thread: TwitterThread) {
+    this.app.handleSocialToTicket({ source: 'twitter', thread });
+  }
+
+  viewTicket(ticketId: number) {
+    this.app.selectTicket(ticketId);
   }
 
   formatDate(dateString: string): string {

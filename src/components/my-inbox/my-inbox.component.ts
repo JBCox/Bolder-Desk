@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ticket, Agent } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-my-inbox',
@@ -11,9 +12,9 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MyInboxComponent {
-  allTickets = input.required<Ticket[]>();
-  currentAgent = input.required<Agent>();
-  viewTicket = output<number>();
+  private app = inject(AppComponent);
+  allTickets = this.app.tickets;
+  currentAgent = this.app.currentAgent;
 
   myAssignedTickets = computed(() => 
     this.allTickets().filter(t => t.assignedTo === this.currentAgent().name && (t.status === 'open' || t.status === 'pending'))
@@ -29,6 +30,9 @@ export class MyInboxComponent {
     .sort((a,b) => new Date(b.created).getTime() - new Date(a.created).getTime())
   );
 
+  viewTicket(id: number) {
+    this.app.selectTicket(id);
+  }
 
   formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString();

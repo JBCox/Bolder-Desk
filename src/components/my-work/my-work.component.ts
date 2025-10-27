@@ -4,13 +4,13 @@ import { Ticket, Agent } from '../../models';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
-  selector: 'app-my-inbox',
+  selector: 'app-my-work',
   standalone: true,
   imports: [CommonModule, IconComponent],
-  templateUrl: './my-inbox.component.html',
+  templateUrl: './my-work.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MyInboxComponent {
+export class MyWorkComponent {
   allTickets = input.required<Ticket[]>();
   currentAgent = input.required<Agent>();
   viewTicket = output<number>();

@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SalesforceSettings } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-salesforce-integration',
@@ -12,9 +13,9 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SalesforceIntegrationComponent {
-  initialSettings = input.required<SalesforceSettings>({ alias: 'settings' });
-  save = output<SalesforceSettings>();
-
+  private app = inject(AppComponent);
+  initialSettings = this.app.salesforceSettings;
+  
   editableSettings = signal<SalesforceSettings>({
     connected: false,
     instanceUrl: '',
@@ -28,7 +29,7 @@ export class SalesforceIntegrationComponent {
   }
 
   handleSave() {
-    this.save.emit(this.editableSettings());
+    this.app.handleSaveSalesforceSettings(this.editableSettings());
     alert('Salesforce settings saved!');
   }
 

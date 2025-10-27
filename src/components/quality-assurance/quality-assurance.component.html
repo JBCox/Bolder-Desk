@@ -1,8 +1,8 @@
-<div class="flex h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+<div class="flex h-full bg-gray-50 dark:bg-slate-900">
   <!-- Left Panel: Ticket Lists -->
-  <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+  <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-slate-800">
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-      <h2 class="text-lg font-semibold">Quality Assurance</h2>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Quality Assurance</h2>
     </div>
     <div class="flex-grow overflow-y-auto">
       <!-- Tickets to Review -->
@@ -11,17 +11,18 @@
         @if (ticketsToReview().length > 0) {
           <ul>
             @for (ticket of ticketsToReview(); track ticket.id) {
-              <li (click)="selectTicket(ticket)" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer" [class.bg-blue-100]="selectedTicket()?.id === ticket.id" [class.dark:bg-blue-900]="selectedTicket()?.id === ticket.id">
+              <li (click)="selectTicket(ticket)" 
+                  [class]="'p-2 rounded-md cursor-pointer ' + (selectedTicket()?.id === ticket.id ? 'bg-blue-100 dark:bg-blue-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800')">
                 <div class="flex justify-between items-center">
-                  <p class="font-medium truncate">#{{ticket.id}} {{ticket.subject}}</p>
-                  <span class="text-xs text-gray-500">{{ formatDate(ticket.resolvedAt!) }}</span>
+                  <p class="font-medium truncate text-gray-900 dark:text-gray-100">#{{ticket.id}} {{ticket.subject}}</p>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(ticket.resolvedAt!) }}</span>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Agent: {{ticket.assignedTo}}</p>
               </li>
             }
           </ul>
         } @else {
-          <p class="p-4 text-center text-gray-500">No tickets are awaiting review.</p>
+          <p class="p-4 text-center text-gray-500 dark:text-gray-400">No tickets are awaiting review.</p>
         }
       </div>
       <!-- Completed Reviews -->
@@ -32,8 +33,8 @@
           @for (review of reviews(); track review.id) {
             <li class="p-2 rounded-md">
               <div class="flex justify-between items-center">
-                <p class="font-medium">Ticket #{{review.ticketId}}</p>
-                <span class="text-xs text-gray-500">{{ formatDate(review.reviewDate) }}</span>
+                <p class="font-medium text-gray-900 dark:text-gray-100">Ticket #{{review.ticketId}}</p>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(review.reviewDate) }}</span>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-400">Agent: {{ getAgentName(review.agentId) }}</p>
               <p class="text-sm text-gray-600 dark:text-gray-400">Score: {{ review.totalScore }}</p>
@@ -41,7 +42,7 @@
           }
         </ul>
         } @else {
-          <p class="p-4 text-center text-gray-500">No reviews completed yet.</p>
+          <p class="p-4 text-center text-gray-500 dark:text-gray-400">No reviews completed yet.</p>
         }
       </div>
     </div>
@@ -50,16 +51,16 @@
   <!-- Right Panel: Review Details -->
   <div class="w-2/3 flex flex-col">
     @if (selectedTicket(); as ticket) {
-      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 class="text-xl font-bold">Reviewing Ticket #{{ticket.id}}</h3>
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800">
+        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">Reviewing Ticket #{{ticket.id}}</h3>
         <p class="text-gray-600 dark:text-gray-400">{{ticket.subject}}</p>
-        <p class="text-sm text-gray-500">Assigned to: {{ticket.assignedTo}}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Assigned to: {{ticket.assignedTo}}</p>
       </div>
       <div class="flex-grow p-6 overflow-y-auto">
         <!-- Rubric Selection -->
         <div class="mb-6">
           <label for="rubric" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Rubric</label>
-          <select id="rubric" (change)="handleRubricChange($event)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-gray-700">
+          <select id="rubric" (change)="handleRubricChange($event)" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
             <option value="" disabled [selected]="!selectedRubricId()">-- Choose a rubric --</option>
             @for (rubric of rubrics(); track rubric.id) {
               <option [value]="rubric.id">{{rubric.name}}</option>
@@ -83,13 +84,13 @@
 
           <!-- Total Score -->
           <div class="mt-6 text-right">
-            <span class="text-lg font-bold">Total Score: {{ totalScore() }} / {{ maxScore() }}</span>
+            <span class="text-lg font-bold text-gray-900 dark:text-gray-100">Total Score: {{ totalScore() }} / {{ maxScore() }}</span>
           </div>
 
           <!-- Feedback -->
           <div class="mt-6">
             <label for="feedback" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Feedback for Agent</label>
-            <textarea id="feedback" name="feedback" rows="4" [(ngModel)]="currentReviewFeedback" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"></textarea>
+            <textarea id="feedback" name="feedback" rows="4" [(ngModel)]="currentReviewFeedback" class="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"></textarea>
           </div>
 
           <!-- Actions -->
@@ -108,7 +109,7 @@
         <div class="text-center">
           <app-icon name="award" class="mx-auto h-12 w-12 text-gray-400"></app-icon>
           <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">Select a ticket to review</h3>
-          <p class="mt-1 text-sm text-gray-500">Choose a resolved ticket from the list to begin the QA process.</p>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Choose a resolved ticket from the list to begin the QA process.</p>
         </div>
       </div>
     }

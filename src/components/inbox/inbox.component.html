@@ -27,7 +27,7 @@
         <div class="flex justify-between items-start">
             <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2">{{ email.subject }}</h1>
             @if(email.status === 'unprocessed') {
-                <button (click)="convertToTicket.emit(email)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-indigo-700 transition">
+                <button (click)="convertToTicket(email)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-indigo-700 transition">
                     <app-icon name="plus" class="w-5 h-5"></app-icon>
                     <span>Convert to Ticket</span>
                 </button>

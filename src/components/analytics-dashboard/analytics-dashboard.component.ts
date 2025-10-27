@@ -1,24 +1,26 @@
-// Fix: Replaced invalid file content with a complete and valid Angular component.
-import { Component, ChangeDetectionStrategy, input, output, signal, inject, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnalyticsData, Ticket, Anomaly, ProblemSuggestion, FilterOperator } from '../../models';
 import { IconComponent } from '../icon/icon.component';
 import { GeminiService } from '../../gemini.service';
+import { AppComponent } from '../../app.component';
 
 type AiFeature = 'anomalies' | 'deflection' | 'problems';
 
 @Component({
   selector: 'app-analytics-dashboard',
+  standalone: true,
   templateUrl: './analytics-dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],
 })
 export class AnalyticsDashboardComponent {
-  data = input.required<AnalyticsData>();
-  tickets = input.required<Ticket[]>();
-  createProblemTicket = output<ProblemSuggestion>();
-  filterRequested = output<{ field: string, operator: FilterOperator, value: any }[]>();
+  private app = inject(AppComponent);
   private geminiService = inject(GeminiService);
+  
+  data = this.app.analyticsData;
+  tickets = this.app.tickets;
+
   isApiOnCooldown = this.geminiService.isApiOnCooldown;
 
   anomalies = signal<Anomaly[]>([]);
@@ -53,6 +55,14 @@ export class AnalyticsDashboardComponent {
     } finally {
       this.isLoading.set(new Set());
     }
+  }
+
+  createProblemTicket(suggestion: ProblemSuggestion) {
+    this.app.handleCreateProblemTicket(suggestion);
+  }
+
+  filterRequested(conditions: { field: string, operator: FilterOperator, value: any }[]) {
+    this.app.handleAnalyticsFilter(conditions);
   }
 
   objectKeys(obj: object): string[] {

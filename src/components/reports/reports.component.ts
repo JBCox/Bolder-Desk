@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Ticket, Agent } from '../../models';
 import { IconComponent } from '../icon/icon.component';
 import { GeminiService } from '../../gemini.service';
+import { AppComponent } from '../../app.component';
 
 interface AgentReport {
     agentName: string;
@@ -13,12 +14,14 @@ interface AgentReport {
 
 @Component({
   selector: 'app-reports',
+  standalone: true,
   templateUrl: './reports.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
 })
 export class ReportsComponent {
-  tickets = input.required<Ticket[]>();
-  agents = input.required<Agent[]>();
+  private app = inject(AppComponent);
+  tickets = this.app.tickets;
+  agents = this.app.agents;
 
   private geminiService = inject(GeminiService);
   isApiOnCooldown = this.geminiService.isApiOnCooldown;
@@ -30,9 +33,7 @@ export class ReportsComponent {
   isGeneratingSummary = signal(false);
 
   constructor() {
-    // Effect to reset AI summary when date range changes
     effect(() => {
-      // This will run whenever dateFrom or dateTo changes.
       this.dateFrom();
       this.dateTo();
       this.aiSummary.set('');
@@ -41,7 +42,6 @@ export class ReportsComponent {
 
   reportData = computed<AgentReport[]>(() => {
     const from = this.dateFrom() ? new Date(this.dateFrom()).getTime() : 0;
-    // Set to end of day
     const to = this.dateTo() ? new Date(this.dateTo()).setHours(23, 59, 59, 999) : Infinity;
 
     const filteredTickets = this.tickets().filter(t => {

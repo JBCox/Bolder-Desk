@@ -8,13 +8,13 @@
             <div class="mt-1">
                 @switch (field.type) {
                     @case('text') { 
-                        <input type="text" [id]="field.id" [formControlName]="field.name" class="form-input">
+                        <input type="text" [id]="field.id" [formControlName]="field.name" class="block w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200">
                     }
                     @case('textarea') { 
-                        <textarea rows="4" [id]="field.id" [formControlName]="field.name" class="form-input"></textarea>
+                        <textarea rows="4" [id]="field.id" [formControlName]="field.name" class="block w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200"></textarea>
                     }
                     @case('dropdown') { 
-                      <select [id]="field.id" [formControlName]="field.name" class="form-input">
+                      <select [id]="field.id" [formControlName]="field.name" class="block w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200">
                         @for(option of field.options; track option) { <option [value]="option">{{option}}</option> }
                       </select>
                     }
@@ -45,9 +45,3 @@
       <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Create Ticket</button>
     </div>
 </form>
-
-<style>
-.form-input {
-  @apply block w-full text-sm border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200;
-}
-</style>

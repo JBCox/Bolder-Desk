@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { JiraSettings } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-jira-integration',
@@ -12,8 +13,8 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JiraIntegrationComponent {
-  initialSettings = input.required<JiraSettings>({ alias: 'settings' });
-  save = output<JiraSettings>();
+  private app = inject(AppComponent);
+  initialSettings = this.app.jiraSettings;
 
   editableSettings = signal<JiraSettings>({
     connected: false,
@@ -29,7 +30,7 @@ export class JiraIntegrationComponent {
   }
 
   handleSave() {
-    this.save.emit(this.editableSettings());
+    this.app.handleSaveJiraSettings(this.editableSettings());
     alert('Jira settings saved!');
   }
 

@@ -1,1 +1,38 @@
-full contents of src/components/split-ticket-modal/split-ticket-modal.component.html
+<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg flex flex-col">
+    <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+      <h3 class="text-lg font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-100">
+        <app-icon name="split" class="w-6 h-6"></app-icon>
+        <span>Split to New Ticket</span>
+      </h3>
+      <button (click)="close.emit()" class="p-1 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">
+        <app-icon name="x" class="w-5 h-5"></app-icon>
+      </button>
+    </div>
+    <div class="p-6">
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        The following message will be moved to a new ticket. Please provide a subject for the new ticket.
+      </p>
+      <div class="p-3 border rounded-md bg-slate-50 dark:bg-slate-700/50 dark:border-slate-600 mb-6">
+        <p class="text-sm text-slate-700 dark:text-slate-300 italic">"{{ messageToSplit().content }}"</p>
+      </div>
+      <div>
+        <label for="new-subject" class="block text-sm font-medium text-slate-700 dark:text-slate-300">New Ticket Subject</label>
+        <input 
+          type="text" 
+          id="new-subject"
+          [ngModel]="newSubject()"
+          (ngModelChange)="newSubject.set($event)"
+          class="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="Enter a subject for the new ticket"
+        />
+      </div>
+    </div>
+    <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2 border-t dark:border-slate-700">
+      <button (click)="close.emit()" class="px-4 py-2 text-sm rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600">Cancel</button>
+      <button (click)="handleSplit()" [disabled]="!newSubject().trim()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+        Split Ticket
+      </button>
+    </div>
+  </div>
+</div>

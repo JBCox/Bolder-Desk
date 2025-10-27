@@ -85,6 +85,7 @@ export class GeminiService {
       };
     }
 
+    let responseText = '';
     try {
       const conversationHistory = ticket.messages
         .map(m => `${m.from} (${m.type}): ${m.content}`)
@@ -128,7 +129,8 @@ export class GeminiService {
         }
       });
       
-      const result = JSON.parse(response.text);
+      responseText = response.text;
+      const result = JSON.parse(responseText);
 
       return {
         summary: result.summary || 'Summary not available.',
@@ -139,6 +141,10 @@ export class GeminiService {
       };
 
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'getAiTicketInsights');
     }
   }
@@ -155,6 +161,7 @@ export class GeminiService {
        };
     }
 
+    let responseText = '';
     try {
       const recentTickets = tickets
         .filter(t => new Date(t.created).getTime() > Date.now() - 24 * 60 * 60 * 1000)
@@ -235,9 +242,14 @@ export class GeminiService {
         }
       });
       
-      return JSON.parse(response.text);
+      responseText = response.text;
+      return JSON.parse(responseText);
 
     } catch (error) {
+       if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
        this.handleApiError(error, 'getAiAnalyticsInsights');
     }
   }
@@ -288,6 +300,7 @@ export class GeminiService {
        ];
     }
     
+    let responseText = '';
     try {
       const conversationHistory = ticket.messages
         .map(m => `${m.from} (${m.type}): ${m.content}`)
@@ -327,9 +340,14 @@ export class GeminiService {
             }
        });
 
-       const json = JSON.parse(response.text);
+       responseText = response.text;
+       const json = JSON.parse(responseText);
        return json.suggestions || [];
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'generateReplySuggestions');
     }
   }
@@ -375,6 +393,7 @@ export class GeminiService {
       return availableTags.length > 2 ? [availableTags[0], availableTags[1]] : [];
     }
     
+    let responseText = '';
     try {
       const content = ticket.messages.map(m => m.content).join('\n');
       const prompt = `Based on the content of this support ticket, suggest up to 3 relevant tags from the provided list.
@@ -408,10 +427,15 @@ export class GeminiService {
         }
       });
       
-      const json = JSON.parse(response.text);
+      responseText = response.text;
+      const json = JSON.parse(responseText);
       // Filter to ensure AI only returns valid tags
       return (json.tags || []).filter((tag: string) => availableTags.includes(tag));
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'suggestTags');
     }
   }
@@ -423,6 +447,7 @@ export class GeminiService {
       return {};
     }
 
+    let responseText = '';
     try {
       const schemaProperties: { [key: string]: any } = {};
       customFields.forEach(field => {
@@ -452,8 +477,13 @@ export class GeminiService {
         }
       });
       
-      return JSON.parse(response.text);
+      responseText = response.text;
+      return JSON.parse(responseText);
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'extractFieldsFromContent');
     }
   }
@@ -467,6 +497,7 @@ export class GeminiService {
       return onlineAgents.length > 0 ? onlineAgents[Math.floor(Math.random() * onlineAgents.length)] : null;
     }
 
+    let responseText = '';
     try {
       const ticketContent = `${ticket.subject}\n\n${ticket.messages.map(m => m.content).join('\n')}`;
       const availableAgents = agents
@@ -508,12 +539,17 @@ export class GeminiService {
         }
       });
       
-      const result = JSON.parse(response.text);
+      responseText = response.text;
+      const result = JSON.parse(responseText);
       if (result.agentName) {
         return agents.find(a => a.name === result.agentName) || null;
       }
       return null;
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'suggestAgentForTicket');
     }
   }
@@ -525,6 +561,7 @@ export class GeminiService {
       return availableSkills.length > 1 ? [availableSkills[0]] : [];
     }
 
+    let responseText = '';
     try {
       const content = `${ticket.subject}\n${ticket.messages.map(m => m.content).join('\n')}`;
       const prompt = `Based on the following support ticket, identify which of the available skills are most relevant to resolving the issue. Suggest a maximum of two skills.
@@ -555,9 +592,14 @@ export class GeminiService {
         }
       });
       
-      const json = JSON.parse(response.text);
+      responseText = response.text;
+      const json = JSON.parse(responseText);
       return (json.skills || []).filter((skill: string) => availableSkills.includes(skill));
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'extractSkillsForTicket');
     }
   }
@@ -602,6 +644,7 @@ export class GeminiService {
       };
     }
     
+    let responseText = '';
     try {
       const conversation = ticket.messages.map(m => `${m.type === 'agent' ? 'Support Agent' : 'Customer'}: ${m.content}`).join('\n');
       const prompt = `Analyze the following support ticket conversation, which has been marked as resolved. Generate a concise knowledge base article that explains the customer's problem and provides the solution.
@@ -636,8 +679,13 @@ export class GeminiService {
         }
       });
       
-      return JSON.parse(response.text);
+      responseText = response.text;
+      return JSON.parse(responseText);
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'generateKbArticle');
     }
   }
@@ -681,6 +729,7 @@ export class GeminiService {
       };
     }
 
+    let responseText = '';
     try {
       const context = articles.map(a => `
         <article>
@@ -721,8 +770,13 @@ export class GeminiService {
         }
       });
 
-      return JSON.parse(response.text);
+      responseText = response.text;
+      return JSON.parse(responseText);
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'answerFromKb');
     }
   }
@@ -734,6 +788,7 @@ export class GeminiService {
       return Math.round((Math.random() * 4 + 1) * 10) / 10;
     }
     
+    let responseText = '';
     try {
       const conversation = ticket.messages.map(m => `${m.from}: ${m.content}`).join('\n\n');
       const prompt = `Analyze the sentiment and content of the following support ticket conversation. Based on the interaction, predict the customer satisfaction score on a scale from 1.0 to 5.0, where 1 is very dissatisfied and 5 is very satisfied.
@@ -759,10 +814,15 @@ export class GeminiService {
         }
       });
       
-      const result = JSON.parse(response.text);
+      responseText = response.text;
+      const result = JSON.parse(responseText);
       const score = Math.max(1, Math.min(5, result.predictedScore || 0));
       return Math.round(score * 10) / 10;
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error('Failed to parse AI response as JSON:', responseText);
+        throw new Error('Received an invalid response from the AI service.');
+      }
       this.handleApiError(error, 'predictCsat');
     }
   }

@@ -1,4 +1,5 @@
 
+
 export interface Ticket {
   id: number;
   subject: string;
@@ -27,7 +28,7 @@ export interface Ticket {
   parentId?: number;
   childTicketIds?: number[];
   linkedTicketIds?: number[];
-  source: 'email' | 'portal' | 'chat' | 'api' | 'slack';
+  source: 'email' | 'portal' | 'chat' | 'api' | 'slack' | 'facebook' | 'twitter' | 'whatsapp';
 }
 
 export interface Message {

@@ -1,4 +1,3 @@
-// Fix: Replaced invalid file content with a complete and valid Angular component.
 import { Component, ChangeDetectionStrategy, input, output, signal, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +16,6 @@ type AiFeature = 'summary' | 'suggestions' | 'tags' | 'sentiment' | 'kb' | 'pred
 export class TicketDetailComponent {
   ticket = input.required<models.Ticket | null>();
   contact = input.required<models.Contact | undefined>();
-  agent = input<models.Agent | undefined>();
   agents = input.required<models.Agent[]>();
   availableTags = input.required<string[]>();
   hasPermission = input.required<(permission: models.Permission) => boolean>();

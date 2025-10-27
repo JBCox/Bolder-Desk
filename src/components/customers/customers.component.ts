@@ -1,18 +1,21 @@
-import { Component, ChangeDetectionStrategy, input, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Organization, Contact, Ticket, Message, InternalNote, Activity } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-customers',
+  standalone: true,
   templateUrl: './customers.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
 })
 export class CustomersComponent {
-  organizations = input.required<Organization[]>();
-  contacts = input.required<Contact[]>();
-  tickets = input.required<Ticket[]>();
+  private app = inject(AppComponent);
+  organizations = this.app.organizations;
+  contacts = this.app.contacts;
+  tickets = this.app.tickets;
 
   searchQuery = signal('');
   selectedOrganization = signal<Organization | null>(null);

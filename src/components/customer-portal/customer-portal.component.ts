@@ -4,19 +4,20 @@ import { Ticket, KnowledgeBaseArticle, Contact, KbFeedback } from '../../models'
 import { IconComponent } from '../icon/icon.component';
 import { FormsModule } from '@angular/forms';
 import { GeminiService } from '../../gemini.service';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-customer-portal',
+  standalone: true,
   templateUrl: './customer-portal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent, FormsModule],
 })
 export class CustomerPortalComponent {
-  tickets = input.required<Ticket[]>();
-  articles = input.required<KnowledgeBaseArticle[]>();
-  currentContact = input.required<Contact | { name: string }>();
-  addReply = output<{ ticketId: number; content: string; fromAgent: boolean; attachments: string[] }>();
-  kbFeedback = output<KbFeedback>();
+  private app = inject(AppComponent);
+  tickets = this.app.customerPortalTickets;
+  articles = this.app.kbArticles;
+  currentContact = this.app.currentCustomer;
 
   private geminiService = inject(GeminiService);
   isApiOnCooldown = this.geminiService.isApiOnCooldown;
@@ -25,7 +26,6 @@ export class CustomerPortalComponent {
   activeTab = signal<'tickets' | 'kb'>('tickets');
   replyText = signal('');
   
-  // Knowledge Base signals
   kbSearchQuery = signal('');
   submittedKbSearchQuery = signal('');
   selectedKbArticle = signal<KnowledgeBaseArticle | null>(null);
@@ -93,7 +93,7 @@ export class CustomerPortalComponent {
   handleReply() {
     const ticket = this.selectedTicket();
     if (ticket && this.replyText().trim()) {
-      this.addReply.emit({
+      this.app.handleAddReply({
         ticketId: ticket.id,
         content: this.replyText(),
         fromAgent: false,
@@ -104,7 +104,7 @@ export class CustomerPortalComponent {
   }
 
   handleKbVote(articleId: number, vote: 'up' | 'down') {
-    this.kbFeedback.emit({ articleId, vote });
+    this.app.handleKbFeedback({ articleId, vote });
     this.feedbackGiven.update(given => ({...given, [articleId]: vote }));
   }
 }

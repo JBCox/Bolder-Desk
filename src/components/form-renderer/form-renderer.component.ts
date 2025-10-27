@@ -2,12 +2,11 @@ import { Component, ChangeDetectionStrategy, input, output, signal, effect } fro
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { FormTemplate, FormField } from '../../models';
-import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-form-renderer',
   templateUrl: './form-renderer.component.html',
-  imports: [CommonModule, ReactiveFormsModule, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule],
 })
 export class FormRendererComponent {
   formTemplate = input.required<FormTemplate>();

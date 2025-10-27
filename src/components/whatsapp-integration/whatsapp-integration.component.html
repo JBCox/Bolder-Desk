@@ -27,7 +27,7 @@
   </div>
 
   <!-- Conversation View -->
-  <div class="flex-1 flex flex-col bg-gray-50 dark:bg-slate-900" style="background-image: url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg'); background-size: cover; background-position: center;">
+  <div class="flex-1 flex flex-col bg-gray-50 dark:bg-slate-900 whatsapp-bg">
     @if(selectedThread(); as thread) {
       <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
           <div class="flex items-center space-x-3">
@@ -40,13 +40,13 @@
             </div>
           </div>
           @if(thread.status === 'unprocessed') {
-              <button (click)="createTicket.emit(thread)" class="bg-emerald-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-emerald-600 transition text-sm">
+              <button (click)="createTicket(thread)" class="bg-emerald-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-emerald-600 transition text-sm">
                   <app-icon name="plus" class="w-4 h-4"></app-icon>
                   <span>Create Ticket</span>
               </button>
           } @else {
                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
-                  <a (click)="viewTicket.emit(thread.linkedTicketId!)" class="hover:underline cursor-pointer">Ticket #{{thread.linkedTicketId}}</a>
+                  <a (click)="viewTicket(thread.linkedTicketId!)" class="hover:underline cursor-pointer">Ticket #{{thread.linkedTicketId}}</a>
               </span>
           }
       </div>

@@ -1,21 +1,23 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ticket, Agent, QARubric, QAReview, QACriterion } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-quality-assurance',
+  standalone: true,
   templateUrl: './quality-assurance.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],
 })
 export class QualityAssuranceComponent {
-  tickets = input.required<Ticket[]>();
-  agents = input.required<Agent[]>();
-  rubrics = input.required<QARubric[]>({ alias: 'qaRubrics' });
-  reviews = input.required<QAReview[]>({ alias: 'qaReviews' });
-  saveReview = output<QAReview>();
+  private app = inject(AppComponent);
+  tickets = this.app.tickets;
+  agents = this.app.agents;
+  rubrics = this.app.qaRubrics;
+  reviews = this.app.qaReviews;
 
   selectedTicket = signal<Ticket | null>(null);
   selectedRubricId = signal<string | null>(null);
@@ -83,7 +85,6 @@ export class QualityAssuranceComponent {
     const agent = this.agents().find(a => a.name === ticket?.assignedTo);
 
     if (!ticket || !rubricId || !agent) {
-        // Should show an error to the user
         console.error("Cannot save review, missing data.", {ticket, rubricId, agent});
         return;
     }
@@ -100,8 +101,8 @@ export class QualityAssuranceComponent {
         totalScore: this.totalScore()
     };
     
-    this.saveReview.emit(newReview);
-    this.selectTicket(null); // Reset form
+    this.app.qaReviews.update(reviews => [...reviews, newReview]);
+    this.selectTicket(null);
   }
   
   getAgentName(agentId: number): string {

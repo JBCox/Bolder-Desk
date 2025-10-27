@@ -1,19 +1,21 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KnowledgeBaseArticle, KnowledgeBaseCategory, KbFeedback } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-knowledge-base',
+  standalone: true,
   templateUrl: './knowledge-base.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],
 })
 export class KnowledgeBaseComponent {
-  articles = input.required<KnowledgeBaseArticle[]>();
-  categories = input.required<KnowledgeBaseCategory[]>();
-  kbFeedback = output<KbFeedback>();
+  private app = inject(AppComponent);
+  articles = this.app.kbArticles;
+  categories = this.app.kbCategories;
 
   selectedCategory = signal<string | 'all'>('all');
   searchQuery = signal('');
@@ -47,7 +49,7 @@ export class KnowledgeBaseComponent {
   }
 
   handleVote(articleId: number, vote: 'up' | 'down') {
-    this.kbFeedback.emit({ articleId, vote });
+    this.app.handleKbFeedback({ articleId, vote });
     this.feedbackGiven.update(given => ({...given, [articleId]: vote }));
   }
 }

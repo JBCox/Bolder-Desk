@@ -1,22 +1,32 @@
-import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FacebookThread } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { AppComponent } from '../../app.component';
 
 @Component({
   selector: 'app-facebook-integration',
+  standalone: true,
   templateUrl: './facebook-integration.component.html',
   imports: [CommonModule, IconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FacebookIntegrationComponent {
-  threads = input.required<FacebookThread[]>();
-  createTicket = output<FacebookThread>();
-  viewTicket = output<number>();
+  private app = inject(AppComponent);
+  threads = this.app.facebookThreads;
 
   selectedThread = signal<FacebookThread | null>(null);
 
   selectThread(thread: FacebookThread) {
     this.selectedThread.set(thread);
+  }
+
+  createTicket(thread: FacebookThread) {
+    this.app.handleSocialToTicket({ source: 'facebook', thread });
+  }
+
+  viewTicket(ticketId: number) {
+    this.app.selectTicket(ticketId);
   }
 
   formatDate(dateString: string): string {

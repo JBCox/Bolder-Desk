@@ -9,7 +9,7 @@
             </h2>
             <div class="space-y-3">
                 @for(ticket of myAssignedTickets(); track ticket.id) {
-                    <div (click)="viewTicket.emit(ticket.id)" class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-md hover:border-indigo-500">
+                    <div (click)="viewTicket(ticket.id)" class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-md hover:border-indigo-500">
                         <div class="flex justify-between items-start">
                             <div>
                                <p class="font-semibold text-indigo-600 dark:text-indigo-400">#{{ticket.id}}</p>
@@ -35,7 +35,7 @@
             </h2>
              <div class="space-y-3">
                 @for(ticket of myMentionedTickets(); track ticket.id) {
-                    <div (click)="viewTicket.emit(ticket.id)" class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-md hover:border-indigo-500">
+                    <div (click)="viewTicket(ticket.id)" class="bg-white dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer hover:shadow-md hover:border-indigo-500">
                          <div class="flex justify-between items-start">
                             <div>
                                <p class="font-semibold text-indigo-600 dark:text-indigo-400">#{{ticket.id}}</p>
