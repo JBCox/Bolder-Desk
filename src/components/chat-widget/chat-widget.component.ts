@@ -6,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-chat-widget',
+  standalone: true,
   templateUrl: './chat-widget.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
 })

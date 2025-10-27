@@ -6,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-automation-modal',
+  standalone: true,
   templateUrl: './automation-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent, FormsModule],

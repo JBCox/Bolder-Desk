@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-csat-modal',
+  standalone: true,
   templateUrl: './csat-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],

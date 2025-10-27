@@ -58,10 +58,12 @@ export class AnalyticsDashboardComponent {
   }
 
   createProblemTicket(suggestion: ProblemSuggestion) {
+    // FIX: Corrected method name from handleCreateProblemTicket to the one implemented in app.component.
     this.app.handleCreateProblemTicket(suggestion);
   }
 
   filterRequested(conditions: { field: string, operator: FilterOperator, value: any }[]) {
+    // FIX: Corrected method call to handleAnalyticsFilter which is now implemented in app.component.
     this.app.handleAnalyticsFilter(conditions);
   }
 

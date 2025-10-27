@@ -5,6 +5,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-audit-log',
+  standalone: true,
   template: `
     <div class="p-4">
       <h3 class="text-lg font-medium text-slate-800 dark:text-slate-100 mb-4">Audit Log</h3>

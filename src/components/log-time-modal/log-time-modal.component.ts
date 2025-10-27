@@ -5,6 +5,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-log-time-modal',
+  standalone: true,
   templateUrl: './log-time-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],

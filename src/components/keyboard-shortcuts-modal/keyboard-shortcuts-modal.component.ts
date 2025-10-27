@@ -4,6 +4,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-keyboard-shortcuts-modal',
+  standalone: true,
   templateUrl: './keyboard-shortcuts-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, IconComponent],

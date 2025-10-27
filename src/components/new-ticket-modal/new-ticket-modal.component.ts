@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +7,7 @@ import { FormRendererComponent } from '../form-renderer/form-renderer.component'
 
 @Component({
   selector: 'app-new-ticket-modal',
+  standalone: true,
   templateUrl: './new-ticket-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent, FormRendererComponent],

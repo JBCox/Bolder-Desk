@@ -9,6 +9,7 @@ type AiFeature = 'summary' | 'suggestions' | 'tags' | 'sentiment' | 'kb' | 'pred
 
 @Component({
   selector: 'app-ticket-detail',
+  standalone: true,
   templateUrl: './ticket-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],

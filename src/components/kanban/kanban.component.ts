@@ -1,7 +1,9 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { KanbanBoard, KanbanList, KanbanCard, KanbanWorkspace, Agent } from '../../models';
+import { CdkDragDrop, moveItemInArray, transferArrayItem, CdkDrag, CdkDropList, CdkDropListGroup } from '@angular/cdk/drag-drop';
+
+import { KanbanBoard, KanbanColumn, KanbanTask, Agent, KanbanLabel, KanbanComment, KanbanActivity } from '../../models';
 import { IconComponent } from '../icon/icon.component';
 import { AppComponent } from '../../app.component';
 import { NewKanbanBoardModalComponent } from '../new-kanban-board-modal/new-kanban-board-modal.component';
@@ -9,157 +11,215 @@ import { NewKanbanBoardModalComponent } from '../new-kanban-board-modal/new-kanb
 @Component({
   selector: 'app-kanban',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, NewKanbanBoardModalComponent],
+  imports: [CommonModule, FormsModule, IconComponent, NewKanbanBoardModalComponent, CdkDropListGroup, CdkDropList, CdkDrag, DatePipe],
   templateUrl: './kanban.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KanbanComponent {
-  private app = inject(AppComponent);
-
+  app = inject(AppComponent);
+  
   workspaces = this.app.kanbanWorkspaces;
   boards = this.app.kanbanBoards;
-  lists = this.app.kanbanLists;
-  cards = this.app.kanbanCards;
   agents = this.app.agents;
+  tasks = this.app.kanbanTasks;
 
-  selectedBoard = signal<KanbanBoard | null>(null);
-  draggedCard = signal<KanbanCard | null>(null);
-  showNewBoardModal = signal(false);
+  selectedWorkspaceId = signal<string | null>(null);
+  selectedBoardId = signal<string | null>(null);
 
-  // UI state for inline forms
-  showAddCardForm = signal<string | null>(null);
-  showAddListForm = signal<boolean>(false);
-  newCardTitle = signal('');
-  newListTitle = signal('');
+  // Modal State
+  showCardDetailModal = signal(false);
+  selectedCardForDetail = signal<KanbanTask | null>(null);
+  editableCard = signal<Partial<KanbanTask> | null>(null);
+  newComment = signal('');
 
-  boardsByWorkspace = computed(() => (workspaceId: string) => {
-    return this.boards().filter(b => b.workspaceId === workspaceId);
+  selectedBoard = computed<KanbanBoard | null>(() => {
+    const boardId = this.selectedBoardId();
+    if (!boardId) return null;
+    return this.boards().find(b => b.id === boardId) || null;
   });
 
-  listsForBoard = computed(() => {
-    const board = this.selectedBoard();
-    if (!board) return [];
-    return this.lists().filter(l => l.boardId === board.id).sort((a, b) => a.order - b.order);
+  columnsForSelectedBoard = computed(() => {
+    return this.selectedBoard()?.columns || [];
   });
   
-  listsWithCards = computed(() => {
-    const lists = this.listsForBoard();
-    const allCards = this.cards();
-    return lists.map(list => ({
-      ...list,
-      cards: allCards
-        .filter(card => card.listId === list.id)
-        .sort((a, b) => a.order - b.order)
-    }));
+  selectedCardColumnName = computed(() => {
+    const card = this.selectedCardForDetail();
+    if (!card) return '';
+    const column = this.columnsForSelectedBoard().find(c => c.taskIds.includes(card.id));
+    return column ? column.title : '';
   });
 
-  selectBoard(board: KanbanBoard | null) {
-    this.selectedBoard.set(board);
+  boardsInSelectedWorkspace = computed(() => {
+    const wsId = this.selectedWorkspaceId();
+    if (!wsId) return [];
+    const workspace = this.workspaces().find(ws => ws.id === wsId);
+    if (!workspace) return [];
+    return this.boards().filter(b => workspace.boardIds.includes(b.id));
+  });
+
+  timeline = computed(() => {
+    const card = this.selectedCardForDetail();
+    if (!card) return [];
+    const items: (KanbanComment | KanbanActivity)[] = [
+      ...(card.comments || []),
+      ...(card.activities || []),
+    ];
+    return items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  });
+
+  ngOnInit() {
+    if (this.workspaces().length > 0) {
+      this.selectedWorkspaceId.set(this.workspaces()[0].id);
+      const firstWs = this.workspaces()[0];
+      if (firstWs.boardIds.length > 0) {
+        this.selectedBoardId.set(firstWs.boardIds[0]);
+      }
+    }
   }
 
-  addList(title: string) {
-    const boardId = this.selectedBoard()?.id;
-    if (!title.trim() || !boardId) return;
+  getTasksForColumn(column: KanbanColumn): KanbanTask[] {
+    const allTasks = this.tasks();
+    if (!allTasks) return [];
+    return column.taskIds.map(taskId => allTasks[taskId]).filter(Boolean).sort((a,b) => a.order - b.order);
+  }
 
-    const newList: KanbanList = {
-      id: `list_${Date.now()}`,
-      title,
-      boardId,
-      order: this.listsForBoard().length,
-      cards: [],
+  getAgent(agentId: number): Agent | undefined {
+    return this.agents().find(a => a.id === agentId);
+  }
+
+  drop(event: CdkDragDrop<KanbanTask[]>, columnId: string) {
+    const task = event.item.data as KanbanTask;
+    const previousColumn = this.columnsForSelectedBoard().find(c => c.id === event.previousContainer.id);
+
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      this.app.updateKanbanColumnTasks(this.selectedBoardId()!, columnId, event.container.data.map(t => t.id));
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+      const sourceColumnId = event.previousContainer.id;
+      const targetColumnId = event.container.id;
+      
+      this.app.moveKanbanTask(
+        this.selectedBoardId()!,
+        sourceColumnId,
+        targetColumnId,
+        event.previousContainer.data.map(t => t.id),
+        event.container.data.map(t => t.id)
+      );
+      
+      const targetColumn = this.columnsForSelectedBoard().find(c => c.id === targetColumnId);
+      if (previousColumn && targetColumn) {
+          const activity: KanbanActivity = {
+              id: `act_${Date.now()}`,
+              agentId: this.app.currentAgent().id,
+              content: `moved this card from "${previousColumn.title}" to "${targetColumn.title}"`,
+              timestamp: new Date().toISOString()
+          };
+          
+          this.app.kanbanTasks.update(tasks => {
+              const currentTask = tasks[task.id];
+              if (currentTask) {
+                  return { ...tasks, [task.id]: { ...currentTask, activities: [...(currentTask.activities || []), activity]}};
+              }
+              return tasks;
+          });
+      }
+    }
+  }
+
+  handleCreateBoard(event: { title: string; workspaceId: string }) {
+    this.app.handleCreateKanbanBoard(event);
+  }
+
+  // Card Detail Methods
+  openCardDetail(task: KanbanTask) {
+    this.selectedCardForDetail.set(task);
+    this.editableCard.set(JSON.parse(JSON.stringify(task)));
+    this.showCardDetailModal.set(true);
+  }
+
+  closeCardDetail() {
+    this.showCardDetailModal.set(false);
+    this.selectedCardForDetail.set(null);
+    this.editableCard.set(null);
+    this.newComment.set('');
+  }
+
+  handleCardUpdate() {
+    const updatedCard = this.editableCard();
+    if (updatedCard && updatedCard.id) {
+      this.app.handleKanbanCardUpdate(updatedCard as KanbanTask);
+      this.closeCardDetail();
+    }
+  }
+  
+  handleAddComment() {
+    const content = this.newComment().trim();
+    const card = this.selectedCardForDetail();
+    if (!content || !card) return;
+
+    const newComment: KanbanComment = {
+      id: `comm_${Date.now()}`,
+      agentId: this.app.currentAgent().id,
+      content,
+      timestamp: new Date().toISOString()
     };
-    this.lists.update(lists => [...lists, newList]);
-  }
 
-  addCard(listId: string, title: string) {
-    const boardId = this.selectedBoard()?.id;
-    if (!title.trim() || !boardId) return;
+    this.app.handleKanbanCardComment({ cardId: card.id, comment: newComment });
     
-    const newCard: KanbanCard = {
-      id: `card_${Date.now()}`,
-      title,
-      listId,
-      boardId,
-      order: this.cards().filter(c => c.listId === listId).length,
-    };
-    this.cards.update(cards => [...cards, newCard]);
+    this.selectedCardForDetail.update(currentCard => {
+      if (!currentCard) return null;
+      return { ...currentCard, comments: [...(currentCard.comments || []), newComment] };
+    });
+    this.editableCard.update(currentCard => {
+        if (!currentCard) return null;
+        return { ...currentCard, comments: [...(currentCard.comments || []), newComment] };
+    });
+
+    this.newComment.set('');
   }
 
-  handleAddList() {
-    if (this.newListTitle().trim()) {
-      this.addList(this.newListTitle());
-      this.newListTitle.set('');
-      this.showAddListForm.set(false);
-    }
+  getLabel(labelId: string): KanbanLabel | undefined {
+    return this.app.kanbanLabels().find(l => l.id === labelId);
   }
 
-  handleAddCard(listId: string) {
-    if (this.newCardTitle().trim()) {
-      this.addCard(listId, this.newCardTitle());
-      this.newCardTitle.set('');
-      // Keep the form open to add another card quickly, if desired
-      // this.showAddCardForm.set(null);
-    }
+  isOverdue(dueDate: string | null): boolean {
+    if (!dueDate) return false;
+    return new Date(dueDate) < new Date();
   }
   
-  handleCreateBoard(data: { title: string; workspaceId: string }) {
-    const newBoard: KanbanBoard = {
-      id: `board_${Date.now()}`,
-      title: data.title,
-      workspaceId: data.workspaceId,
-      lists: []
-    };
-    this.boards.update(boards => [...boards, newBoard]);
-    this.selectBoard(newBoard);
-    this.showNewBoardModal.set(false);
-  }
-
-  // --- Drag and Drop ---
-  handleDragStart(event: DragEvent, card: KanbanCard) {
-    this.draggedCard.set(card);
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', card.id);
-    }
-  }
-
-  handleDragOver(event: DragEvent) {
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
-    }
-  }
-
-  handleDrop(event: DragEvent, targetListId: string) {
-    event.preventDefault();
-    const card = this.draggedCard();
-    if (!card || card.listId === targetListId) {
-      this.draggedCard.set(null);
-      return;
-    }
-
-    this.cards.update(cards => 
-      cards.map(c => c.id === card.id ? { ...c, listId: targetListId } : c)
-    );
-    
-    this.draggedCard.set(null);
+  isAssigned(agentId: number): boolean {
+    return this.editableCard()?.assigneeIds?.includes(agentId) ?? false;
   }
   
-  // --- Helpers ---
-  getAgent(id: number): Agent | undefined {
-      return this.agents().find(a => a.id === id);
+  toggleAssignee(agentId: number) {
+    this.editableCard.update(card => {
+        if (!card) return null;
+        const currentAssignees = card.assigneeIds || [];
+        const newAssignees = currentAssignees.includes(agentId) 
+            ? currentAssignees.filter(id => id !== agentId)
+            : [...currentAssignees, agentId];
+        return { ...card, assigneeIds: newAssignees };
+    });
+  }
+  
+  hasLabel(labelId: string): boolean {
+    return this.editableCard()?.labels?.includes(labelId) ?? false;
   }
 
-  getAgentName(id: number): string {
-    return this.getAgent(id)?.name || 'Unknown';
-  }
-
-  getAgentInitials(id: number): string {
-    const name = this.getAgentName(id);
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  }
-
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  toggleLabel(labelId: string) {
+    this.editableCard.update(card => {
+        if (!card) return null;
+        const currentLabels = card.labels || [];
+        const newLabels = currentLabels.includes(labelId)
+            ? currentLabels.filter(id => id !== labelId)
+            : [...currentLabels, labelId];
+        return { ...card, labels: newLabels };
+    });
   }
 }

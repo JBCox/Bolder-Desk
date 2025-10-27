@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
 @Component({
   selector: 'app-icon',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="inline-block">

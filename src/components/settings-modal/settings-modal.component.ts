@@ -15,6 +15,7 @@ type SettingsTab = 'profile' | 'roles' | 'automations' | 'slas' | 'forms' | 'aut
 
 @Component({
   selector: 'app-settings-modal',
+  standalone: true,
   templateUrl: './settings-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [

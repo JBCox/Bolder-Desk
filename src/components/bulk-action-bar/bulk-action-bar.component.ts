@@ -1,10 +1,12 @@
 
+
 import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Agent } from '../../models';
 
 @Component({
   selector: 'app-bulk-action-bar',
+  standalone: true,
   templateUrl: './bulk-action-bar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],

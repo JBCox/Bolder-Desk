@@ -6,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-sso-settings',
+  standalone: true,
   templateUrl: './sso-settings.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
 })

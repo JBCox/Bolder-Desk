@@ -6,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-merge-ticket-modal',
+  standalone: true,
   templateUrl: './merge-ticket-modal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],

@@ -6,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-roles-permissions',
+  standalone: true,
   templateUrl: './roles-permissions.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,

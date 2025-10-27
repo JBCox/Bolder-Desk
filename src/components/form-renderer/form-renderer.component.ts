@@ -5,6 +5,7 @@ import { FormTemplate, FormField } from '../../models';
 
 @Component({
   selector: 'app-form-renderer',
+  standalone: true,
   templateUrl: './form-renderer.component.html',
   imports: [CommonModule, ReactiveFormsModule],
 })

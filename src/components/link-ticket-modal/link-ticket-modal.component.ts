@@ -6,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-link-ticket-modal',
+  standalone: true,
   templateUrl: './link-ticket-modal.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
 })

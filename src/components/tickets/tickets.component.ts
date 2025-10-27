@@ -20,7 +20,8 @@ import { ChatWidgetComponent } from '../chat-widget/chat-widget.component';
 })
 export class TicketsComponent {
   public app = inject(AppComponent);
-  private route = inject(ActivatedRoute);
+  // FIX: Explicitly type injected ActivatedRoute to fix "Property 'paramMap' does not exist on type 'unknown'" error.
+  private route: ActivatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
 
   // UI State local to the tickets view

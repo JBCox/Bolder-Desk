@@ -6,6 +6,7 @@ import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-form-builder',
+  standalone: true,
   templateUrl: './form-builder.component.html',
   imports: [CommonModule, FormsModule, IconComponent],
 })
