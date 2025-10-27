@@ -1,3 +1,5 @@
+
+
 export interface Ticket {
   id: number;
   subject: string;
@@ -21,9 +23,12 @@ export interface Ticket {
   resolvedAt?: string;
   satisfactionRating?: number;
   satisfactionComment?: string;
+  csatDriver?: string;
+  predictedSatisfaction?: number;
   parentId?: number;
   childTicketIds?: number[];
   linkedTicketIds?: number[];
+  source: 'email' | 'portal' | 'chat' | 'api' | 'slack';
 }
 
 export interface Message {
@@ -53,12 +58,16 @@ export interface Contact {
   email: string;
   organizationId: number;
   phone?: string;
+  title?: string;
 }
 
 export interface Organization {
   id: number;
   name: string;
   industry?: string;
+  isVip?: boolean;
+  slaTier?: 'Premium' | 'Standard';
+  timezone?: string;
 }
 
 export interface Agent {
@@ -90,12 +99,21 @@ export interface SlaRules {
   };
 }
 
+export type AutomationTrigger =
+  | { type: 'tag_added'; value: string }
+  | { type: 'status_changed_to'; value: Ticket['status'] }
+  | { type: 'priority_is'; value: Ticket['priority'] }
+  | { type: 'ticket_created' }
+  | { type: 'time_since_status'; status: Ticket['status']; hours: number }
+  | { type: 'view_entered'; viewId: string }
+  | { type: 'view_left'; viewId: string };
+
 export interface AutomationRule {
   id: number;
   name: string;
   description: string;
   enabled: boolean;
-  trigger: string;
+  trigger: AutomationTrigger;
   action: {
     type: string;
     payload: any;
@@ -135,8 +153,8 @@ export interface FormTemplate {
 
 export interface FormField {
   id: string;
-  name: string;
   label: string;
+  name: string;
   type: 'text' | 'textarea' | 'dropdown' | 'checkbox' | 'radio' | 'date';
   required: boolean;
   options?: string[];
@@ -153,14 +171,25 @@ export interface AnalyticsData {
   avgResolutionTime: number; // in hours
   satisfactionScore: number;
   topPerformingAgent: string;
+  csatDrivers: { [key: string]: number };
+}
+
+export interface Anomaly {
+  topic: string;
+  count: number;
+  severity: 'high' | 'medium';
 }
 
 export interface MockEmail {
   id: string;
   from: string;
+  to?: string;
   subject: string;
   body: string;
   receivedAt: string;
+  isRead?: boolean;
+  status?: 'unprocessed' | 'ticket_created';
+  ticketId?: number;
 }
 
 export interface ChatSession {
@@ -170,7 +199,7 @@ export interface ChatSession {
   initialMessage: string;
   status: 'pending' | 'active' | 'ended';
   agentId?: number;
-  transcript: { sender: 'customer' | 'agent', content: string, timestamp: string }[];
+  transcript: { sender: 'customer' | 'agent', name: string, content: string, timestamp: string }[];
   createdAt: string;
   pageUrl?: string;
   browserInfo?: string;
@@ -183,7 +212,8 @@ export interface SlackMessage {
     text: string;
     timestamp: string;
     isSupportRequest: boolean;
-    linkedTicket?: string; // e.g., "Ticket #12345"
+    status: 'unprocessed' | 'ticket_created' | 'reply_added';
+    linkedTicketId?: number;
 }
 
 export interface SlackSettings {
@@ -202,6 +232,8 @@ export interface WallboardData {
   slaBreachRisks: number;
   agentStatus: { name: string, status: 'online' | 'away' | 'offline', tickets: number }[];
   customerSatisfaction: { score: number, trend: 'up' | 'down' | 'stable' };
+  longestWaitTime: string;
+  agentsOnline: number;
 }
 
 export interface QARubric {
@@ -247,4 +279,210 @@ export interface SsoSettings {
   providerUrl: string;
   clientId: string;
   clientSecret: string;
+}
+
+export interface ProblemSuggestion {
+  suggestedTitle: string;
+  incidentTicketIds: number[];
+}
+
+export interface AuditLogEntry {
+  id: string;
+  user: string; // Agent name
+  action: string;
+  timestamp: string;
+  details?: string;
+  icon: string;
+}
+
+export interface FacebookMessage {
+    sender: 'customer' | 'page';
+    content: string;
+    timestamp: string;
+}
+
+export interface FacebookThread {
+    id: string;
+    customerName: string;
+    customerProfilePic: string;
+    lastMessageSnippet: string;
+    updatedAt: string;
+    status: 'unprocessed' | 'ticket_created';
+    linkedTicketId?: number;
+    messages: FacebookMessage[];
+}
+
+export interface TwitterMessage {
+    sender: 'customer' | 'agent';
+    content: string;
+    timestamp: string;
+}
+
+export interface TwitterThread {
+    id: string;
+    customerName: string;
+    customerHandle: string;
+    customerProfilePic: string;
+    lastMessageSnippet: string;
+    updatedAt: string;
+    status: 'unprocessed' | 'ticket_created';
+    linkedTicketId?: number;
+    messages: TwitterMessage[];
+}
+
+export interface WhatsAppMessage {
+    sender: 'customer' | 'agent';
+    content: string;
+    timestamp: string;
+}
+
+export interface WhatsAppThread {
+    id: string;
+    customerName: string;
+    customerPhone: string;
+    lastMessageSnippet: string;
+    updatedAt: string;
+    status: 'unprocessed' | 'ticket_created';
+    linkedTicketId?: number;
+    messages: WhatsAppMessage[];
+}
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  key: string; // The full secret key
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+export type WebhookEvent = 'ticket.created' | 'ticket.updated' | 'ticket.resolved' | 'contact.created';
+
+export interface WebhookDelivery {
+  id: string;
+  timestamp: string;
+  success: boolean;
+  statusCode: number;
+  requestPayload: string;
+  responsePayload: string;
+}
+
+export interface Webhook {
+  id: string;
+  url: string;
+  events: WebhookEvent[];
+  status: 'active' | 'failing';
+  deliveries: WebhookDelivery[];
+}
+
+export interface SalesforceSettings {
+  connected: boolean;
+  instanceUrl: string;
+  sync: {
+    accounts: boolean;
+    contacts: boolean;
+    cases: boolean;
+  };
+}
+
+export interface JiraSettings {
+  connected: boolean;
+  instanceUrl: string;
+  projectKey: string;
+  issueTypeId: string;
+}
+
+export interface KanbanCard {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+  listId: string;
+  boardId: string;
+  assigneeIds?: number[];
+  labels?: string[];
+  dueDate?: string;
+}
+
+export interface KanbanList {
+  id: string;
+  title: string;
+  order: number;
+  boardId: string;
+  cards: KanbanCard[];
+}
+
+export interface KanbanBoard {
+  id: string;
+  title: string;
+  description?: string;
+  workspaceId: string;
+  lists: KanbanList[];
+}
+
+export interface KanbanWorkspace {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+// Advanced Filtering Models
+export type FilterOperator = 
+  // General
+  | 'is' 
+  | 'is_not' 
+  | 'is_set' 
+  | 'is_not_set'
+  // Text
+  | 'contains' 
+  | 'does_not_contain'
+  | 'starts_with'
+  | 'ends_with'
+  // Number
+  | 'greater_than'
+  | 'less_than'
+  // Date
+  | 'is_on'
+  | 'is_before'
+  | 'is_after'
+  | 'last_x_days'
+  // Dropdown / Multi-select
+  | 'is_one_of';
+
+export interface TicketFilterCondition {
+  id: string;
+  field: string; // 'status', 'priority', or a custom field ID like 'cf_123'
+  operator: FilterOperator;
+  value: any;
+}
+
+export interface TicketFilterGroup {
+  id: string;
+  matchType: 'all' | 'any';
+  conditions: TicketFilterCondition[];
+}
+
+export type TicketFilters = TicketFilterGroup[];
+
+export interface TicketView {
+  id: string;
+  name: string;
+  ownerId: number; // ID of the agent who created it
+  visibility: 'private' | 'shared';
+  sharedWithGroupIds?: number[]; // Only applies if visibility is 'shared'
+  isPinned?: boolean;
+  filters: TicketFilters;
+  displayOptions: {
+    columns: string[]; // e.g., ['id', 'subject', 'contact', 'status', 'priority', 'cf_product_area']
+    sortBy: string; // e.g., 'created'
+    sortDirection: 'asc' | 'desc';
+    groupBy?: string; // e.g., 'status'
+  };
+}
+
+export interface Notification {
+  id: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  ticketId?: number;
 }

@@ -3,44 +3,50 @@
   <div class="flex-shrink-0 p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
     <div class="flex items-center space-x-2">
         <span class="text-gray-500 dark:text-slate-400 text-lg">#</span>
-        <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">{{ settings().channel }}</h2>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">{{ settings().supportChannel }}</h2>
     </div>
-    <button (click)="handleCreateTicket()" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center space-x-2 hover:bg-indigo-700 transition">
-        <app-icon name="plus" class="w-4 h-4"></app-icon>
-        <span>Create Ticket</span>
-    </button>
   </div>
 
   <!-- Message List -->
   <div class="flex-1 overflow-y-auto p-4 space-y-4">
     @for(message of messages(); track message.id) {
         <div class="flex items-start space-x-3">
-            <div class="w-10 h-10 rounded bg-gray-200 dark:bg-slate-700 flex items-center justify-center font-bold text-gray-600 dark:text-slate-300">
-                {{ message.authorIcon }}
+            <div class="w-10 h-10 rounded bg-gray-200 dark:bg-slate-700 flex items-center justify-center font-bold text-gray-600 dark:text-slate-300 flex-shrink-0">
+                {{ message.user.charAt(0) }}
             </div>
             <div class="flex-1">
                 <div class="flex items-baseline space-x-2">
-                    <span class="font-bold text-gray-900 dark:text-slate-100">{{ message.author }}</span>
+                    <span class="font-bold text-gray-900 dark:text-slate-100">{{ message.user }}</span>
                     <span class="text-xs text-gray-500 dark:text-slate-400">{{ formatTimestamp(message.timestamp) }}</span>
                 </div>
-                @if(message.content) {
-                    <p class="text-gray-800 dark:text-slate-300">{{ message.content }}</p>
-                }
-                @if(message.attachment; as attachment) {
-                    <div class="mt-2 border-l-4 rounded" [style.border-color]="attachment.color">
-                        <div class="p-3 bg-gray-50 dark:bg-slate-900/50 rounded-r">
-                            <a (click)="handleViewTicket(attachment.title_link)" class="font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">{{ attachment.title }}</a>
-                            <div class="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
-                                @for(field of attachment.fields; track $index) {
-                                    <div [class]="!field.short ? 'col-span-2' : ''">
-                                        <h4 class="text-xs font-semibold text-gray-600 dark:text-slate-400">{{ field.title }}</h4>
-                                        <p class="text-sm text-gray-800 dark:text-slate-300">{{ field.value }}</p>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                }
+                <p class="text-gray-800 dark:text-slate-300">{{ message.text }}</p>
+                
+                <div class="mt-2 flex items-center space-x-2">
+                  @if (message.isSupportRequest) {
+                    @if(message.status === 'unprocessed') {
+                        <button (click)="slackAction.emit({message, action: 'createTicket'})" class="flex items-center space-x-1.5 text-xs px-2 py-1 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 rounded-md text-indigo-700 dark:text-indigo-300">
+                            <app-icon name="plus" class="w-3 h-3"></app-icon>
+                            <span>Create Ticket</span>
+                        </button>
+                    }
+                    @if(message.status === 'ticket_created' && message.linkedTicketId) {
+                        <span class="flex items-center space-x-2 text-xs text-green-700 dark:text-green-400">
+                           <app-icon name="check-circle" class="w-4 h-4"></app-icon>
+                           <span>Ticket <button (click)="handleViewTicket(message.linkedTicketId)" class="font-semibold hover:underline">#{{message.linkedTicketId}}</button> Created</span>
+                        </span>
+                        <button (click)="slackAction.emit({message, action: 'addReply'})" class="flex items-center space-x-1.5 text-xs px-2 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-md text-slate-600 dark:text-slate-300">
+                            <app-icon name="message-square" class="w-3 h-3"></app-icon>
+                            <span>Add as Reply</span>
+                        </button>
+                    }
+                     @if(message.status === 'reply_added' && message.linkedTicketId) {
+                         <span class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+                           <app-icon name="check-circle" class="w-4 h-4"></app-icon>
+                           <span>Replied to <button (click)="handleViewTicket(message.linkedTicketId)" class="font-semibold hover:underline">#{{message.linkedTicketId}}</button></span>
+                        </span>
+                    }
+                  }
+                </div>
             </div>
         </div>
     }

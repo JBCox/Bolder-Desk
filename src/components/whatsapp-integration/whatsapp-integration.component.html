@@ -1,0 +1,83 @@
+<div class="flex h-full">
+  <!-- Threads List -->
+  <div class="w-1/3 border-r border-gray-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-800">
+    <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center space-x-2">
+      <app-icon name="phone" class="w-6 h-6 text-emerald-500"></app-icon>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-slate-100">WhatsApp</h2>
+    </div>
+    <div class="flex-1 overflow-y-auto">
+      @for(thread of threads(); track thread.id) {
+        <div 
+          (click)="selectThread(thread)"
+          [class]="'p-4 cursor-pointer border-l-4 flex items-start space-x-3 ' + (selectedThread()?.id === thread.id ? 'bg-emerald-50 dark:bg-emerald-900/50 border-emerald-500' : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-700/50')">
+          <div class="w-10 h-10 rounded-full flex-shrink-0 bg-gray-200 dark:bg-slate-700 flex items-center justify-center">
+            <app-icon name="user" class="w-6 h-6 text-gray-500"></app-icon>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <div class="flex justify-between items-center">
+              <span class="font-semibold text-sm text-gray-800 dark:text-slate-200">{{ thread.customerName }}</span>
+              <span class="text-xs text-gray-500 dark:text-slate-400 flex-shrink-0">{{ formatDate(thread.updatedAt) }}</span>
+            </div>
+             <p class="text-xs text-gray-500 dark:text-slate-400">{{ thread.customerPhone }}</p>
+            <p class="text-xs text-gray-500 dark:text-slate-400 truncate mt-1">{{ thread.lastMessageSnippet }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Conversation View -->
+  <div class="flex-1 flex flex-col bg-gray-50 dark:bg-slate-900" style="background-image: url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg'); background-size: cover; background-position: center;">
+    @if(selectedThread(); as thread) {
+      <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
+          <div class="flex items-center space-x-3">
+             <div class="w-8 h-8 rounded-full flex-shrink-0 bg-gray-200 dark:bg-slate-700 flex items-center justify-center">
+                <app-icon name="user" class="w-5 h-5 text-gray-500"></app-icon>
+             </div>
+             <div>
+                <h3 class="font-semibold text-gray-900 dark:text-slate-100">{{ thread.customerName }}</h3>
+                <p class="text-sm text-gray-500 dark:text-slate-400">{{ thread.customerPhone }}</p>
+            </div>
+          </div>
+          @if(thread.status === 'unprocessed') {
+              <button (click)="createTicket.emit(thread)" class="bg-emerald-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-emerald-600 transition text-sm">
+                  <app-icon name="plus" class="w-4 h-4"></app-icon>
+                  <span>Create Ticket</span>
+              </button>
+          } @else {
+               <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                  <a (click)="viewTicket.emit(thread.linkedTicketId!)" class="hover:underline cursor-pointer">Ticket #{{thread.linkedTicketId}}</a>
+              </span>
+          }
+      </div>
+       <div class="flex-1 overflow-y-auto p-4 space-y-2">
+        @for(message of thread.messages; track $index) {
+          <div [class]="'flex ' + (message.sender === 'agent' ? 'justify-end' : 'justify-start')">
+            <div [class]="'max-w-md p-2 px-3 rounded-lg shadow ' + (message.sender === 'agent' ? 'bg-emerald-100 dark:bg-emerald-800' : 'bg-white dark:bg-slate-700')">
+              <p class="text-sm text-gray-800 dark:text-slate-200">{{ message.content }}</p>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="p-4 bg-gray-100 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
+          <div class="flex items-center space-x-2">
+            <input 
+              type="text" 
+              placeholder="Message..." 
+              class="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 dark:text-slate-200"
+            >
+            <button class="bg-emerald-500 text-white p-2 rounded-full hover:bg-emerald-600">
+                <app-icon name="send" class="w-5 h-5"></app-icon>
+            </button>
+          </div>
+        </div>
+    } @else {
+      <div class="h-full flex items-center justify-center text-gray-700 dark:text-slate-200 bg-black/10 dark:bg-black/30">
+        <div class="text-center bg-white/80 dark:bg-slate-800/80 p-6 rounded-lg">
+            <app-icon name="phone" class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-slate-500"></app-icon>
+            <p>Select a WhatsApp chat to view</p>
+        </div>
+      </div>
+    }
+  </div>
+</div>

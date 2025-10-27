@@ -6,232 +6,11 @@ import * as models from '../../models';
 import { IconComponent } from '../icon/icon.component';
 import { GeminiService } from '../../gemini.service';
 
-type AiFeature = 'summary' | 'suggestions' | 'tags' | 'sentiment' | 'kb';
+type AiFeature = 'summary' | 'suggestions' | 'tags' | 'sentiment' | 'kb' | 'predictedCsat';
 
 @Component({
   selector: 'app-ticket-detail',
-  template: `
-@if (ticket(); as currentTicket) {
-  <div class="flex flex-col h-full bg-white dark:bg-slate-900">
-    <!-- Header -->
-    <div class="flex-shrink-0 p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-      <div>
-        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 truncate" title="{{ currentTicket.subject }}">
-          {{ currentTicket.subject }}
-        </h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400">
-          #{{ currentTicket.id }} opened on {{ formatDate(currentTicket.created) }}
-        </p>
-      </div>
-      <div class="flex items-center space-x-2">
-        @if (hasPermission('ticket:merge')) {
-            <button (click)="openMergeModal.emit(currentTicket)" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Merge Ticket">
-              <app-icon name="merge" class="w-5 h-5 text-slate-600 dark:text-slate-300"></app-icon>
-            </button>
-        }
-        <button (click)="openLogTimeModal.emit(currentTicket)" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800" title="Log Time">
-          <app-icon name="clock" class="w-5 h-5 text-slate-600 dark:text-slate-300"></app-icon>
-        </button>
-         <button (click)="handleCreateKbArticle()" class="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 relative" title="Generate KB Article">
-            <app-icon name="library" class="w-5 h-5 text-slate-600 dark:text-slate-300"></app-icon>
-            @if (isGeneratingKb()) {
-              <div class="absolute inset-0 bg-white/50 dark:bg-slate-900/50 flex items-center justify-center">
-                  <app-icon name="loader" class="w-4 h-4"></app-icon>
-              </div>
-            }
-        </button>
-      </div>
-    </div>
-
-    <!-- Body -->
-    <div class="flex-grow flex overflow-hidden">
-      <!-- Left: Conversation -->
-      <div class="flex flex-col w-2/3 border-r border-slate-200 dark:border-slate-700">
-        <!-- Message History -->
-        <div class="flex-grow overflow-y-auto p-4 space-y-6">
-          @for (item of timelineItems(); track item.timestamp) {
-            @if (isMessage(item)) {
-              <div class="flex items-start gap-3" [class.flex-row-reverse]="item.type === 'agent'">
-                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" [class]="item.type === 'agent' ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'">
-                  <app-icon [name]="item.type === 'agent' ? 'user' : 'user'" class="w-5 h-5"></app-icon>
-                </div>
-                <div class="p-3 rounded-lg max-w-lg" [class]="item.type === 'agent' ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'bg-slate-100 dark:bg-slate-800'">
-                  <div class="flex items-center justify-between mb-1">
-                    <p class="font-semibold text-sm text-slate-800 dark:text-slate-200">{{ item.from }}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDate(item.timestamp) }}</p>
-                  </div>
-                  <p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ item.content }}</p>
-                  <div class="mt-2">
-                    <button (click)="openSplitModal.emit(item)" class="text-xs text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
-                      Split into new ticket
-                    </button>
-                  </div>
-                </div>
-              </div>
-            } @else if (isNote(item)) {
-                <div class="my-4">
-                    <div class="flex items-center gap-3">
-                        <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
-                        <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                            <app-icon name="lock" class="w-4 h-4"></app-icon>
-                            <span class="text-xs font-medium">Internal Note by {{ item.agentName }} on {{ formatDate(item.timestamp) }}</span>
-                        </div>
-                        <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
-                    </div>
-                    <div class="mt-2 bg-yellow-50 dark:bg-yellow-400/10 p-3 rounded-lg border border-yellow-200 dark:border-yellow-400/20">
-                        <p class="text-sm text-yellow-800 dark:text-yellow-200 whitespace-pre-wrap">{{ item.content }}</p>
-                    </div>
-                </div>
-            } @else if (isActivity(item)) {
-              <div class="my-4">
-                <div class="flex items-center gap-3">
-                  <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
-                  <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                    @if(item.type === 'ai_assignment') {
-                      <app-icon name="brain-circuit" class="w-4 h-4 text-indigo-500"></app-icon>
-                      <span class="text-xs font-medium">AI Action by {{ item.user }} on {{ formatDate(item.timestamp) }}</span>
-                    } @else {
-                      <app-icon name="history" class="w-4 h-4"></app-icon>
-                      <span class="text-xs font-medium">Activity on {{ formatDate(item.timestamp) }}</span>
-                    }
-                  </div>
-                  <div class="h-px bg-slate-200 dark:bg-slate-700 flex-grow"></div>
-                </div>
-                <div class="mt-2 text-center">
-                  <p class="text-sm text-slate-600 dark:text-slate-400">{{ item.details }}</p>
-                </div>
-              </div>
-            }
-          }
-        </div>
-        
-        <!-- Reply Box -->
-        <div class="flex-shrink-0 p-4 border-t border-slate-200 dark:border-slate-700">
-            <div class="flex items-center border-b border-slate-200 dark:border-slate-700 mb-2">
-                <button (click)="activeTab.set('reply')" class="px-4 py-2 text-sm" [class]="activeTab() === 'reply' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">Reply</button>
-                <button (click)="activeTab.set('note')" class="px-4 py-2 text-sm" [class]="activeTab() === 'note' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-500 dark:text-slate-400'">Internal Note</button>
-            </div>
-            @if (activeTab() === 'reply') {
-                <div>
-                    <textarea [(ngModel)]="replyContent" rows="4" class="w-full p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Type your reply..."></textarea>
-                    <div class="flex justify-between items-center mt-2">
-                        <div>
-                            <!-- AI suggestions for reply -->
-                             @if (isLoading().has('suggestions')) {
-                                <app-icon name="loader" class="w-5 h-5 text-slate-500"></app-icon>
-                             } @else {
-                                 @for (s of suggestions(); track s) {
-                                    <button (click)="replyContent.set(s)" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-2 py-1 rounded-full mr-1 mb-1">{{ s }}</button>
-                                 }
-                             }
-                        </div>
-                        <button (click)="handleReply()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300" [disabled]="!replyContent().trim()">Send</button>
-                    </div>
-                </div>
-            } @else {
-                 <div>
-                    <textarea [(ngModel)]="noteContent" rows="4" class="w-full p-2 border rounded-md bg-yellow-50 dark:bg-yellow-500/10 border-yellow-300 dark:border-yellow-600/50 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" placeholder="Type an internal note..."></textarea>
-                     <div class="flex justify-end mt-2">
-                        <button (click)="handleNote()" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:bg-yellow-300" [disabled]="!noteContent().trim()">Add Note</button>
-                     </div>
-                 </div>
-            }
-        </div>
-      </div>
-
-      <!-- Right: Details -->
-      <div class="w-1/3 overflow-y-auto p-4 space-y-6">
-        <!-- Properties -->
-        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
-          <h3 class="font-semibold mb-4 text-slate-800 dark:text-slate-200">Properties</h3>
-          <div class="space-y-3 text-sm">
-            <div><label class="font-medium text-slate-500 dark:text-slate-400">Status</label><select (change)="handleStatusChange($event)" [value]="currentTicket.status" class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"><option>open</option><option>pending</option><option>resolved</option><option>closed</option></select></div>
-            <div><label class="font-medium text-slate-500 dark:text-slate-400">Priority</label><select (change)="handlePriorityChange($event)" [value]="currentTicket.priority" class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"><option>low</option><option>medium</option><option>high</option><option>urgent</option></select></div>
-            <div><label class="font-medium text-slate-500 dark:text-slate-400">Assignee</label><select (change)="handleAssigneeChange($event)" [value]="currentTicket.assignedTo || ''" class="w-full mt-1 p-2 border rounded-md bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"><option value="">Unassigned</option>@for(a of agents(); track a.id) { <option [value]="a.name">{{ a.name }}</option> }</select></div>
-            <div><label class="font-medium text-slate-500 dark:text-slate-400">Time Tracked</label><p class="text-slate-800 dark:text-slate-100">{{ formatSeconds(currentTicket.timeTrackedSeconds) }}</p></div>
-          </div>
-        </div>
-
-        <!-- Tags -->
-        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
-            <h3 class="font-semibold mb-2 text-slate-800 dark:text-slate-200">Tags</h3>
-            <div class="flex flex-wrap gap-2">
-                @for (tag of currentTicket.tags; track tag) {
-                    <span class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium px-2.5 py-1 rounded-full flex items-center">
-                        {{tag}}
-                        <button (click)="removeTag(tag)" class="ml-1.5 -mr-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
-                            <app-icon name="x" class="w-3 h-3"></app-icon>
-                        </button>
-                    </span>
-                }
-            </div>
-            <div class="mt-3">
-                <h4 class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Suggested Tags</h4>
-                @if(isLoading().has('tags')) {
-                    <app-icon name="loader" class="w-4 h-4"></app-icon>
-                } @else {
-                    @for (tag of suggestedTags(); track tag) {
-                        @if (!currentTicket.tags.includes(tag)) {
-                            <button (click)="addTag(tag)" class="text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 px-2 py-1 rounded-full mr-1 mb-1 hover:bg-blue-200 dark:hover:bg-blue-500/30">
-                                + {{tag}}
-                            </button>
-                        }
-                    }
-                }
-            </div>
-        </div>
-
-        <!-- AI Insights -->
-        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
-          <h3 class="font-semibold mb-2 text-slate-800 dark:text-slate-200 flex items-center"><app-icon name="sparkles" class="w-5 h-5 mr-2 text-indigo-500"></app-icon>AI Insights</h3>
-          <div class="space-y-3 text-sm">
-            <div>
-              <h4 class="font-medium text-slate-500 dark:text-slate-400 mb-1">Summary</h4>
-              @if (isLoading().has('summary')) {
-                <div class="space-y-2 animate-pulse"><div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full"></div><div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-5/6"></div></div>
-              } @else {
-                <p class="text-slate-700 dark:text-slate-300">{{ summary() }}</p>
-              }
-            </div>
-            <div>
-                <h4 class="font-medium text-slate-500 dark:text-slate-400 mb-1">Sentiment</h4>
-                @if (isLoading().has('sentiment')) {
-                   <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 animate-pulse"></div>
-                } @else {
-                    <div class="flex items-center gap-2">
-                        @switch(sentiment()) {
-                            @case('positive') { <app-icon name="smile" class="w-5 h-5 text-green-500"></app-icon> }
-                            @case('negative') { <app-icon name="frown" class="w-5 h-5 text-red-500"></app-icon> }
-                            @default { <app-icon name="meh" class="w-5 h-5 text-yellow-500"></app-icon> }
-                        }
-                        <span class="capitalize text-slate-700 dark:text-slate-300">{{ sentiment() }}</span>
-                    </div>
-                }
-            </div>
-          </div>
-        </div>
-        
-        <!-- Contact -->
-        @if (contact(); as currentContact) {
-            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
-              <h3 class="font-semibold mb-2 text-slate-800 dark:text-slate-200">Contact</h3>
-              <p class="font-bold text-slate-700 dark:text-slate-200">{{ currentContact.name }}</p>
-              <p class="text-sm text-slate-500 dark:text-slate-400">{{ currentContact.email }}</p>
-            </div>
-        }
-      </div>
-    </div>
-  </div>
-} @else {
-  <div class="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-800/50 text-slate-500">
-    <div class="text-center">
-      <app-icon name="mail" class="w-16 h-16 mx-auto mb-4"></app-icon>
-      <h3 class="text-lg font-semibold">Select a ticket</h3>
-      <p>Choose a ticket from the list to see the details.</p>
-    </div>
-  </div>
-}
-  `,
+  templateUrl: './ticket-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, IconComponent],
 })
@@ -251,6 +30,7 @@ export class TicketDetailComponent {
   openLogTimeModal = output<models.Ticket>();
   openLinkTicketModal = output<models.Ticket>();
   createKbArticle = output<models.Ticket>();
+  viewTicket = output<number>();
 
   private geminiService = inject(GeminiService);
 
@@ -263,59 +43,86 @@ export class TicketDetailComponent {
   suggestions = signal<string[]>([]);
   suggestedTags = signal<string[]>([]);
   sentiment = signal<models.Ticket['sentiment']>('neutral');
+  predictedCsat = signal<number | null>(null);
   isLoading = signal<Set<AiFeature>>(new Set());
+  isRewritingTone = signal(false);
   
   isGeneratingKb = signal(false);
+  
+  private lastRunTicketId = signal<number | null>(null);
+  private lastRunMessageCount = signal<number>(0);
 
   constructor() {
     effect(() => {
       const currentTicket = this.ticket();
       if (currentTicket) {
-        this.runAllAiFeatures(currentTicket);
+        const isNewTicket = currentTicket.id !== this.lastRunTicketId();
+        // Trigger on new ticket or if a new message has been added
+        const hasNewMessage = currentTicket.messages.length > this.lastRunMessageCount();
+
+        if (isNewTicket || hasNewMessage) {
+            this.runTicketInsights(currentTicket);
+            this.lastRunTicketId.set(currentTicket.id);
+            this.lastRunMessageCount.set(currentTicket.messages.length);
+        }
+      } else {
+        // Reset when no ticket is selected
+        this.lastRunTicketId.set(null);
+        this.lastRunMessageCount.set(0);
       }
     }, { allowSignalWrites: true });
   }
 
-  runAllAiFeatures(ticket: models.Ticket) {
+  async handleRewriteTone(tone: 'Formal' | 'Friendly') {
+    const currentContent = this.replyContent();
+    if (!currentContent.trim()) {
+      return;
+    }
+    
+    this.isRewritingTone.set(true);
+    try {
+      const rewrittenText = await this.geminiService.changeTone(currentContent, tone);
+      this.replyContent.set(rewrittenText);
+    } catch (error) {
+      console.error('Failed to rewrite tone:', error);
+    } finally {
+      this.isRewritingTone.set(false);
+    }
+  }
+
+  async runTicketInsights(ticket: models.Ticket) {
+    if (!this.contact()) return;
+
+    this.isLoading.set(new Set(['summary', 'suggestions', 'tags', 'sentiment', 'predictedCsat']));
     this.summary.set('');
     this.suggestions.set([]);
     this.suggestedTags.set([]);
     this.sentiment.set('neutral');
-    this.generateSummary(ticket);
-    this.generateSuggestions(ticket);
-    this.generateTags(ticket);
-    this.analyzeSentiment(ticket);
-  }
+    this.predictedCsat.set(null);
 
-  async generateSummary(ticket: models.Ticket) {
-    if (!this.contact()) return;
-    this.isLoading.update(s => s.add('summary'));
-    const summary = await this.geminiService.summarizeTicket(ticket, this.contact()!.name);
-    this.summary.set(summary);
-    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('summary'); return newSet; });
-  }
-
-  async generateSuggestions(ticket: models.Ticket) {
-    if (!this.contact()) return;
-    this.isLoading.update(s => s.add('suggestions'));
-    const suggestions = await this.geminiService.generateReplySuggestions(ticket, this.contact()!.name);
-    this.suggestions.set(suggestions);
-    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('suggestions'); return newSet; });
+    try {
+        const insights = await this.geminiService.getAiTicketInsights(ticket, this.contact()!.name, this.availableTags());
+        this.summary.set(insights.summary);
+        this.suggestions.set(insights.suggestions);
+        this.suggestedTags.set(insights.tags);
+        this.sentiment.set(insights.sentiment);
+        this.updateTicket.emit({ sentiment: insights.sentiment });
+        this.predictedCsat.set(insights.predictedCsat);
+        this.updateTicket.emit({ predictedSatisfaction: insights.predictedCsat });
+    } catch (e) {
+        console.error('Failed to get AI ticket insights', e);
+        const errorMessage = e instanceof Error ? e.message : 'Could not load AI insights.';
+        this.summary.set(errorMessage);
+    } finally {
+        this.isLoading.set(new Set());
+    }
   }
   
-  async generateTags(ticket: models.Ticket) {
-    this.isLoading.update(s => s.add('tags'));
-    const tags = await this.geminiService.suggestTags(ticket, this.availableTags());
-    this.suggestedTags.set(tags);
-    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('tags'); return newSet; });
-  }
-
-  async analyzeSentiment(ticket: models.Ticket) {
-    this.isLoading.update(s => s.add('sentiment'));
-    const sentiment = await this.geminiService.analyzeSentiment(ticket);
-    this.sentiment.set(sentiment);
-    this.updateTicket.emit({ sentiment });
-    this.isLoading.update(s => { const newSet = new Set(s); newSet.delete('sentiment'); return newSet; });
+  forceRefreshInsights() {
+    const currentTicket = this.ticket();
+    if (currentTicket) {
+      this.runTicketInsights(currentTicket);
+    }
   }
   
   async handleCreateKbArticle() {

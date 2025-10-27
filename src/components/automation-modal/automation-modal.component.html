@@ -30,17 +30,19 @@
                     @case ('priority_is') { Priority is "{{ rule.trigger.value }}" }
                     @case ('ticket_created') { A new ticket is created }
                     @case ('time_since_status') { Status is "{{ rule.trigger.status }}" for {{ rule.trigger.hours }} hours }
+                    @case ('view_entered') { Ticket enters view: "{{ getViewName(rule.trigger.viewId) }}" }
+                    @case ('view_left') { Ticket leaves view: "{{ getViewName(rule.trigger.viewId) }}" }
                   }
                 </p>
                 <p>
                   <span class="font-medium">Then:</span>
                   @switch (rule.action.type) {
-                    @case ('assign_agent') { Assign to agent: {{ rule.action.value }} }
-                    @case ('change_status') { Change status to: "{{ rule.action.value }}" }
-                    @case ('add_tag') { Add tag: "{{ rule.action.value }}" }
-                    @case ('assign_group_round_robin') { Assign to group "{{ getGroupName(rule.action.groupId) }}" (Round-Robin) }
-                    @case ('assign_group_load_based') { Assign to group "{{ getGroupName(rule.action.groupId) }}" (Load-Based) }
-                    @case ('change_priority') { Change priority to: "{{ rule.action.value }}" }
+                    @case ('assign_agent') { Assign to agent: {{ rule.action.payload }} }
+                    @case ('change_status') { Change status to: "{{ rule.action.payload }}" }
+                    @case ('add_tag') { Add tag: "{{ rule.action.payload }}" }
+                    @case ('assign_group_round_robin') { Assign to group "{{ getGroupName(rule.action.payload) }}" (Round-Robin) }
+                    @case ('assign_group_load_based') { Assign to group "{{ getGroupName(rule.action.payload) }}" (Load-Based) }
+                    @case ('change_priority') { Change priority to: "{{ rule.action.payload }}" }
                   }
                 </p>
               </div>

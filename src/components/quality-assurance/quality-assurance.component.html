@@ -73,7 +73,7 @@
             @for (criterion of rubric.criteria; track criterion.id) {
               <div>
                 <label [for]="'crit-' + criterion.id" class="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <span>{{criterion.text}}</span>
+                  <span>{{criterion.name}}</span>
                   <span>{{ currentReviewScores()[criterion.id] || 0 }} / {{criterion.maxScore}}</span>
                 </label>
                 <input type="range" [id]="'crit-' + criterion.id" [value]="currentReviewScores()[criterion.id] || 0" (input)="handleScoreInput(criterion.id, $event)" min="0" [max]="criterion.maxScore" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer mt-1">

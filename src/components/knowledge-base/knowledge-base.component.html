@@ -44,7 +44,7 @@
           <h3 class="font-semibold text-gray-900 dark:text-slate-100 mb-1">{{ article.title }}</h3>
           <p class="text-sm text-gray-600 dark:text-slate-400 line-clamp-2">{{ article.content }}</p>
           <div class="text-xs text-gray-400 dark:text-slate-500 mt-2">
-            Updated on {{ formatDate(article.lastUpdatedAt) }}
+            Updated on {{ formatDate(article.updatedAt) }}
           </div>
         </div>
       }
@@ -58,7 +58,7 @@
         <span class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase">{{ getCategoryName(article.category) }}</span>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100 my-2">{{ article.title }}</h1>
         <div class="text-sm text-gray-500 dark:text-slate-400 mb-6">
-          Last updated: {{ formatDate(article.lastUpdatedAt) }}
+          Last updated: {{ formatDate(article.updatedAt) }}
         </div>
         <div class="prose max-w-none text-gray-800 dark:text-slate-300">
             {{ article.content }}

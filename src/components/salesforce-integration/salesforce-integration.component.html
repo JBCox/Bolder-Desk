@@ -1,0 +1,60 @@
+<div class="p-8 h-full bg-gray-50 dark:bg-slate-900">
+  <div class="max-w-4xl mx-auto">
+    <div class="flex items-center space-x-4 mb-6">
+      <app-icon name="salesforce" class="w-12 h-12 text-blue-500"></app-icon>
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100">Salesforce Integration</h1>
+        <p class="text-gray-500 dark:text-slate-400">Sync accounts, contacts, and cases between BoldDesk and Salesforce.</p>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+      <div class="flex justify-between items-center pb-4 border-b border-gray-200 dark:border-slate-700">
+        <div>
+          <h2 class="text-lg font-semibold">Connection Status</h2>
+          <p class="text-sm text-gray-500 dark:text-slate-400">
+            @if (editableSettings().connected) {
+              Connected to {{ editableSettings().instanceUrl }}
+            } @else {
+              Not connected
+            }
+          </p>
+        </div>
+        @if (editableSettings().connected) {
+          <button (click)="toggleConnection()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Disconnect</button>
+        } @else {
+          <button (click)="toggleConnection()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Connect</button>
+        }
+      </div>
+
+      @if (editableSettings().connected) {
+        <div class="mt-6">
+          <h3 class="text-md font-semibold mb-4">Sync Settings</h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-md">
+              <label for="sync-accounts" class="font-medium text-gray-800 dark:text-slate-200">Sync Accounts</label>
+              <input type="checkbox" id="sync-accounts" [(ngModel)]="editableSettings().sync.accounts" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-md">
+              <label for="sync-contacts" class="font-medium text-gray-800 dark:text-slate-200">Sync Contacts</label>
+              <input type="checkbox" id="sync-contacts" [(ngModel)]="editableSettings().sync.contacts" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+             <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-md">
+              <label for="sync-cases" class="font-medium text-gray-800 dark:text-slate-200">Sync Cases</label>
+              <input type="checkbox" id="sync-cases" [(ngModel)]="editableSettings().sync.cases" class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+          </div>
+        </div>
+      } @else {
+         <div class="mt-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Salesforce Instance URL</label>
+            <input type="text" [(ngModel)]="editableSettings().instanceUrl" placeholder="https://your-domain.my.salesforce.com" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200">
+        </div>
+      }
+
+      <div class="mt-8 flex justify-end">
+        <button (click)="handleSave()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>

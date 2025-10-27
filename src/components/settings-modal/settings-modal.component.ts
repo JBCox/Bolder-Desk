@@ -8,8 +8,10 @@ import { AutomationModalComponent } from '../automation-modal/automation-modal.c
 import { FormBuilderComponent } from '../form-builder/form-builder.component';
 import { RolesPermissionsComponent } from '../roles-permissions/roles-permissions.component';
 import { SsoSettingsComponent } from '../sso-settings/sso-settings.component';
+import { AuditLogComponent } from '../audit-log/audit-log.component';
+import { DeveloperSettingsComponent } from '../developer-settings/developer-settings.component';
 
-type SettingsTab = 'profile' | 'roles' | 'automations' | 'slas' | 'forms' | 'authentication';
+type SettingsTab = 'profile' | 'roles' | 'automations' | 'slas' | 'forms' | 'authentication' | 'audit' | 'developer';
 
 @Component({
   selector: 'app-settings-modal',
@@ -23,13 +25,18 @@ type SettingsTab = 'profile' | 'roles' | 'automations' | 'slas' | 'forms' | 'aut
     AutomationModalComponent, 
     FormBuilderComponent,
     RolesPermissionsComponent,
-    SsoSettingsComponent
+    SsoSettingsComponent,
+    AuditLogComponent,
+    DeveloperSettingsComponent,
   ],
 })
 export class SettingsModalComponent {
   close = output<void>();
   saveRoles = output<models.Role[]>();
   saveSsoSettings = output<models.SsoSettings>();
+  createApiKey = output<models.ApiKey>();
+  revokeApiKey = output<string>();
+  saveWebhooks = output<models.Webhook[]>();
 
   roles = input.required<models.Role[]>();
   allPermissions = input.required<models.Permission[]>();
@@ -39,6 +46,10 @@ export class SettingsModalComponent {
   formTemplates = input.required<models.FormTemplate[]>();
   currentAgent = input.required<models.Agent>();
   ssoSettings = input.required<models.SsoSettings>();
+  auditLog = input.required<models.AuditLogEntry[]>();
+  apiKeys = input.required<models.ApiKey[]>();
+  webhooks = input.required<models.Webhook[]>();
+  ticketViews = input.required<models.TicketView[]>();
   
   activeTab = signal<SettingsTab>('profile');
 

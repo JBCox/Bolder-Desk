@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AutomationRule, Group } from '../../models';
+import { AutomationRule, Group, TicketView } from '../../models';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
@@ -13,6 +13,7 @@ import { IconComponent } from '../icon/icon.component';
 export class AutomationModalComponent {
   initialRules = input.required<AutomationRule[]>({ alias: 'automationRules'});
   groups = input.required<Group[]>();
+  ticketViews = input.required<TicketView[]>();
   close = output<void>();
   update = output<AutomationRule[]>();
 
@@ -26,6 +27,10 @@ export class AutomationModalComponent {
 
   getGroupName(groupId: number): string {
     return this.groups().find(g => g.id === groupId)?.name || 'Unknown Group';
+  }
+  
+  getViewName(viewId: string): string {
+    return this.ticketViews().find(v => v.id === viewId)?.name || 'Unknown View';
   }
 
   toggleRule(ruleId: number) {

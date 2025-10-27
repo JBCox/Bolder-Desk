@@ -119,6 +119,9 @@ export class DevPlanComponent {
             { name: 'Bulk Ticket Actions', description: 'Perform actions on multiple tickets at once.', status: 'Done' },
             { name: 'Knowledge Base (Authoring & Voting)', description: 'Create and manage support articles for agents and customers.', status: 'Done' },
             { name: 'Keyboard Shortcuts', description: 'Boost agent speed with keyboard navigation and actions.', status: 'Done' },
+            { name: 'Advanced Filtering (AND/OR Logic)', description: 'Build complex queries with nested condition groups using AND/OR logic to precisely target tickets.', status: 'Not Started' },
+            { name: 'Saved Views (Private & Shared)', description: 'Save complex filter combinations as views for quick access. Create private views or share them with teams.', status: 'Not Started' },
+            { name: 'Customizable Views (Columns, Sort, Group)', description: 'Customize saved views by choosing columns to display, setting default sorting, and grouping tickets.', status: 'Not Started' },
           ]
         },
         {
@@ -133,9 +136,10 @@ export class DevPlanComponent {
                 { name: 'Quality Assurance (QA) Module', description: 'Review and score agent interactions against custom rubrics.', status: 'Done' },
                 { name: 'Single Sign-On (SSO/SAML)', description: 'Allow users to log in with their corporate identity provider.', status: 'Done' },
                 { name: 'Wallboard / Live Dashboard', description: 'A real-time, high-level view of help desk activity.', status: 'Done' },
-                { name: 'Multi-language Support', description: 'Localize the help desk for global teams and customers.', status: 'Not Started' },
-                { name: 'Audit Logs', description: 'Track all changes made within the system for security and compliance.', status: 'Not Started' },
-                { name: 'Marketplace for 3rd Party Apps', description: 'Allow developers to build and share integrations.', status: 'Not Started' },
+                { name: 'Multi-language Support', description: 'Localize the help desk for global teams and customers.', status: 'Done' },
+                { name: 'Audit Logs', description: 'Track all changes made within the system for security and compliance.', status: 'Done' },
+                { name: 'Custom Fields', description: 'Define custom data fields (text, number, dropdowns) to capture business-specific information on tickets.', status: 'Not Started' },
+                { name: 'Automated Tagging Rules', description: 'Create rules to automatically add tags based on ticket properties like subject, content, or source.', status: 'Not Started' },
             ]
         }
       ]
@@ -159,10 +163,10 @@ export class DevPlanComponent {
           description: 'Expanding our reach to popular social media and messaging platforms.',
           features: [
             { name: 'Slack Integration (Message Streaming)', description: 'Pipe Slack messages from a support channel into the app.', status: 'Done' },
-            { name: 'Slack Actions (Create/Update Ticket)', description: 'Allow agents to manage tickets directly from Slack.', status: 'Not Started' },
-            { name: 'Facebook Messenger Integration', description: 'Manage customer conversations from Facebook Messenger.', status: 'Not Started' },
-            { name: 'Twitter DM Integration', description: 'Respond to support requests from Twitter Direct Messages.', status: 'Not Started' },
-            { name: 'WhatsApp Integration', description: 'Engage with customers on the world\'s most popular messaging app.', status: 'Not Started' },
+            { name: 'Slack Actions (Create/Update Ticket)', description: 'Allow agents to manage tickets directly from Slack.', status: 'Done' },
+            { name: 'Facebook Messenger Integration', description: 'Manage customer conversations from Facebook Messenger.', status: 'Done' },
+            { name: 'Twitter DM Integration', description: 'Respond to support requests from Twitter Direct Messages.', status: 'Done' },
+            { name: 'WhatsApp Integration', description: 'Engage with customers on the world\'s most popular messaging app.', status: 'Done' },
           ]
         },
         {
@@ -170,10 +174,10 @@ export class DevPlanComponent {
           icon: 'server',
           description: 'Opening up the platform for custom development and deep integrations.',
           features: [
-            { name: 'Public REST API', description: 'Enable programmatic access to help desk data and actions.', status: 'Not Started' },
-            { name: 'Webhook Support (Outgoing)', description: 'Send real-time notifications to external systems.', status: 'Not Started' },
-            { name: 'Salesforce Integration', description: 'Sync customer and ticket data with Salesforce CRM.', status: 'Not Started' },
-            { name: 'Jira Integration', description: 'Create and link Jira issues directly from help desk tickets.', status: 'Not Started' },
+            { name: 'Public REST API', description: 'Enable programmatic access to help desk data and actions.', status: 'Done' },
+            { name: 'Webhook Support (Outgoing)', description: 'Send real-time notifications to external systems.', status: 'Done' },
+            { name: 'Salesforce Integration', description: 'Sync customer and ticket data with Salesforce CRM.', status: 'Done' },
+            { name: 'Jira Integration', description: 'Create and link Jira issues directly from help desk tickets.', status: 'Done' },
           ]
         },
       ],
@@ -200,9 +204,9 @@ export class DevPlanComponent {
           features: [
             { name: 'Automated Knowledge Base Creation', description: 'Generate KB article drafts from resolved tickets.', status: 'Done' },
             { name: 'Natural Language KB Search', description: 'Get direct answers to questions by searching the KB with natural language.', status: 'Done' },
-            { name: 'Tone Rewriting for Agent Replies', description: 'Adjust the tone of agent replies to be more formal or friendly.', status: 'Not Started' },
-            { name: 'Predictive CSAT Analysis', description: 'Predict customer satisfaction scores before the survey is sent.', status: 'Not Started' },
-            { name: 'Anomaly Detection', description: 'Get alerted to unusual spikes in ticket volume for specific topics.', status: 'Not Started' },
+            { name: 'Tone Rewriting for Agent Replies', description: 'Adjust the tone of agent replies to be more formal or friendly.', status: 'Done' },
+            { name: 'Predictive CSAT Analysis', description: 'Predict customer satisfaction scores before the survey is sent.', status: 'Done' },
+            { name: 'Anomaly Detection', description: 'Get alerted to unusual spikes in ticket volume for specific topics.', status: 'Done' },
           ]
         },
         {
@@ -211,9 +215,9 @@ export class DevPlanComponent {
           description: 'Leveraging generative AI to uncover deep insights from your support data.',
           features: [
             { name: 'Automated CSAT Comment Analysis', description: 'Categorize and summarize free-text CSAT feedback.', status: 'Done' },
-            { name: 'Identify Ticket Deflection Opportunities', description: 'AI analysis to find common issues that could be solved with new KB articles.', status: 'Not Started' },
-            { name: 'Generate Executive Summaries for Reports', description: 'Create natural language summaries of performance reports.', status: 'Not Started' },
-            { name: 'Proactive Problem Management', description: 'Automatically identify multiple related incidents and suggest creating a problem ticket.', status: 'Not Started' },
+            { name: 'Generate Executive Summaries for Reports', description: 'Create natural language summaries of performance reports.', status: 'Done' },
+            { name: 'Identify Ticket Deflection Opportunities', description: 'AI analysis to find common issues that could be solved with new KB articles.', status: 'Done' },
+            { name: 'Proactive Problem Management', description: 'Automatically identify multiple related incidents and suggest creating a problem ticket.', status: 'Done' },
           ]
         },
       ],
@@ -226,7 +230,7 @@ export class DevPlanComponent {
           icon: 'clipboard-check',
           description: 'Establishing the fundamental features of a flexible and powerful Kanban system.',
           features: [
-            { name: 'Workspace & Board Management', description: 'Full CRUD for Workspaces and Boards, including customization (colors and images for backgrounds), icons, descriptions, duplication, and cascading deletion.', status: 'Not Started' },
+            { name: 'Workspace & Board Management', description: 'Full CRUD for Workspaces and Boards, including customization (colors and images for backgrounds), icons, descriptions, duplication, and cascading deletion.', status: 'In Progress' },
             { name: 'Archive & Restore', description: 'Safely archive boards, lists, and cards, with the ability to restore them later.', status: 'Not Started' },
             { name: 'Favorite/Starred Boards', description: 'Pin frequently-used boards for quick access in the sidebar.', status: 'Not Started' },
             { name: 'Workspace & Board RBAC', description: 'Owner, Admin, Member, and Viewer roles at both the Workspace and Board level, with member management and online presence indicators.', status: 'Not Started' },

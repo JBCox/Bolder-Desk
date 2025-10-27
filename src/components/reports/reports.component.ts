@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, input, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ticket, Agent } from '../../models';
 import { IconComponent } from '../icon/icon.component';
+import { GeminiService } from '../../gemini.service';
 
 interface AgentReport {
     agentName: string;
@@ -19,10 +20,18 @@ export class ReportsComponent {
   tickets = input.required<Ticket[]>();
   agents = input.required<Agent[]>();
 
+  private geminiService = inject(GeminiService);
+
   dateFrom = signal('');
   dateTo = signal('');
+  
+  aiSummary = signal<string>('');
+  isGeneratingSummary = signal(false);
 
   reportData = computed<AgentReport[]>(() => {
+    // Reset AI summary when data changes
+    this.aiSummary.set('');
+
     const from = this.dateFrom() ? new Date(this.dateFrom()).getTime() : 0;
     // Set to end of day
     const to = this.dateTo() ? new Date(this.dateTo()).setHours(23, 59, 59, 999) : Infinity;
@@ -56,6 +65,23 @@ export class ReportsComponent {
         };
     }).sort((a, b) => b.resolvedCount - a.resolvedCount);
   });
+
+  async handleGenerateSummary() {
+    if (this.reportData().length === 0) {
+        return;
+    }
+    this.isGeneratingSummary.set(true);
+    this.aiSummary.set('');
+    try {
+        const summary = await this.geminiService.summarizeReportData(this.reportData());
+        this.aiSummary.set(summary);
+    } catch (e) {
+        this.aiSummary.set('An error occurred while generating the summary.');
+        console.error(e);
+    } finally {
+        this.isGeneratingSummary.set(false);
+    }
+  }
 
   private formatDateForInput(date: Date): string {
     const year = date.getFullYear();

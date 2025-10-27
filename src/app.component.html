@@ -21,11 +21,23 @@
     <div class="flex items-center space-x-4">
       <button (click)="openModal.set('newTicket')" class="px-4 py-2 bg-indigo-600 text-white rounded-lg flex items-center space-x-2 text-sm font-semibold hover:bg-indigo-700">
         <app-icon name="plus" class="w-5 h-5"></app-icon>
-        <span>New Ticket</span>
+        <span>{{ translations().newTicket }}</span>
       </button>
       <button (click)="toggleDarkMode()" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
         <app-icon [name]="isDarkMode() ? 'sun' : 'moon'" class="w-6 h-6"></app-icon>
       </button>
+      <div class="relative">
+        <button (click)="showLanguageMenu.set(!showLanguageMenu())" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+          <app-icon name="globe" class="w-6 h-6"></app-icon>
+        </button>
+        @if(showLanguageMenu()) {
+          <div class="absolute right-0 mt-2 w-36 bg-white dark:bg-slate-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-20">
+            <a (click)="currentLanguage.set('en'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">English</a>
+            <a (click)="currentLanguage.set('es'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">Español</a>
+            <a (click)="currentLanguage.set('fr'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">Français</a>
+          </div>
+        }
+      </div>
        <button class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 relative">
         <app-icon name="bell" class="w-6 h-6"></app-icon>
         <span class="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
@@ -41,227 +53,373 @@
     @switch (currentView()) {
       @case ('tickets') {
         <div class="flex h-full">
+          <!-- Filter Panel -->
+          @if (showFilterPanel()) {
+            <div class="w-96 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col text-slate-800 dark:text-slate-200">
+              <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+                <h3 class="text-lg font-semibold">Filters</h3>
+                <button (click)="toggleFilterPanel()" class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
+                  <app-icon name="x" class="w-5 h-5"></app-icon>
+                </button>
+              </div>
+              <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                @for (group of panelFilters(); track group.id; let gIndex = $index) {
+                  <div class="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+                    <div class="flex items-center justify-between mb-3">
+                      <select (change)="updateGroupMatchType(gIndex, $event)" class="text-sm font-semibold bg-transparent border-0 focus:ring-0 p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600">
+                        <option value="all" [selected]="group.matchType === 'all'">Match ALL</option>
+                        <option value="any" [selected]="group.matchType === 'any'">Match ANY</option>
+                      </select>
+                      @if (panelFilters().length > 1) {
+                        <button (click)="removeConditionGroup(gIndex)" class="text-xs text-red-500 hover:underline">Remove Group</button>
+                      }
+                    </div>
+                    <div class="space-y-2">
+                      @for (condition of group.conditions; track condition.id; let cIndex = $index) {
+                        @let fieldDef = getFieldDef(condition.field);
+                        <div class="grid grid-cols-[auto,auto,1fr,auto] gap-1 items-center">
+                          <select (change)="updateConditionField(gIndex, cIndex, $event)" class="filter-select">
+                            <option value="" disabled [selected]="!condition.field">Select field...</option>
+                            @for (field of availableFilterFields(); track field.id) { <option [value]="field.id" [selected]="condition.field === field.id">{{ field.name }}</option> }
+                          </select>
+                          <select (change)="updateConditionOperator(gIndex, cIndex, $event)" class="filter-select">
+                            @for(operator of getOperatorsForFieldType(fieldDef?.type); track operator.id) {
+                              <option [value]="operator.id" [selected]="condition.operator === operator.id">{{ operator.name }}</option>
+                            }
+                          </select>
+                          @if (condition.field && !['is_set', 'is_not_set'].includes(condition.operator)) {
+                            @switch (fieldDef?.type) {
+                              @case ('dropdown') {
+                                <select [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input">
+                                  @for (opt of fieldDef.options; track opt) { <option [value]="opt">{{opt}}</option> }
+                                </select>
+                              }
+                              @case ('agent_dropdown') {
+                                <select [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input">
+                                  <option value="unassigned">Unassigned</option>
+                                  @for (agent of agents(); track agent.id) { <option [value]="agent.name">{{agent.name}}</option> }
+                                </select>
+                              }
+                              @case ('date') { 
+                                @if(condition.operator === 'last_x_days') {
+                                  <input type="number" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input" placeholder="e.g., 7">
+                                } @else {
+                                  <input type="date" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input"> 
+                                }
+                              }
+                              @case ('number') { <input type="number" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input"> }
+                              @default { <input type="text" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input"> }
+                            }
+                          } @else { <div class="filter-input bg-slate-200 dark:bg-slate-700"></div> }
+                          <button (click)="removeCondition(gIndex, cIndex)" class="text-slate-400 hover:text-red-500 p-1"><app-icon name="x" class="w-4 h-4"></app-icon></button>
+                        </div>
+                      }
+                    </div>
+                    <button (click)="addCondition(gIndex)" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-2">+ Add Condition</button>
+                  </div>
+                }
+                <button (click)="addConditionGroup()" class="text-sm w-full p-2 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">+ Add Condition Group</button>
+              </div>
+              <div class="p-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+                <button (click)="clearFilters()" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Clear all</button>
+                <button (click)="applyFilters()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold">Apply filters</button>
+              </div>
+            </div>
+          }
+
           <!-- Ticket List -->
-          <div class="w-1/3 border-r border-gray-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-800">
+          <div class="w-2/3 border-r border-gray-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-800">
             <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
-                <h2 class="text-lg font-semibold">Tickets ({{ filteredTickets().length }})</h2>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <div class="relative">
+                      <button (click)="showViewsDropdown.set(!showViewsDropdown())" class="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 p-1 rounded-md">
+                        @if(defaultViewId() === activeViewId()) { <app-icon name="star" class="w-4 h-4 text-amber-500 fill-current"></app-icon> }
+                        <span>{{ activeViewId() === 'custom' ? 'Custom Filters' : activeView().name }}</span>
+                        @if(isViewModified()) { <span class="text-amber-500 font-bold">*</span> }
+                        <app-icon name="chevrondown" class="w-5 h-5 text-slate-500"></app-icon>
+                      </button>
+                      @if (showViewsDropdown()) {
+                        <div class="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-20">
+                          @if(privateViews().length > 0) {
+                             <h3 class="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400">My Private Views</h3>
+                             @for(view of privateViews(); track view.id) { 
+                               <button (click)="selectView(view.id)" class="view-dropdown-item">
+                                 <span class="truncate">{{view.name}}</span>
+                                 @if(defaultViewId() === view.id) { <app-icon name="star" class="w-4 h-4 text-amber-500 fill-current"></app-icon> }
+                               </button> 
+                              }
+                          }
+                          @if(teamViews().length > 0) {
+                             <h3 class="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Team Views</h3>
+                             @for(view of teamViews(); track view.id) { <button (click)="selectView(view.id)" class="view-dropdown-item">{{view.name}}</button> }
+                          }
+                          @if(sharedViews().length > 0) {
+                             <h3 class="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Shared Views</h3>
+                             @for(view of sharedViews(); track view.id) { <button (click)="selectView(view.id)" class="view-dropdown-item">{{view.name}}</button> }
+                          }
+                        </div>
+                      }
+                    </div>
+                     @if(activeViewId() !== 'all') {
+                       <div class="relative">
+                          <button (click)="showViewActions.set(!showViewActions())" class="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                            <app-icon name="more-horizontal" class="w-5 h-5 text-slate-500"></app-icon>
+                          </button>
+                          @if (showViewActions()) {
+                            <div class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-20">
+                              <button (click)="togglePinView(activeViewId())" class="view-action-item gap-2"><app-icon name="pin" class="w-4 h-4"></app-icon> {{ activeView().isPinned ? 'Unpin View' : 'Pin View' }}</button>
+                              <button (click)="cloneView()" class="view-action-item gap-2"><app-icon name="copy" class="w-4 h-4"></app-icon> Clone View</button>
+                              @if(canEditActiveView()) {
+                                <button (click)="openEditViewModal()" class="view-action-item gap-2"><app-icon name="edit-3" class="w-4 h-4"></app-icon> Edit View</button>
+                                <button (click)="renameView(activeViewId())" class="view-action-item gap-2"><app-icon name="tag" class="w-4 h-4"></app-icon> Rename</button>
+                                @if(defaultViewId() !== activeViewId()) {
+                                  <button (click)="setDefaultView(activeViewId())" class="view-action-item gap-2"><app-icon name="star" class="w-4 h-4"></app-icon> Set as Default</button>
+                                }
+                                <button (click)="deleteView(activeViewId())" class="view-action-item text-red-600 dark:text-red-400 gap-2"><app-icon name="trash" class="w-4 h-4"></app-icon> Delete View</button>
+                              }
+                            </div>
+                          }
+                       </div>
+                    }
+                  </div>
+                  <div class="flex items-center gap-2">
+                     @if (showSaveActions()) {
+                        @if(isViewModified()){
+                          <button (click)="resetViewChanges()" class="text-sm text-slate-600 dark:text-slate-300 hover:underline">Reset</button>
+                        }
+                        @if (isViewModified() && canEditActiveView()) {
+                            <button (click)="updateCurrentView()" class="text-sm px-3 py-1 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 hover:bg-indigo-200">Update View</button>
+                        }
+                        <button (click)="openSaveViewModal()" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Save as New</button>
+                     }
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm text-slate-500 dark:text-slate-400">{{ filteredTickets().length }} Tickets</h2>
+                    <button (click)="toggleFilterPanel()" class="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100">
+                      <app-icon name="filter" class="w-4 h-4"></app-icon> Filter
+                    </button>
+                </div>
             </div>
             <div class="flex-1 overflow-y-auto">
-              @for (ticket of filteredTickets(); track ticket.id) {
-                <div 
-                    (click)="selectTicket(ticket.id)" 
-                    [class]="'p-4 cursor-pointer border-l-4 ' + (selectedTicketId() === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50 border-indigo-500' : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-700/50')"
-                >
-                  <div class="flex justify-between items-start">
-                    <p class="font-semibold text-gray-800 dark:text-slate-100 truncate pr-4">#{{ticket.id}} {{ ticket.subject }}</p>
-                    <span class="text-xs text-gray-500 dark:text-slate-400 flex-shrink-0">{{ ticket.created | date:'short' }}</span>
-                  </div>
-                  <p class="text-sm text-gray-600 dark:text-slate-300">{{ getContact(ticket.contactId)?.name }}</p>
-                </div>
+              @let groups = groupedAndSortedTickets();
+              @for (groupName of objectKeys(groups); track groupName) {
+                @if (activeView().displayOptions.groupBy) {
+                  <div class="px-4 py-1 bg-slate-100 dark:bg-slate-700/50 font-semibold text-sm text-slate-600 dark:text-slate-300 sticky top-0">{{ groupName }} <span class="text-xs font-normal">({{ groups[groupName].length }})</span></div>
+                }
+                <table class="w-full text-sm">
+                  @if (!activeView().displayOptions.groupBy || groupName === objectKeys(groups)[0]) {
+                    <thead class="bg-slate-50 dark:bg-slate-800">
+                      <tr class="border-b border-slate-200 dark:border-slate-700">
+                        @for (col of activeView().displayOptions.columns; track col) { <th class="p-2 text-left font-medium text-slate-500 dark:text-slate-400">{{ getColumnName(col) }}</th> }
+                      </tr>
+                    </thead>
+                  }
+                  <tbody>
+                    @for (ticket of groups[groupName]; track ticket.id) {
+                      <tr (click)="selectTicket(ticket.id)" [class]="'cursor-pointer border-b border-slate-200 dark:border-slate-700 ' + (selectedTicketId() === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50')">
+                        @for (col of activeView().displayOptions.columns; track col) {
+                           <td class="p-2 truncate" [title]="getColumnValue(ticket, col)">
+                            @if(editingCell()?.ticketId === ticket.id && editingCell()?.columnId === col) {
+                               @switch(col) {
+                                @case('status') {
+                                    <select (change)="handleInlineUpdate(ticket.id, 'status', $event); $event.stopPropagation()" (blur)="stopEditing()" class="inline-edit-select" [value]="ticket.status" (click)="$event.stopPropagation()">
+                                        <option>open</option><option>pending</option><option>resolved</option><option>closed</option>
+                                    </select>
+                                }
+                                @case('priority') {
+                                    <select (change)="handleInlineUpdate(ticket.id, 'priority', $event); $event.stopPropagation()" (blur)="stopEditing()" class="inline-edit-select" [value]="ticket.priority" (click)="$event.stopPropagation()">
+                                        <option>low</option><option>medium</option><option>high</option><option>urgent</option>
+                                    </select>
+                                }
+                                @case('assignedTo') {
+                                     <select (change)="handleInlineUpdate(ticket.id, 'assignedTo', $event); $event.stopPropagation()" (blur)="stopEditing()" class="inline-edit-select" [value]="ticket.assignedTo || 'unassigned'" (click)="$event.stopPropagation()">
+                                        <option value="unassigned">Unassigned</option>
+                                        @for(a of agents(); track a.id) { <option [value]="a.name">{{ a.name }}</option> }
+                                    </select>
+                                }
+                                @default { <span>{{ getColumnValue(ticket, col) }}</span> }
+                               }
+                            } @else {
+                               @switch(col) {
+                                @case('status') { <span (click)="startEditing(ticket.id, 'status', $event)" class="hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md">{{ getColumnValue(ticket, col) }}</span> }
+                                @case('priority') { <span (click)="startEditing(ticket.id, 'priority', $event)" class="hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md">{{ getColumnValue(ticket, col) }}</span> }
+                                @case('assignedTo') { <span (click)="startEditing(ticket.id, 'assignedTo', $event)" class="hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md">{{ getColumnValue(ticket, col) }}</span> }
+                                @default { <span>{{ getColumnValue(ticket, col) }}</span> }
+                               }
+                            }
+                           </td> 
+                        }
+                      </tr>
+                    } @empty { <tr><td class="p-4 text-center text-slate-500" [attr.colspan]="activeView().displayOptions.columns.length">No tickets match your filters.</td></tr> }
+                  </tbody>
+                </table>
               }
             </div>
           </div>
+
           <!-- Ticket Detail -->
-          <div class="flex-1">
-            <app-ticket-detail 
-              [ticket]="selectedTicket()"
-              [contact]="selectedContact()"
-              [agents]="agents()"
-              [availableTags]="availableTags()"
-              [hasPermission]="hasPermission()"
-              (addReply)="handleAddReply($event)"
-              (addNote)="handleAddNote($event)"
-              (updateTicket)="handleUpdateTicket($event)"
-              (openMergeModal)="openModalWithTicket('mergeTicket', $event)"
-              (openSplitModal)="openSplitModalWithMessage($event)"
-              (openLogTimeModal)="openModalWithTicket('logTime', $event)"
-              (openLinkTicketModal)="openModalWithTicket('linkTicket', $event)"
-              (createKbArticle)="handleCreateKbArticle($event)"
-            ></app-ticket-detail>
+          <div class="w-1/3">
+            <app-ticket-detail [ticket]="selectedTicket()" [contact]="selectedContact()" [agents]="agents()" [availableTags]="availableTags()" [hasPermission]="hasPermission()" (addReply)="handleAddReply($event)" (addNote)="handleAddNote($event)" (updateTicket)="handleUpdateTicket($event)" (openMergeModal)="openModalWithTicket('mergeTicket', $event)" (openSplitModal)="openSplitModalWithMessage($event)" (openLogTimeModal)="openModalWithTicket('logTime', $event)" (openLinkTicketModal)="openModalWithTicket('linkTicket', $event)" (createKbArticle)="noop()" (viewTicket)="selectTicket($event)"></app-ticket-detail>
           </div>
         </div>
       }
-      @case ('analytics') {
-        <app-analytics-dashboard [data]="analyticsData()"></app-analytics-dashboard>
-      }
-      @case ('kb') {
-        <app-knowledge-base [articles]="kbArticles()" [categories]="kbCategories()" (kbFeedback)="handleKbFeedback($event)"></app-knowledge-base>
-      }
-      @case ('customers') {
-        <app-customers [organizations]="organizations()" [contacts]="contacts()" [tickets]="tickets()"></app-customers>
-      }
-       @case ('inbox') {
-        <app-inbox [emails]="emails()"></app-inbox>
-      }
-      @case ('chat') {
-        <app-chat [chatSessions]="chatSessions()" [currentAgent]="currentAgent()"></app-chat>
-      }
-      @case ('reports') {
-        <app-reports [tickets]="tickets()" [agents]="agents()"></app-reports>
-      }
-      @case ('slack') {
-        <app-slack-integration [messages]="slackMessages()" [settings]="slackSettings()"></app-slack-integration>
-      }
-       @case ('qa') {
-        <app-quality-assurance [tickets]="tickets()" [agents]="agents()" [qaRubrics]="qaRubrics()" [qaReviews]="qaReviews()"></app-quality-assurance>
-      }
-      @case ('wallboard') {
-        <app-wallboard [data]="wallboardData()"></app-wallboard>
-      }
-      @case ('devplan') {
-        <app-dev-plan></app-dev-plan>
-      }
-      @case ('portal') { 
-        <app-customer-portal 
-            [tickets]="customerPortalTickets()" 
-            [articles]="kbArticles()" 
-            [currentContact]="currentCustomer()"
-            (addReply)="handleAddReply($event)"
-            (kbFeedback)="handleKbFeedback($event)">
-        </app-customer-portal> 
-      }
+      @case ('mywork') { <app-my-work [tickets]="tickets()" [currentAgent]="currentAgent()" (viewTicket)="selectTicket($event)"></app-my-work> }
+      @case ('analytics') { <app-analytics-dashboard [data]="analyticsData()" [tickets]="tickets()" (createProblemTicket)="handleCreateProblemTicket($event)"></app-analytics-dashboard> }
+      @case ('kb') { <app-knowledge-base [articles]="kbArticles()" [categories]="kbCategories()" (kbFeedback)="handleKbFeedback($event)"></app-knowledge-base> }
+      @case ('customers') { <app-customers [organizations]="organizations()" [contacts]="contacts()" [tickets]="tickets()"></app-customers> }
+      @case ('inbox') { <app-inbox [emails]="emails()" (convertToTicket)="handleConvertToTicket($event)"></app-inbox> }
+      @case ('chat') { <app-chat [chatSessions]="chatSessions()" [currentAgent]="currentAgent()" (acceptChat)="handleAcceptChat($event)" (sendMessage)="handleSendChatMessage({ chatId: $event.chatId, content: $event.content, from: 'agent' })" (convertToTicket)="handleChatConvertToTicket($event)"></app-chat> }
+      @case ('reports') { <app-reports [tickets]="tickets()" [agents]="agents()"></app-reports> }
+      @case ('slack') { <app-slack-integration [messages]="slackMessages()" [settings]="slackSettings()" (slackAction)="noop()" (viewTicket)="selectTicket($event)"></app-slack-integration> }
+      @case ('facebook') { <app-facebook-integration [threads]="facebookThreads()" (createTicket)="noop()" (viewTicket)="selectTicket($event)"></app-facebook-integration> }
+      @case ('twitter') { <app-twitter-integration [threads]="twitterThreads()" (createTicket)="noop()" (viewTicket)="selectTicket($event)"></app-twitter-integration> }
+      @case ('whatsapp') { <app-whatsapp-integration [threads]="whatsAppThreads()" (createTicket)="noop()" (viewTicket)="selectTicket($event)"></app-whatsapp-integration> }
+      @case ('salesforce') { <app-salesforce-integration [settings]="salesforceSettings()" (save)="handleSaveSalesforceSettings($event)"></app-salesforce-integration> }
+      @case ('jira') { <app-jira-integration [settings]="jiraSettings()" (save)="handleSaveJiraSettings($event)"></app-jira-integration> }
+      @case ('kanban') { <app-kanban [workspaces]="kanbanWorkspaces()" [boards]="kanbanBoards()" (createBoardRequest)="openModal.set('newKanbanBoard')"></app-kanban> }
+      @case ('qa') { <app-quality-assurance [tickets]="tickets()" [agents]="agents()" [qaRubrics]="qaRubrics()" [qaReviews]="qaReviews()"></app-quality-assurance> }
+      @case ('wallboard') { <app-wallboard [data]="wallboardData()"></app-wallboard> }
+      @case ('devplan') { <app-dev-plan></app-dev-plan> }
+      @case ('portal') { <app-customer-portal [tickets]="customerPortalTickets()" [articles]="kbArticles()" [currentContact]="currentCustomer()" (addReply)="handleAddReply($event)" (kbFeedback)="handleKbFeedback($event)"></app-customer-portal> }
     }
   </main>
 </div>
 
 <!-- Sidebar -->
 <aside [class]="(sidebarCollapsed() ? '-translate-x-full' : 'translate-x-0') + ' fixed inset-y-0 left-0 bg-white dark:bg-slate-800 w-56 border-r border-gray-200 dark:border-slate-700 transform transition-transform duration-300 ease-in-out md:translate-x-0 z-40'">
-  <div class="flex items-center justify-center h-16 border-b border-gray-200 dark:border-slate-700">
-    <app-icon name="briefcase" class="w-8 h-8 text-indigo-600"></app-icon>
-    <span class="ml-2 text-xl font-bold text-gray-800 dark:text-slate-100">BoldDesk</span>
-  </div>
+  <div class="flex items-center justify-center h-16 border-b border-gray-200 dark:border-slate-700"> <app-icon name="briefcase" class="w-8 h-8 text-indigo-600"></app-icon> <span class="ml-2 text-xl font-bold text-gray-800 dark:text-slate-100">BoldDesk</span> </div>
   <nav class="mt-4 px-2">
-    <a (click)="currentView.set('tickets')" [class]="'flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-      <app-icon name="mail" class="w-5 h-5 mr-3"></app-icon> Tickets
-    </a>
-    <a (click)="currentView.set('analytics')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'analytics' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-      <app-icon name="barchart3" class="w-5 h-5 mr-3"></app-icon> Analytics
-    </a>
-    <a (click)="currentView.set('kb')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'kb' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-      <app-icon name="library" class="w-5 h-5 mr-3"></app-icon> Knowledge Base
-    </a>
-     <a (click)="currentView.set('customers')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'customers' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-      <app-icon name="users" class="w-5 h-5 mr-3"></app-icon> Customers
-    </a>
-     <a (click)="currentView.set('reports')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'reports' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-      <app-icon name="pie-chart" class="w-5 h-5 mr-3"></app-icon> Reports
-    </a>
-    <a (click)="currentView.set('qa')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'qa' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-      <app-icon name="award" class="w-5 h-5 mr-3"></app-icon> Quality Assurance
-    </a>
-    <a (click)="currentView.set('wallboard')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'wallboard' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-      <app-icon name="tv" class="w-5 h-5 mr-3"></app-icon> Wallboard
-    </a>
-
-    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
-        <h3 class="px-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Channels</h3>
-         <a (click)="currentView.set('inbox')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'inbox' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-          <app-icon name="inbox" class="w-5 h-5 mr-3"></app-icon> Inbox
-        </a>
-        <a (click)="currentView.set('chat')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'chat' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-          <app-icon name="message-circle" class="w-5 h-5 mr-3"></app-icon> Live Chat
-        </a>
-        <a (click)="currentView.set('slack')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'slack' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-          <app-icon name="slack" class="w-5 h-5 mr-3"></app-icon> Slack
-        </a>
+    <a (click)="currentView.set('mywork')" [class]="'flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'mywork' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="user" class="w-5 h-5 mr-3"></app-icon> {{ translations().myWork }} </a>
+    <a (click)="currentView.set('tickets')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="mail" class="w-5 h-5 mr-3"></app-icon> {{ translations().tickets }} </a>
+    @if(pinnedViews().length > 0) {
+      <div class="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+        @for(view of pinnedViews(); track view.id) {
+           <a (click)="selectView(view.id)" [class]="'flex items-center px-4 py-2 rounded-lg cursor-pointer text-sm ' + (activeViewId() === view.id && currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="pin" class="w-4 h-4 mr-3"></app-icon> <span class="truncate">{{ view.name }}</span> </a>
+        }
+      </div>
+    }
+    <div class="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+        <a (click)="currentView.set('analytics')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'analytics' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="barchart3" class="w-5 h-5 mr-3"></app-icon> {{ translations().analytics }} </a>
+        <a (click)="currentView.set('kb')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'kb' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="library" class="w-5 h-5 mr-3"></app-icon> {{ translations().knowledgeBase }} </a>
+        <a (click)="currentView.set('customers')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'customers' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="users" class="w-5 h-5 mr-3"></app-icon> {{ translations().customers }} </a>
+        <a (click)="currentView.set('reports')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'reports' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="pie-chart" class="w-5 h-5 mr-3"></app-icon> {{ translations().reports }} </a>
+        <a (click)="currentView.set('qa')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'qa' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="award" class="w-5 h-5 mr-3"></app-icon> {{ translations().qualityAssurance }} </a>
+        <a (click)="currentView.set('wallboard')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'wallboard' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="tv" class="w-5 h-5 mr-3"></app-icon> {{ translations().wallboard }} </a>
+        <a (click)="currentView.set('kanban')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'kanban' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="layout-grid" class="w-5 h-5 mr-3"></app-icon> {{ translations().kanban }} </a>
     </div>
-
-    <!-- Dev/Testing Links -->
-    <div class="absolute bottom-16 w-full px-2">
-       <a (click)="currentView.set('devplan')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'devplan' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-        <app-icon name="clipboard" class="w-5 h-5 mr-3"></app-icon> Dev Plan
-      </a>
-      <a (click)="currentView.set('portal')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg ' + (currentView() === 'portal' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')">
-        <app-icon name="external-link" class="w-5 h-5 mr-3"></app-icon> Customer Portal
-      </a>
-    </div>
-
+    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700"> <h3 class="px-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ translations().channels }}</h3> <a (click)="currentView.set('inbox')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'inbox' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="inbox" class="w-5 h-5 mr-3"></app-icon> {{ translations().inbox }} </a> <a (click)="currentView.set('chat')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'chat' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="message-circle" class="w-5 h-5 mr-3"></app-icon> {{ translations().liveChat }} </a> <a (click)="currentView.set('slack')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'slack' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="slack" class="w-5 h-5 mr-3"></app-icon> {{ translations().slack }} </a> <a (click)="currentView.set('facebook')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'facebook' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="facebook" class="w-5 h-5 mr-3"></app-icon> {{ translations().facebook }} </a> <a (click)="currentView.set('twitter')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'twitter' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="twitter" class="w-5 h-5 mr-3"></app-icon> {{ translations().twitter }} </a> <a (click)="currentView.set('whatsapp')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'whatsapp' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="phone" class="w-5 h-5 mr-3"></app-icon> {{ translations().whatsapp }} </a> </div>
+    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700"> <h3 class="px-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ translations().integrations }}</h3> <a (click)="currentView.set('salesforce')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'salesforce' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="salesforce" class="w-5 h-5 mr-3"></app-icon> {{ translations().salesforce }} </a> <a (click)="currentView.set('jira')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'jira' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="jira" class="w-5 h-5 mr-3"></app-icon> {{ translations().jira }} </a> </div>
+    <div class="absolute bottom-0 left-0 w-full p-2 border-t border-gray-200 dark:border-slate-700"> <a (click)="currentView.set('portal')" class="flex items-center px-4 py-2 rounded-lg cursor-pointer text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"> <app-icon name="external-link" class="w-5 h-5 mr-3"></app-icon> {{ translations().customerPortal }} </a> <a (click)="currentView.set('devplan')" class="flex items-center px-4 py-2 rounded-lg cursor-pointer text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"> <app-icon name="rocket" class="w-5 h-5 mr-3"></app-icon> {{ translations().devPlan }} </a> </div>
   </nav>
-
-  <div class="absolute bottom-0 w-full p-4 border-t border-gray-200 dark:border-slate-700">
-    <div class="flex items-center">
-        <div class="w-8 h-8 rounded-full bg-indigo-200 flex items-center justify-center font-bold text-indigo-700">
-            {{ currentAgent().name.charAt(0) }}
-        </div>
-        <div class="ml-3">
-            <p class="text-sm font-semibold text-gray-800 dark:text-slate-100">{{ currentAgent().name }}</p>
-            <p class="text-xs text-gray-500 dark:text-slate-400">{{ getRoleName(currentAgent().roleId) }}</p>
-        </div>
-    </div>
-  </div>
 </aside>
 
 <!-- Modals -->
-@if (openModal(); as modal) {
-  @switch(modal) {
-    @case('newTicket') {
-      <app-new-ticket-modal
-        [contacts]="contacts()"
-        [organizations]="organizations()"
-        [customFieldDefinitions]="customFieldDefs()"
-        [formTemplates]="formTemplates()"
-        [knowledgeBaseArticles]="kbArticles()"
-        (close)="openModal.set(null)"
-        (create)="handleCreateTicket($event)"
-      ></app-new-ticket-modal>
-    }
-    @case('mergeTicket') {
-        <app-merge-ticket-modal
-            [currentTicket]="selectedTicketForModal()!"
-            [allTickets]="tickets()"
-            [contacts]="contacts()"
-            (close)="openModal.set(null)"
-            (merge)="handleMergeTickets($event)"
-        ></app-merge-ticket-modal>
-    }
-    @case('splitTicket') {
-        <app-split-ticket-modal
-            [messageToSplit]="selectedMessageForModal()!"
-            (close)="openModal.set(null)"
-            (split)="handleSplitTicket($event)"
-        ></app-split-ticket-modal>
-    }
-    @case('csat') {
-        <app-csat-modal
-            [ticket]="selectedTicketForModal()!"
-            (close)="openModal.set(null)"
-            (submit)="handleCsatSubmit($event)"
-        ></app-csat-modal>
-    }
-    @case('logTime') {
-        <app-log-time-modal
-            (close)="openModal.set(null)"
-            (logTime)="handleLogTime($event)"
-        ></app-log-time-modal>
-    }
-    @case('linkTicket') {
-        <app-link-ticket-modal
-            [currentTicket]="selectedTicketForModal()!"
-            [allTickets]="tickets()"
-            [contacts]="contacts()"
-            (close)="openModal.set(null)"
-        ></app-link-ticket-modal>
-    }
-    @case('settings') {
-      <app-settings-modal 
-        (close)="openModal.set(null)"
-        [roles]="roles()"
-        [allPermissions]="allPermissions()"
-        [automationRules]="automationRules()"
-        [groups]="groups()"
-        [slaRules]="slaRules()"
-        [formTemplates]="formTemplates()"
-        [currentAgent]="currentAgent()"
-        [ssoSettings]="ssoSettings()"
-        (saveRoles)="handleSaveRoles($event)"
-        (saveSsoSettings)="handleSaveSsoSettings($event)"
-      ></app-settings-modal>
-    }
-    @case('shortcuts') {
-      <app-keyboard-shortcuts-modal (close)="openModal.set(null)"></app-keyboard-shortcuts-modal>
-    }
-  }
+@if (openModal() === 'newTicket') { <app-new-ticket-modal [contacts]="contacts()" [organizations]="organizations()" [customFieldDefinitions]="customFieldDefs()" [formTemplates]="formTemplates()" [knowledgeBaseArticles]="kbArticles()" (close)="openModal.set(null)" (create)="handleCreateTicket($event)"></app-new-ticket-modal> }
+@if (openModal() === 'mergeTicket' && selectedTicketForModal()) { <app-merge-ticket-modal [currentTicket]="selectedTicketForModal()!" [allTickets]="tickets()" [contacts]="contacts()" (close)="openModal.set(null)" (merge)="handleMergeTickets($event)"></app-merge-ticket-modal> }
+@if (openModal() === 'splitTicket' && selectedMessageForModal()) { <app-split-ticket-modal [messageToSplit]="selectedMessageForModal()!" (close)="openModal.set(null)" (split)="handleSplitTicket($event)"></app-split-ticket-modal> }
+@if (openModal() === 'csat' && selectedTicketForModal()) { <app-csat-modal [ticket]="selectedTicketForModal()!" (close)="openModal.set(null)" (submit)="handleCsatSubmit($event)"></app-csat-modal> }
+@if (openModal() === 'settings') { <app-settings-modal [roles]="roles()" [allPermissions]="allPermissions()" [automationRules]="automationRules()" [groups]="groups()" [slaRules]="slaRules()" [formTemplates]="formTemplates()" [currentAgent]="currentAgent()" [ssoSettings]="ssoSettings()" [auditLog]="auditLog()" [apiKeys]="apiKeys()" [webhooks]="webhooks()" (close)="openModal.set(null)" (saveRoles)="handleSaveRoles($event)" (saveSsoSettings)="handleSaveSsoSettings($event)" (createApiKey)="handleCreateApiKey($event)" (revokeApiKey)="handleRevokeApiKey($event)" (saveWebhooks)="handleSaveWebhooks($event)"></app-settings-modal> }
+@if (openModal() === 'logTime' && selectedTicketForModal()) { <app-log-time-modal (close)="openModal.set(null)" (logTime)="handleLogTime($event)"></app-log-time-modal> }
+@if (openModal() === 'linkTicket' && selectedTicketForModal()) { <app-link-ticket-modal [currentTicket]="selectedTicketForModal()!" [allTickets]="tickets()" [contacts]="contacts()" (close)="openModal.set(null)" (link)="handleLinkTicket($event)"></app-link-ticket-modal> }
+@if (openModal() === 'shortcuts') { <app-keyboard-shortcuts-modal (close)="openModal.set(null)"></app-keyboard-shortcuts-modal> }
+@if (openModal() === 'newKanbanBoard') { <app-new-kanban-board-modal [workspaces]="kanbanWorkspaces()" (close)="openModal.set(null)" (create)="handleCreateKanbanBoard($event)"></app-new-kanban-board-modal> }
+
+@if (openModal() === 'saveView' && tempViewOptions(); as opts) {
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div class="p-6 border-b dark:border-slate-700"><h3 class="text-lg font-semibold">{{ isEditingView() ? 'Edit View' : 'Save New View' }}</h3></div>
+      <div class="p-6 space-y-6 overflow-y-auto">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">View Name</label>
+          <input type="text" [(ngModel)]="newViewName" placeholder="e.g., High Priority Tickets" class="w-full mt-1 rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Visibility</label>
+            <div class="mt-2 space-y-2">
+                <label class="flex items-center">
+                  <input type="radio" name="visibility" value="private" [(ngModel)]="newViewVisibility" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                  <span class="ml-2 text-sm text-gray-700 dark:text-slate-300">Private (only visible to you)</span>
+                </label>
+                 <label class="flex items-center">
+                  <input type="radio" name="visibility" value="shared" [(ngModel)]="newViewVisibility" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                  <span class="ml-2 text-sm text-gray-700 dark:text-slate-300">Shared</span>
+                </label>
+                @if (newViewVisibility() === 'shared') {
+                  <div class="pl-6 pt-2">
+                      <p class="text-xs text-slate-500 mb-2">Share with specific groups (optional). If no groups are selected, it will be visible to everyone.</p>
+                      <div class="grid grid-cols-2 gap-2">
+                          @for(group of groups(); track group.id) {
+                              <label class="flex items-center">
+                                  <input type="checkbox" [checked]="newViewSharedGroups().includes(group.id)" (change)="toggleSharedGroup(group.id)" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                  <span class="ml-2 text-sm">{{ group.name }}</span>
+                              </label>
+                          }
+                      </div>
+                  </div>
+                }
+            </div>
+          </div>
+        <div>
+          <h4 class="font-semibold mb-2">Display Options</h4>
+          <div class="p-4 border rounded-md dark:border-slate-600 space-y-4">
+            <div>
+              <label class="text-sm font-medium">Columns to Display</label>
+              <div class="grid grid-cols-3 gap-2 mt-2">
+                @for(col of availableColumns(); track col.id) {
+                  <label class="flex items-center space-x-2">
+                    <input type="checkbox" [checked]="opts.columns.includes(col.id)" (change)="toggleViewColumn(col.id)" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm">{{ col.name }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-sm font-medium">Sort By</label>
+                <select [(ngModel)]="opts.sortBy" class="w-full mt-1 text-sm rounded-md border-slate-300 dark:bg-slate-700 dark:border-slate-600">
+                  @for(col of availableColumns(); track col.id) { <option [value]="col.id">{{ col.name }}</option> }
+                </select>
+              </div>
+              <div>
+                <label class="text-sm font-medium">Direction</label>
+                <select [(ngModel)]="opts.sortDirection" class="w-full mt-1 text-sm rounded-md border-slate-300 dark:bg-slate-700 dark:border-slate-600">
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="text-sm font-medium">Group By</label>
+              <select [(ngModel)]="opts.groupBy" class="w-full mt-1 text-sm rounded-md border-slate-300 dark:bg-slate-700 dark:border-slate-600">
+                <option [ngValue]="undefined">None</option>
+                @for(col of availableColumns(); track col.id) { <option [value]="col.id">{{ col.name }}</option> }
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2">
+        <button (click)="openModal.set(null)" class="px-4 py-2 text-sm rounded-md">Cancel</button>
+        <button (click)="saveCurrentView()" [disabled]="!newViewName().trim()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">
+            {{ isEditingView() ? 'Save Changes' : 'Save View' }}
+        </button>
+      </div>
+    </div>
+  </div>
 }
 
-<!-- Chat Widget -->
-<app-chat-widget [customer]="currentCustomer()" [session]="currentChatSession()"></app-chat-widget>
+<!-- Bulk Action Bar -->
+@if (selectedTicketIds().length > 0) { <div class="absolute bottom-0 left-0 right-0 z-20" [class]="(sidebarCollapsed() ? 'ml-0' : 'md:ml-56')"> <app-bulk-action-bar [selectedCount]="selectedTicketIds().length" [availableTags]="availableTags()" (action)="handleBulkAction($event)" (cancel)="selectedTicketIds.set([])"></app-bulk-action-bar> </div> }
+
+<!-- Customer-facing chat widget -->
+@if (currentView() === 'portal') { <app-chat-widget [customer]="currentCustomer()" [session]="currentChatSession()" (startChat)="handleStartChat($event)" (sendMessage)="handleSendChatMessage({ chatId: $event.chatId, content: $event.content, from: 'customer' })"></app-chat-widget> }
+
+<style>
+.filter-select { @apply text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50; }
+.filter-input { @apply text-sm w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50; }
+.view-dropdown-item { @apply flex justify-between items-center w-full text-left px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700; }
+.view-action-item { @apply flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700; }
+.inline-edit-select { @apply block w-full text-sm rounded-md border-indigo-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-500; }
+</style>

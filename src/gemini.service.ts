@@ -1,6 +1,27 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
-import { Ticket, CustomFieldDefinition, KnowledgeBaseArticle, Agent } from './models';
+import { Ticket, CustomFieldDefinition, KnowledgeBaseArticle, Agent, Anomaly, ProblemSuggestion } from './models';
+
+interface AgentReport {
+    agentName: string;
+    resolvedCount: number;
+    avgResolutionTime: string;
+}
+
+interface TicketAiInsights {
+  summary: string;
+  suggestions: string[];
+  tags: string[];
+  sentiment: 'positive' | 'neutral' | 'negative';
+  predictedCsat: number;
+}
+
+interface AnalyticsAiInsights {
+  anomalies: Anomaly[];
+  deflectionOpportunities: string[];
+  problemSuggestions: ProblemSuggestion[];
+}
+
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +34,185 @@ export class GeminiService {
     // In a real app, this should be handled with a proper configuration service.
     if (process.env.API_KEY) {
       this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    }
+  }
+
+  private handleApiError(error: unknown, context: string): never {
+    console.error(`Error in GeminiService.${context}:`, error);
+    // A simple way to check for rate limit errors from the Gemini API client
+    if (error instanceof Error && (error.message.includes('429') || error.message.includes('RESOURCE_EXHAUSTED'))) {
+      throw new Error('You have exceeded your API quota. Please check your plan and billing details, or try again later.');
+    }
+    const action = context.replace(/([A-Z])/g, ' $1').toLowerCase();
+    throw new Error(`Failed to ${action}.`);
+  }
+
+  async getAiTicketInsights(ticket: Ticket, contactName: string, availableTags: string[]): Promise<TicketAiInsights> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock insights.');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return {
+        summary: `This is a mock summary for ticket #${ticket.id}. The customer, ${contactName}, is experiencing an issue related to "${ticket.subject}".`,
+        suggestions: ['Mock suggestion 1', 'Mock suggestion 2'],
+        tags: availableTags.slice(0, 2),
+        sentiment: 'neutral',
+        predictedCsat: 4.5
+      };
+    }
+
+    try {
+      const conversationHistory = ticket.messages
+        .map(m => `${m.from} (${m.type}): ${m.content}`)
+        .slice(-10)
+        .join('\n');
+      
+      const prompt = `Analyze the following support ticket and provide a comprehensive analysis in JSON format.
+      
+      Ticket Subject: ${ticket.subject}
+      Customer Name: ${contactName}
+      Available Tags: ${availableTags.join(', ')}
+      Conversation History:
+      ---
+      ${conversationHistory}
+      ---
+      
+      Perform the following tasks:
+      1.  **Summarize** the conversation into a few bullet points, focusing on the customer's problem and the last known status.
+      2.  Generate 3 distinct, helpful, and concise **reply suggestions** for the agent to send to the customer in response to the last message.
+      3.  Suggest up to 3 relevant **tags** for this ticket from the provided list of available tags.
+      4.  Analyze the overall customer **sentiment** from the conversation. Respond with only one word: "positive", "neutral", or "negative".
+      5.  Predict the customer satisfaction score (**predictedCsat**) on a scale from 1.0 to 5.0.
+      
+      Return a single JSON object with the specified structure.`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              summary: { type: Type.STRING },
+              suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+              tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+              sentiment: { type: Type.STRING },
+              predictedCsat: { type: Type.NUMBER }
+            }
+          }
+        }
+      });
+      
+      const result = JSON.parse(response.text);
+
+      return {
+        summary: result.summary || 'Summary not available.',
+        suggestions: Array.isArray(result.suggestions) ? result.suggestions : [],
+        tags: (Array.isArray(result.tags) ? result.tags : []).filter((t: string) => availableTags.includes(t)),
+        sentiment: ['positive', 'neutral', 'negative'].includes(result.sentiment) ? result.sentiment : 'neutral',
+        predictedCsat: typeof result.predictedCsat === 'number' ? Math.max(1, Math.min(5, result.predictedCsat)) : 0
+      };
+
+    } catch (error) {
+      this.handleApiError(error, 'getAiTicketInsights');
+    }
+  }
+
+  async getAiAnalyticsInsights(tickets: Ticket[]): Promise<AnalyticsAiInsights> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock analytics insights.');
+       await new Promise(r => setTimeout(r, 1000));
+       return {
+         anomalies: [{ topic: 'Mock Anomaly: Login Failures', count: 5, severity: 'high' }],
+         deflectionOpportunities: ['How to update billing information'],
+         problemSuggestions: []
+       };
+    }
+
+    try {
+      const recentTickets = tickets
+        .filter(t => new Date(t.created).getTime() > Date.now() - 24 * 60 * 60 * 1000)
+        .map(t => ({ id: t.id, subject: t.subject }));
+      
+      const resolvedTickets = tickets
+        .filter(t => t.status === 'resolved')
+        .slice(-50)
+        .map(t => ({ subject: t.subject }));
+
+      const openTickets = tickets
+        .filter(t => t.status === 'open' && !t.parentId)
+        .map(t => ({ id: t.id, subject: t.subject }));
+
+      const prompt = `Analyze the provided ticket data to identify key insights for a support manager.
+      
+      Current Time: ${new Date().toISOString()}
+      
+      Recently Created Tickets (last 24h):
+      ---
+      ${JSON.stringify(recentTickets, null, 2)}
+      ---
+      
+      Recently Resolved Tickets (last 50):
+      ---
+      ${JSON.stringify(resolvedTickets, null, 2)}
+      ---
+      
+      Currently Open Tickets:
+      ---
+      ${JSON.stringify(openTickets, null, 2)}
+      ---
+      
+      Perform the following tasks and return a single JSON object:
+      1.  **anomalies**: Analyze "Recently Created Tickets". Identify unusual spikes in ticket topics. A spike is a significantly higher number of tickets about a specific topic. Return an array of objects, each with "topic", "count", and "severity" ('high' or 'medium').
+      2.  **deflectionOpportunities**: Analyze "Recently Resolved Tickets". Identify common problems that could be solved with a knowledge base article. Return an array of up to 3 suggested article titles.
+      3.  **problemSuggestions**: Analyze "Currently Open Tickets". Identify clusters of 3 or more tickets reporting the same underlying problem. Return an array of objects, each with "suggestedTitle" for a new "Problem Ticket" and "incidentTicketIds" (an array of ticket IDs).
+      `;
+
+       const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              anomalies: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    topic: { type: Type.STRING },
+                    count: { type: Type.NUMBER },
+                    severity: { type: Type.STRING },
+                  },
+                },
+              },
+              deflectionOpportunities: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
+              problemSuggestions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    suggestedTitle: { type: Type.STRING },
+                    incidentTicketIds: {
+                      type: Type.ARRAY,
+                      items: { type: Type.NUMBER }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      return JSON.parse(response.text);
+
+    } catch (error) {
+       this.handleApiError(error, 'getAiAnalyticsInsights');
     }
   }
 
@@ -45,8 +245,7 @@ export class GeminiService {
 
       return response.text;
     } catch (error) {
-      console.error('Error summarizing ticket:', error);
-      return 'Error: Could not generate summary.';
+      this.handleApiError(error, 'summarizeTicket');
     }
   }
 
@@ -103,8 +302,7 @@ export class GeminiService {
        const json = JSON.parse(response.text);
        return json.suggestions || [];
     } catch (error) {
-      console.error('Error generating replies:', error);
-      return ['Error: Could not generate suggestions.'];
+      this.handleApiError(error, 'generateReplySuggestions');
     }
   }
 
@@ -137,8 +335,7 @@ export class GeminiService {
       }
       return 'neutral';
     } catch (error) {
-      console.error('Error analyzing sentiment:', error);
-      return 'neutral';
+      this.handleApiError(error, 'analyzeSentiment');
     }
   }
 
@@ -185,8 +382,7 @@ export class GeminiService {
       // Filter to ensure AI only returns valid tags
       return (json.tags || []).filter((tag: string) => availableTags.includes(tag));
     } catch (error) {
-      console.error('Error suggesting tags:', error);
-      return [];
+      this.handleApiError(error, 'suggestTags');
     }
   }
   
@@ -227,8 +423,7 @@ export class GeminiService {
       
       return JSON.parse(response.text);
     } catch (error) {
-      console.error('Error extracting fields:', error);
-      return {};
+      this.handleApiError(error, 'extractFieldsFromContent');
     }
   }
 
@@ -287,8 +482,7 @@ export class GeminiService {
       }
       return null;
     } catch (error) {
-      console.error('Error suggesting agent:', error);
-      return null;
+      this.handleApiError(error, 'suggestAgentForTicket');
     }
   }
 
@@ -331,8 +525,7 @@ export class GeminiService {
       const json = JSON.parse(response.text);
       return (json.skills || []).filter((skill: string) => availableSkills.includes(skill));
     } catch (error) {
-      console.error('Error extracting skills:', error);
-      return [];
+      this.handleApiError(error, 'extractSkillsForTicket');
     }
   }
   
@@ -359,8 +552,7 @@ export class GeminiService {
       const driver = response.text.trim();
       return drivers.includes(driver) ? driver : 'Other';
     } catch (error) {
-      console.error('Error analyzing CSAT comment:', error);
-      return 'Other';
+      this.handleApiError(error, 'analyzeCSATComment');
     }
   }
 
@@ -411,8 +603,7 @@ export class GeminiService {
       
       return JSON.parse(response.text);
     } catch (error) {
-      console.error('Error generating KB article:', error);
-      throw new Error('Could not generate KB article.');
+      this.handleApiError(error, 'generateKbArticle');
     }
   }
 
@@ -439,8 +630,7 @@ export class GeminiService {
 
       return response.text.trim();
     } catch (error) {
-      console.error('Error changing tone:', error);
-      return 'Error: Could not rewrite text.';
+      this.handleApiError(error, 'changeTone');
     }
   }
 
@@ -496,11 +686,73 @@ export class GeminiService {
 
       return JSON.parse(response.text);
     } catch (error) {
-      console.error('Error answering from KB:', error);
-      return {
-        answer: 'Sorry, I was unable to find an answer in the knowledge base.',
-        sourceIds: []
-      };
+      this.handleApiError(error, 'answerFromKb');
+    }
+  }
+
+  async predictCsat(ticket: Ticket): Promise<number> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock CSAT prediction.');
+      return Math.round((Math.random() * 4 + 1) * 10) / 10;
+    }
+    
+    try {
+      const conversation = ticket.messages.map(m => `${m.from}: ${m.content}`).join('\n\n');
+      const prompt = `Analyze the sentiment and content of the following support ticket conversation. Based on the interaction, predict the customer satisfaction score on a scale from 1.0 to 5.0, where 1 is very dissatisfied and 5 is very satisfied.
+      
+      Conversation:
+      ---
+      ${conversation}
+      ---
+      
+      Respond with a JSON object containing a single key "predictedScore" which is a number (it can have one decimal place).`;
+      
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              predictedScore: { type: Type.NUMBER }
+            }
+          }
+        }
+      });
+      
+      const result = JSON.parse(response.text);
+      const score = Math.max(1, Math.min(5, result.predictedScore || 0));
+      return Math.round(score * 10) / 10;
+    } catch (error) {
+      this.handleApiError(error, 'predictCsat');
+    }
+  }
+  
+  async summarizeReportData(reportData: AgentReport[]): Promise<string> {
+    if (!this.ai) {
+      console.warn('Gemini API key not configured. Returning mock report summary.');
+      return `This is a mock summary. The top performing agent appears to be ${reportData[0]?.agentName || 'N/A'} with ${reportData[0]?.resolvedCount || 0} resolved tickets.`;
+    }
+    
+    try {
+      const prompt = `Analyze the following agent performance report data. Provide a concise executive summary highlighting key insights, such as top performers, potential areas for improvement, and overall team productivity.
+
+      Report Data:
+      ---
+      ${JSON.stringify(reportData, null, 2)}
+      ---
+      
+      Executive Summary:`;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+      });
+
+      return response.text.trim();
+    } catch (error) {
+      this.handleApiError(error, 'summarizeReportData');
     }
   }
 }

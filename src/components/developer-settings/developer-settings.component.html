@@ -1,0 +1,85 @@
+<div class="p-6">
+  <!-- API Keys Section -->
+  <div>
+    <h3 class="text-lg font-medium text-slate-800 dark:text-slate-100 mb-1">API Keys</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Manage API keys for integrations and custom applications.</p>
+    
+    <div class="space-y-3">
+      @for (key of apiKeys(); track key.id) {
+        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md">
+          <div>
+            <p class="font-semibold text-slate-800 dark:text-slate-200">{{ key.name }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              Key: <span class="font-mono">{{ key.key.substring(0, 11) }}...</span> &bull; Last used: {{ formatDate(key.lastUsedAt) }}
+            </p>
+          </div>
+          <button (click)="revokeApiKey.emit(key.id)" class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900">Revoke</button>
+        </div>
+      }
+    </div>
+
+    <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex items-end gap-2">
+      <div class="flex-grow">
+        <label for="new-key-name" class="text-sm font-medium text-slate-700 dark:text-slate-300">New Key Name</label>
+        <input id="new-key-name" type="text" [(ngModel)]="newApiKeyName" placeholder="e.g., My Custom App" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600">
+      </div>
+      <button (click)="handleCreateApiKey()" [disabled]="!newApiKeyName().trim()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50">Create Key</button>
+    </div>
+  </div>
+
+  <!-- Webhooks Section -->
+  <div class="mt-8">
+    <h3 class="text-lg font-medium text-slate-800 dark:text-slate-100 mb-1">Webhooks</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Send real-time event notifications to your own services.</p>
+
+    <div class="space-y-4">
+      @for (webhook of editableWebhooks(); track webhook.id) {
+        <div class="p-4 border rounded-lg dark:border-slate-700">
+          <div class="flex items-center justify-between">
+            <input type="url" [(ngModel)]="webhook.url" placeholder="https://example.com/webhook" class="w-full mr-4 rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600">
+            <button (click)="removeWebhook(webhook.id)" class="text-slate-400 hover:text-red-500 p-1"><app-icon name="trash" class="w-5 h-5"></app-icon></button>
+          </div>
+          <div class="mt-3">
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Events to send:</p>
+            <div class="grid grid-cols-2 gap-2">
+              @for (event of allWebhookEvents; track event) {
+                <label class="flex items-center space-x-2 text-sm">
+                  <input type="checkbox" [checked]="webhook.events.includes(event)" (change)="toggleWebhookEvent(webhook, event)" class="form-checkbox h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
+                  <span>{{ event }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <button (click)="addWebhook()" class="mt-4 px-4 py-2 text-sm border-dashed border-2 border-slate-300 dark:border-slate-600 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Add Webhook</button>
+  </div>
+  
+   <div class="mt-8 flex justify-end">
+    <button (click)="handleSaveWebhooks()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Webhooks</button>
+  </div>
+</div>
+
+<!-- Modal to show newly created API key -->
+@if (newlyGeneratedKey(); as newKey) {
+  <div class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-lg max-w-lg w-full p-6">
+       <h3 class="text-lg font-semibold mb-2">API Key Created Successfully</h3>
+       <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        This is your new API key for "<span class="font-bold">{{ newKey.name }}</span>".
+        <span class="font-bold text-red-600 dark:text-red-400">Please copy this key and store it securely. You will not be able to see it again.</span>
+       </p>
+       <div class="bg-slate-100 dark:bg-slate-900 p-3 rounded-md flex items-center justify-between font-mono text-sm">
+         <span class="text-slate-700 dark:text-slate-200">{{ newKey.key }}</span>
+         <button (click)="copyToClipboard(newKey.key)" class="p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400">
+           <app-icon name="copy" class="w-5 h-5"></app-icon>
+         </button>
+       </div>
+       <div class="mt-6 flex justify-end">
+         <button (click)="newlyGeneratedKey.set(null)" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Done</button>
+       </div>
+    </div>
+  </div>
+}
