@@ -230,17 +230,16 @@ export class DevPlanComponent {
           icon: 'clipboard-check',
           description: 'Establishing the fundamental features of a flexible and powerful Kanban system.',
           features: [
-            { name: 'Workspace & Board Management', description: 'Full CRUD for Workspaces and Boards, including customization (colors and images for backgrounds), icons, descriptions, duplication, and cascading deletion.', status: 'In Progress' },
-            { name: 'Archive & Restore', description: 'Safely archive boards, lists, and cards, with the ability to restore them later.', status: 'Not Started' },
-            { name: 'Favorite/Starred Boards', description: 'Pin frequently-used boards for quick access in the sidebar.', status: 'Not Started' },
-            { name: 'Workspace & Board RBAC', description: 'Owner, Admin, Member, and Viewer roles at both the Workspace and Board level, with member management and online presence indicators.', status: 'Not Started' },
-            { name: 'Board Visibility Controls', description: 'Support for Private, Workspace-wide, and Public (read-only) boards.', status: 'Not Started' },
-            { name: 'List & Card Management', description: 'Full CRUD for lists (rename, reorder, copy, move, descriptions) and cards. Supports drag-and-drop, duplication, and moving/copying cards between boards.', status: 'Not Started' },
-            { name: 'Collapsible Lists', description: 'Collapse and expand individual lists on a board to save space and focus on relevant columns.', status: 'Not Started' },
-            { name: 'Inline Renaming', description: 'Rename boards, lists, and cards directly in place for a faster workflow.', status: 'Not Started' },
-            { name: 'Real-time Collaboration (WebSockets)', description: 'Live updates for all users on a board, with typing indicators, conflict resolution, and automatic reconnection on disconnect.', status: 'Not Started' },
-            { name: 'Comments, @mentions, & Attachments', description: 'Threaded, markdown-enabled comments on cards with user notifications and full file attachment support with previews.', status: 'Not Started' },
-            { name: 'Labels Management', description: 'Create and apply color-coded labels to cards, with a label legend and quick-add search.', status: 'Not Started' }
+            { name: 'Workspace & Board Management', description: 'Full CRUD for Workspaces and Boards. Customize boards with colors and background images. Duplicate boards to quickly set up new projects. Safely delete workspaces and boards with cascading deletion.', status: 'In Progress' },
+            { name: 'Archive & Restore', description: 'Safely archive boards, lists, and cards to remove them from active view without permanent deletion. Browse the archive to restore items at any time.', status: 'Not Started' },
+            { name: 'Favorite/Starred Boards', description: 'Pin frequently-used boards for quick access from a dedicated "Favorites" section in the main navigation sidebar.', status: 'Not Started' },
+            { name: 'Workspace & Board RBAC', description: 'Granular role-based access control with Owner, Admin, Member, and Viewer roles. Manage members at both the workspace and board level. See online presence indicators for active collaborators.', status: 'Not Started' },
+            { name: 'Board Visibility Controls', description: 'Set board visibility to Private (invite-only), Workspace-wide (visible to all members of the workspace), or Public (read-only for anyone with the link).', status: 'Not Started' },
+            { name: 'List & Card Management', description: 'Full CRUD for lists and cards. Drag-and-drop to reorder items. Move or copy cards between lists and boards. Inline renaming for fast edits.', status: 'Not Started' },
+            { name: 'Collapsible Lists', description: 'Collapse and expand individual lists on a board to save horizontal space and focus on relevant workflow stages.', status: 'Not Started' },
+            { name: 'Real-time Collaboration (WebSockets)', description: 'Live updates for all users on a board, showing changes to cards, lists, and comments in real-time. See typing indicators in comments. Smart conflict resolution for simultaneous edits.', status: 'Not Started' },
+            { name: 'Comments, @mentions, & Attachments', description: 'Full Markdown support in comments. Use @mentions to notify team members. Threaded replies for organized discussions. Attach files with previews for common image types.', status: 'Not Started' },
+            { name: 'Labels Management', description: 'Create and manage a library of color-coded labels. Apply multiple labels to cards for categorization. Filter the board by one or more labels.', status: 'Not Started' }
           ]
         },
         {
@@ -248,16 +247,16 @@ export class DevPlanComponent {
           icon: 'sliders',
           description: 'Adding depth to cards and providing powerful tools for managing work.',
           features: [
-            { name: 'Custom Fields', description: 'Create and manage workspace/board-scoped custom fields (text, number, date, dropdown, etc.) and apply them to cards.', status: 'Not Started' },
-            { name: 'Rich Card Details', description: 'Support for markdown descriptions, due dates, start dates, priority levels, and multiple assignees.', status: 'Not Started' },
-            { name: 'Card Visual Customization', description: 'Set cover images, solid colors, or full backgrounds on cards for better visual organization.', status: 'Not Started' },
-            { name: 'Card Activity Log', description: 'View a complete, timestamped audit trail of all changes and comments on a card, including created/modified user and date stamps.', status: 'Not Started' },
-            { name: 'Card Age & Due Date Indicators', description: 'Visual badges on cards to show if they are overdue, due soon, or approaching a deadline.', status: 'Not Started' },
-            { name: 'Advanced Checklists & Sub-tasks', description: 'Create multiple checklists per card, convert items to new linked cards, and show completion progress bars. Includes a toggle to show/hide completed items.', status: 'Not Started' },
-            { name: 'Card Dependencies & Dependencies Dashboard', description: 'Define \'Blocks\', \'Blocked by\', \'Relates to\', \'Duplicates\', and \'Parent/Child\' dependencies between cards, with visual indicators, dependency notes, and a global graph. Includes protection against circular dependencies.', status: 'Not Started' },
-            { name: 'Bulk Operations', description: 'Multi-select cards via checkboxes or Shift+click to perform actions (move, assign, label, etc.) on them at once.', status: 'Not Started' },
-            { name: 'Card Merging', description: 'Combine multiple cards into one, merging all properties. Source cards are archived but do not auto-complete linked checklist items.', status: 'Not Started' },
-            { name: 'List Limits (WIP)', description: 'Set Work-in-Progress limits on lists to visually warn when capacity is exceeded.', status: 'Not Started' }
+            { name: 'Custom Fields', description: 'Define workspace-scoped custom fields (Text, Number, Date, Dropdown, User Picker, Checkbox) and apply them to cards to capture structured, domain-specific data.', status: 'Not Started' },
+            { name: 'Rich Card Details', description: 'Utilize Markdown in card descriptions, set due dates with reminders, define start dates for planning, set priority levels (Urgent, High, Medium, Low), and assign multiple users to a single card.', status: 'Not Started' },
+            { name: 'Card Visual Customization', description: 'Enhance visual organization by setting cover images from attachments, choosing solid colors, or applying full-card background patterns.', status: 'Not Started' },
+            { name: 'Card Activity Log', description: 'Access a complete, filterable, timestamped audit trail of all changes and comments on a card. Easily see who did what and when.', status: 'Not Started' },
+            { name: 'Card Age & Due Date Indicators', description: 'Visual badges on cards to show if they are overdue, due soon, or have been inactive (stale) in a list for a long time.', status: 'Not Started' },
+            { name: 'Advanced Checklists & Sub-tasks', description: 'Create multiple named checklists per card. Convert checklist items into new, linked cards. Assign users and due dates to individual checklist items. See completion progress bars on the card face.', status: 'Not Started' },
+            { name: 'Card Dependencies & Dependencies Dashboard', description: 'Define relationships between cards: \'Blocks\', \'Is Blocked By\', \'Relates to\', and \'Duplicates\'. Visualize dependencies on the board and prevent moving a card if its blocking dependency is incomplete.', status: 'Not Started' },
+            { name: 'Bulk Operations', description: 'Use multi-select (checkboxes or Shift+click) to perform actions like moving, assigning, labeling, or setting due dates on many cards at once.', status: 'Not Started' },
+            { name: 'Card Merging', description: 'Combine multiple cards into a single one, intelligently merging all properties like comments, attachments, and activity logs. Source cards are automatically archived.', status: 'Not Started' },
+            { name: 'List Limits (WIP)', description: 'Set Work-in-Progress (WIP) limits on lists to visually highlight bottlenecks when the number of cards in a list exceeds its configured capacity.', status: 'Not Started' }
           ]
         },
         {
@@ -265,12 +264,12 @@ export class DevPlanComponent {
           icon: 'layout-template',
           description: 'Offering multiple ways to visualize data and find information quickly.',
           features: [
-            { name: 'Multiple Board Views: Calendar', description: 'View cards on a calendar by due date, with drag-and-drop rescheduling.', status: 'Not Started' },
-            { name: 'Multiple Board Views: Table', description: 'A spreadsheet-like grid with sortable columns, inline editing, multi-select, and export to CSV/Excel.', status: 'Not Started' },
-            { name: 'Multiple Board Views: Gantt Chart', description: 'A timeline view with dependency arrows, progress bars, and critical path highlighting.', status: 'Not Started' },
-            { name: 'Global Search & Command Palette (Cmd+K)', description: 'A keyboard-driven command palette (Cmd+K) to search for anything. Shows recent items first and supports quick actions like \'Create card\' or \'Navigate to board\'.', status: 'Not Started' },
-            { name: 'Advanced Filtering & Saved Filters', description: 'Filter cards by any property (including custom fields) and allow users to save, pin, and share complex filter configurations.', status: 'Not Started' },
-            { name: 'My Work Personal Dashboard', description: 'A personalized view showing all cards assigned to a user across all boards and workspaces, grouped by due date or priority.', status: 'Not Started' }
+            { name: 'Multiple Board Views: Calendar', description: 'View cards on a monthly or weekly calendar based on their start and due dates. Drag-and-drop cards to reschedule.', status: 'Not Started' },
+            { name: 'Multiple Board Views: Table', description: 'A spreadsheet-like grid view of all cards. Customize, sort, and filter columns. Inline edit any field. Multi-select rows for bulk actions and export to CSV/Excel.', status: 'Not Started' },
+            { name: 'Multiple Board Views: Gantt Chart', description: 'A timeline view for project planning. Visualize card durations and dependencies with arrows, track progress, and identify the critical path.', status: 'Not Started' },
+            { name: 'Global Search & Command Palette (Cmd+K)', description: 'A fast, keyboard-driven command palette (Cmd+K) to search for boards, cards, users, and labels across the entire workspace. Supports quick actions like \'Create card\' or \'Go to board\'.', status: 'Not Started' },
+            { name: 'Advanced Filtering & Saved Filters', description: 'Filter cards on any view by any property (including custom fields) using complex AND/OR logic. Save filter combinations for personal use or share with the team.', status: 'Not Started' },
+            { name: 'My Work Personal Dashboard', description: 'A personalized dashboard showing all cards assigned to a user across all boards, grouped by due date, priority, or project.', status: 'Not Started' }
           ]
         },
         {
@@ -278,12 +277,12 @@ export class DevPlanComponent {
           icon: 'zap',
           description: 'Automating repetitive tasks and connecting the Kanban board to external systems.',
           features: [
-            { name: 'Automation Rules Engine', description: 'A trigger-condition-action system to automate workflows. Conditions act as optional filters (e.g., \'only if a certain label is present\').', status: 'Not Started' },
-            { name: 'Card & Board Templates', description: 'Create and manage templates for cards and boards in a workspace-scoped library. Update existing templates from a card or board.', status: 'Not Started' },
-            { name: 'Recurring Cards', description: 'Set up cards to be created automatically on a recurring schedule (daily, weekly, monthly, or cron).', status: 'Not Started' },
-            { name: 'Time Tracking & Reporting', description: 'Log estimated and actual time spent on cards, use a start/stop timer, and generate exportable time reports.', status: 'Not Started' },
-            { name: 'Advanced Email Integration (OAuth)', description: 'Connect email via per-user OAuth to auto-comment on cards. Features AI fuzzy matching, checklist item matching, data extraction with field mapping, selective scanning filters, audit logging, E2E encryption (AES-256), privacy controls, and intelligent thread tracking. Supports manual and scheduled scanning.', status: 'Not Started' },
-            { name: 'Webhooks', description: 'Send data to external services with HMAC signature verification and automatic retry logic.', status: 'Not Started' }
+            { name: 'Automation Rules Engine', description: 'A "Butler"-style trigger-condition-action system. Example: "When a card with label \'Bug\' is moved to \'Done\', post a comment \'Resolved!\' and archive the card."', status: 'Not Started' },
+            { name: 'Card & Board Templates', description: 'Create templates for frequently used cards (e.g., \'Bug Report\') with predefined checklists, labels, and custom fields. Create board templates for common workflows (e.g., \'Agile Sprint\').', status: 'Not Started' },
+            { name: 'Recurring Cards', description: 'Set up cards to be created automatically on a recurring schedule (daily, weekly, monthly, or a custom cron schedule).', status: 'Not Started' },
+            { name: 'Time Tracking & Reporting', description: 'Log estimated and actual time spent on cards using a start/stop timer. Generate reports on time spent per user, per board, or per label.', status: 'Not Started' },
+            { name: 'Advanced Email Integration (OAuth)', description: 'Connect email via per-user OAuth to automate card actions. Features AI fuzzy matching for cards and checklist items, data extraction with field mapping, and intelligent thread tracking with E2E encryption.', status: 'Not Started' },
+            { name: 'Webhooks', description: 'Send outgoing webhooks for various events (card created, moved, comment added, etc.) to integrate with external systems. Support for HMAC signature verification and automatic retries.', status: 'Not Started' }
           ]
         },
         {
@@ -291,11 +290,11 @@ export class DevPlanComponent {
           icon: 'shield',
           description: 'Adding features for complex project management, security, and user comfort.',
           features: [
-            { name: 'Authentication & User Management', description: 'Full login/register flows with session management, password hashing, CSRF protection, and user profiles with preferences.', status: 'Not Started' },
-            { name: 'Notifications (In-App & Email)', description: 'A notification center for @mentions, assignments, due date reminders, etc. with actions like \'Mark as Read\', \'Navigate to Item\', and \'Delete\'.', status: 'Not Started' },
-            { name: 'Customization & Personalization', description: 'User-selectable light/dark themes, custom board/list/card colors, layout preferences, and a suite of fixed keyboard shortcuts.', status: 'Not Started' },
-            { name: 'Accessibility (WCAG AA)', description: 'Ensure the application is fully keyboard navigable, screen-reader friendly, and meets contrast standards.', status: 'Not Started' },
-            { name: 'Performance Optimizations', description: 'Implement optimistic updates, virtual scrolling for long lists, intelligent caching, and lazy loading for a fast experience.', status: 'Not Started' },
+            { name: 'Authentication & User Management', description: 'Full login/register flows with session management, password hashing (bcrypt), CSRF protection, and user profiles with preferences.', status: 'Not Started' },
+            { name: 'Notifications (In-App & Email)', description: 'A real-time notification center for @mentions, assignments, and due date reminders, with actions like \'Mark as Read\' and \'Navigate\'. Granular user controls for email notifications.', status: 'Not Started' },
+            { name: 'Customization & Personalization', description: 'User-selectable light/dark themes, custom board backgrounds, layout preferences (e.g., compact vs. comfortable), and a suite of fixed keyboard shortcuts.', status: 'Not Started' },
+            { name: 'Accessibility (WCAG AA)', description: 'Ensure the application is fully keyboard navigable, screen-reader friendly (ARIA labels), and meets color contrast standards.', status: 'Not Started' },
+            { name: 'Performance Optimizations', description: 'Implement optimistic UI updates for a snappy feel, virtual scrolling for boards with thousands of cards, intelligent caching, and lazy loading of components.', status: 'Not Started' },
             { name: 'In-App Documentation', description: 'A comprehensive, searchable help system explaining how to use all Kanban features, with step-by-step visual guides.', status: 'Not Started' }
           ]
         }
@@ -309,9 +308,9 @@ export class DevPlanComponent {
           icon: 'link',
           description: 'Creating a direct and visible connection between customer issues and development tasks.',
           features: [
-            { name: 'One-Click: Convert Ticket to Kanban Card', description: 'Instantly create a new task on a Kanban board from a support ticket.', status: 'Not Started' },
-            { name: 'Link Existing Tickets and Cards', description: 'Associate one or more tickets with a Kanban card, and vice-versa.', status: 'Not Started' },
-            { name: 'Bi-directional Visibility', description: 'View linked tickets from the Kanban card and linked cards from the ticket UI.', status: 'Not Started' },
+            { name: 'One-Click: Convert Ticket to Kanban Card', description: 'Instantly create a new task on a Kanban board from a support ticket. Automatically carries over ticket title, description, and a permanent link back to the original ticket.', status: 'Not Started' },
+            { name: 'Link Existing Tickets and Cards', description: 'From a ticket or a card, search and link to one or more existing items in the other system. Supports many-to-many relationships.', status: 'Not Started' },
+            { name: 'Bi-directional Visibility', description: 'A dedicated section on the ticket view shows linked Kanban cards with their status, list, and assignee. The Kanban card shows a list of linked tickets with their status and priority.', status: 'Not Started' },
           ]
         },
         {
@@ -319,10 +318,10 @@ export class DevPlanComponent {
           icon: 'zap',
           description: 'Synchronizing status and communication to create a unified workflow.',
           features: [
-            { name: 'Status Synchronization', description: 'Automatically update ticket status when a linked Kanban card moves to "Done".', status: 'Not Started' },
-            { name: 'Post Internal Notes Across Systems', description: 'Add an internal note to a ticket directly from the linked Kanban card.', status: 'Not Started' },
-            { name: 'Expose Ticket SLA on Kanban Card', description: 'Show SLA status as a badge on the linked Kanban card.', status: 'Not Started' },
-            { name: 'Aggregate Time Tracking', description: 'Roll up time tracked on tickets to the parent Kanban card.', status: 'Not Started' },
+            { name: 'Status Synchronization', description: 'Automatically update ticket status (e.g., to \'Resolved\') and optionally notify the customer when a linked Kanban card moves to a "Done" list.', status: 'Not Started' },
+            { name: 'Post Internal Notes Across Systems', description: 'From a Kanban card, write a comment that gets posted as an internal note on all linked tickets, keeping support agents in the loop on development progress.', status: 'Not Started' },
+            { name: 'Expose Ticket SLA on Kanban Card', description: 'Show a visual SLA status badge (OK, At Risk, Breached) on the linked Kanban card so developers can prioritize work based on customer urgency.', status: 'Not Started' },
+            { name: 'Aggregate Time Tracking', description: 'Time logged on support tickets can optionally be rolled up and added to the total time tracked on the parent Kanban card, providing a full picture of effort.', status: 'Not Started' },
           ]
         },
       ],
@@ -335,8 +334,8 @@ export class DevPlanComponent {
           icon: 'layers',
           description: 'Expanding beyond help desk to support mature ITIL processes.',
           features: [
-            { name: 'Asset Management (CMDB)', description: 'Track and manage hardware, software, and other company assets, and link them to tickets.', status: 'Not Started' },
-            { name: 'Change & Release Management', description: 'Implement formal workflows for managing IT changes and software releases, including approval chains.', status: 'Not Started' },
+            { name: 'Asset Management (CMDB)', description: 'Track and manage hardware, software, and other company assets in a configuration management database. Link assets to tickets to understand impact and history.', status: 'Not Started' },
+            { name: 'Change & Release Management', description: 'Implement formal workflows for managing IT changes and software releases, including planning, multi-step approval chains, and release scheduling to minimize service disruption.', status: 'Not Started' },
           ]
         },
         {
@@ -344,8 +343,8 @@ export class DevPlanComponent {
           icon: 'heart-pulse',
           description: 'Building tools that foster community and increase motivation.',
           features: [
-            { name: 'Community Forums', description: 'Enable customers to help each other, reducing ticket volume and building a user community.', status: 'Not Started' },
-            { name: 'Agent Gamification', description: 'Introduce leaderboards, achievements, and badges for agents based on performance metrics like CSAT and resolution time.', status: 'Not Started' },
+            { name: 'Community Forums', description: 'Enable customers to help each other, reducing ticket volume and building a user community. Allows agents to moderate and convert posts into tickets or KB articles.', status: 'Not Started' },
+            { name: 'Agent Gamification', description: 'Introduce leaderboards, achievements, and badges for agents based on performance metrics like CSAT, first response time, and tickets resolved, fostering friendly competition.', status: 'Not Started' },
           ]
         },
         {
@@ -353,9 +352,9 @@ export class DevPlanComponent {
           icon: 'mic',
           description: 'Integrating voice channels and applying AI for deeper analysis.',
           features: [
-            { name: 'Telephony (Voice/CTI) Integration', description: 'Connect with phone systems to handle calls, create tickets from voicemails, and show customer context on incoming calls.', status: 'Not Started' },
-            { name: 'AI Call Transcription & Analysis', description: 'Automatically transcribe calls and use Gemini to summarize them, analyze sentiment, and identify keywords.', status: 'Not Started' },
-            { name: 'AI-Powered Spam Detection', description: 'Automatically identify and filter out spam tickets from any channel to keep queues clean.', status: 'Not Started' },
+            { name: 'Telephony (Voice/CTI) Integration', description: 'Connect with phone systems (e.g., via Twilio) to handle calls, automatically create tickets from voicemails, and show a \'screen pop\' with customer context on incoming calls.', status: 'Not Started' },
+            { name: 'AI Call Transcription & Analysis', description: 'Automatically transcribe calls and use Gemini to summarize them, analyze sentiment, and identify keywords for automatic tagging and routing.', status: 'Not Started' },
+            { name: 'AI-Powered Spam Detection', description: 'Train a model to automatically identify and filter out spam tickets from any channel (email, portal, etc.) to keep queues clean and focused.', status: 'Not Started' },
           ]
         },
         {
@@ -363,9 +362,9 @@ export class DevPlanComponent {
           icon: 'code',
           description: 'Expanding our reach by integrating with crucial third-party developer and business platforms.',
           features: [
-            { name: 'Developer Tool Integrations', description: 'Link tickets and tasks to issues, commits, and pull requests in GitHub, GitLab, and other dev tools.', status: 'Not Started' },
+            { name: 'Developer Tool Integrations', description: 'Bi-directional sync with GitHub, GitLab, and other dev tools. Link tickets and cards to issues, commits, and pull requests. See PR status directly from the ticket.', status: 'Not Started' },
             { name: 'E-commerce & Payments Integrations', description: 'Display customer order history and subscription data from platforms like Shopify and Stripe directly within the ticket view.', status: 'Not Started' },
-            { name: 'In-App Mobile SDK', description: 'Provide an SDK for iOS and Android developers to embed support directly into their mobile applications.', status: 'Not Started' },
+            { name: 'In-App Mobile SDK', description: 'Provide an SDK for iOS and Android developers to embed a native support experience (KB search, ticket submission, chat) directly into their mobile applications.', status: 'Not Started' },
           ]
         }
       ]
