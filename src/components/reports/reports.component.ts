@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, signal, computed, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Ticket, Agent } from '../../models';
@@ -21,6 +21,7 @@ export class ReportsComponent {
   agents = input.required<Agent[]>();
 
   private geminiService = inject(GeminiService);
+  isApiOnCooldown = this.geminiService.isApiOnCooldown;
 
   dateFrom = signal('');
   dateTo = signal('');
@@ -28,10 +29,17 @@ export class ReportsComponent {
   aiSummary = signal<string>('');
   isGeneratingSummary = signal(false);
 
-  reportData = computed<AgentReport[]>(() => {
-    // Reset AI summary when data changes
-    this.aiSummary.set('');
+  constructor() {
+    // Effect to reset AI summary when date range changes
+    effect(() => {
+      // This will run whenever dateFrom or dateTo changes.
+      this.dateFrom();
+      this.dateTo();
+      this.aiSummary.set('');
+    });
+  }
 
+  reportData = computed<AgentReport[]>(() => {
     const from = this.dateFrom() ? new Date(this.dateFrom()).getTime() : 0;
     // Set to end of day
     const to = this.dateTo() ? new Date(this.dateTo()).setHours(23, 59, 59, 999) : Infinity;
@@ -76,7 +84,7 @@ export class ReportsComponent {
         const summary = await this.geminiService.summarizeReportData(this.reportData());
         this.aiSummary.set(summary);
     } catch (e) {
-        this.aiSummary.set('An error occurred while generating the summary.');
+        this.aiSummary.set(e instanceof Error ? e.message : 'An error occurred while generating the summary.');
         console.error(e);
     } finally {
         this.isGeneratingSummary.set(false);

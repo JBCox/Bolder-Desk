@@ -1,90 +1,124 @@
-<div class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+<div class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 z-50 flex items-center justify-center p-4">
   <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-5xl h-[90vh] flex flex-col">
-    <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-      <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+    <!-- Header -->
+    <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center flex-shrink-0">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
         <app-icon name="settings" class="w-6 h-6"></app-icon>
-        Settings
-      </h2>
-      <button (click)="close.emit()" class="text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200">
-        <app-icon name="x" class="w-6 h-6"></app-icon>
+        <span>Settings</span>
+      </h3>
+      <button (click)="close.emit()" class="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">
+        <app-icon name="x" class="w-5 h-5"></app-icon>
       </button>
     </div>
-    <div class="flex-1 flex overflow-hidden">
-      <!-- Sidebar -->
-      <div class="w-1/4 p-4 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+
+    <!-- Body -->
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Left Nav -->
+      <div class="w-1/4 p-4 border-r dark:border-slate-700 overflow-y-auto">
         <nav class="space-y-1">
-          <button (click)="activeTab.set('profile')" [class]="getTabClass('profile')">
-            <app-icon name="user" class="w-5 h-5 mr-2"></app-icon>
-            <span>My Profile</span>
-          </button>
-          <button (click)="activeTab.set('roles')" [class]="getTabClass('roles')">
-            <app-icon name="users" class="w-5 h-5 mr-2"></app-icon>
-            <span>Roles & Permissions</span>
-          </button>
-           <button (click)="activeTab.set('authentication')" [class]="getTabClass('authentication')">
-            <app-icon name="shield" class="w-5 h-5 mr-2"></app-icon>
-            <span>Authentication</span>
-          </button>
-           <button (click)="activeTab.set('automations')" [class]="getTabClass('automations')">
-            <app-icon name="zap" class="w-5 h-5 mr-2"></app-icon>
-            <span>Automation Rules</span>
-          </button>
-           <button (click)="activeTab.set('slas')" [class]="getTabClass('slas')">
-            <app-icon name="sliders" class="w-5 h-5 mr-2"></app-icon>
-            <span>SLA Policies</span>
-          </button>
-          <button (click)="activeTab.set('forms')" [class]="getTabClass('forms')">
-            <app-icon name="layout-template" class="w-5 h-5 mr-2"></app-icon>
-            <span>Form Templates</span>
-          </button>
-          <button (click)="activeTab.set('developer')" [class]="getTabClass('developer')">
-            <app-icon name="code" class="w-5 h-5 mr-2"></app-icon>
-            <span>Developer</span>
-          </button>
-          <button (click)="activeTab.set('audit')" [class]="getTabClass('audit')">
-            <app-icon name="history" class="w-5 h-5 mr-2"></app-icon>
-            <span>Audit Log</span>
-          </button>
+          <div>
+            <h4 class="px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Personal</h4>
+            <button [class]="getTabClass('profile')" (click)="activeTab.set('profile')">
+              <app-icon name="user" class="w-4 h-4 mr-2"></app-icon> My Profile
+            </button>
+          </div>
+
+          <div class="pt-2">
+            <h4 class="px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Administration</h4>
+            <button [class]="getTabClass('roles')" (click)="activeTab.set('roles')">
+              <app-icon name="shield" class="w-4 h-4 mr-2"></app-icon> Roles & Permissions
+            </button>
+            <button [class]="getTabClass('automations')" (click)="activeTab.set('automations')">
+              <app-icon name="zap" class="w-4 h-4 mr-2"></app-icon> Automations
+            </button>
+            <button [class]="getTabClass('slas')" (click)="activeTab.set('slas')">
+              <app-icon name="sliders" class="w-4 h-4 mr-2"></app-icon> SLA Policies
+            </button>
+            <button [class]="getTabClass('forms')" (click)="activeTab.set('forms')">
+              <app-icon name="layout-template" class="w-4 h-4 mr-2"></app-icon> Form Templates
+            </button>
+            <button [class]="getTabClass('authentication')" (click)="activeTab.set('authentication')">
+              <app-icon name="lock" class="w-4 h-4 mr-2"></app-icon> Authentication (SSO)
+            </button>
+          </div>
+
+          <div class="pt-2">
+            <h4 class="px-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">System</h4>
+            <button [class]="getTabClass('audit')" (click)="activeTab.set('audit')">
+              <app-icon name="history" class="w-4 h-4 mr-2"></app-icon> Audit Log
+            </button>
+            <button [class]="getTabClass('developer')" (click)="activeTab.set('developer')">
+              <app-icon name="code" class="w-4 h-4 mr-2"></app-icon> Developer
+            </button>
+          </div>
         </nav>
       </div>
-      <!-- Content -->
-      <div class="flex-1 overflow-y-auto">
+
+      <!-- Right Content -->
+      <div class="w-3/4 overflow-y-auto">
         @switch (activeTab()) {
           @case ('profile') {
             <div class="p-6">
               <h3 class="text-lg font-medium text-slate-800 dark:text-slate-100">My Profile</h3>
               <p class="text-slate-500 dark:text-slate-400 mt-1">Manage your personal settings.</p>
-              <div class="mt-4">
-                <p><strong>Name:</strong> {{ currentAgent().name }}</p>
-                <p><strong>Email:</strong> {{ currentAgent().email }}</p>
+              <div class="mt-6 border-t border-slate-200 dark:border-slate-700">
+                <dl class="divide-y divide-slate-200 dark:divide-slate-700">
+                  <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Name</dt>
+                    <dd class="mt-1 flex text-sm text-slate-900 dark:text-slate-100 sm:mt-0 sm:col-span-2">{{ currentAgent().name }}</dd>
+                  </div>
+                  <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt class="text-sm font-medium text-slate-500 dark:text-slate-400">Email</dt>
+                    <dd class="mt-1 flex text-sm text-slate-900 dark:text-slate-100 sm:mt-0 sm:col-span-2">{{ currentAgent().email }}</dd>
+                  </div>
+                </dl>
               </div>
             </div>
           }
           @case ('roles') {
-            <app-roles-permissions [roles]="roles()" [allPermissions]="allPermissions()" (save)="saveRoles.emit($event)"></app-roles-permissions>
+            <app-roles-permissions 
+              [roles]="roles()" 
+              [allPermissions]="allPermissions()" 
+              (save)="saveRoles.emit($event)">
+            </app-roles-permissions>
           }
-          @case('automations') {
-            <app-automation-modal [automationRules]="automationRules()" [groups]="groups()" [ticketViews]="ticketViews()" (close)="noop()" (update)="noop()"></app-automation-modal>
+          @case ('automations') {
+            <app-automation-modal 
+              [automationRules]="automationRules()"
+              [groups]="groups()"
+              [ticketViews]="ticketViews()"
+              (update)="saveAutomationRules.emit($event)">
+            </app-automation-modal>
+          }
+          @case ('slas') {
+            <app-sla-management-modal 
+              [slaRules]="slaRules()"
+              (update)="saveSlaRules.emit($event)">
+            </app-sla-management-modal>
+          }
+          @case ('forms') {
+            <app-form-builder 
+              [initialTemplates]="formTemplates()" 
+              (save)="saveFormTemplates.emit($event)">
+            </app-form-builder>
           }
           @case ('authentication') {
-            <app-sso-settings [settings]="ssoSettings()" (save)="saveSsoSettings.emit($event)"></app-sso-settings>
+            <app-sso-settings 
+              [settings]="ssoSettings()" 
+              (save)="saveSsoSettings.emit($event)">
+            </app-sso-settings>
           }
-           @case ('audit') {
+          @case ('audit') {
             <app-audit-log [log]="auditLog()"></app-audit-log>
-           }
-           @case ('developer') {
+          }
+          @case ('developer') {
             <app-developer-settings
               [apiKeys]="apiKeys()"
               [webhooks]="webhooks()"
               (createApiKey)="createApiKey.emit($event)"
               (revokeApiKey)="revokeApiKey.emit($event)"
-              (saveWebhooks)="saveWebhooks.emit($event)"
-            ></app-developer-settings>
-           }
-          @default {
-            <div class="p-6 text-slate-500">
-              <p>This section is under construction.</p>
-            </div>
+              (saveWebhooks)="saveWebhooks.emit($event)">
+            </app-developer-settings>
           }
         }
       </div>

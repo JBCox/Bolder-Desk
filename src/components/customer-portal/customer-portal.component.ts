@@ -19,6 +19,7 @@ export class CustomerPortalComponent {
   kbFeedback = output<KbFeedback>();
 
   private geminiService = inject(GeminiService);
+  isApiOnCooldown = this.geminiService.isApiOnCooldown;
 
   selectedTicket = signal<Ticket | null>(null);
   activeTab = signal<'tickets' | 'kb'>('tickets');
@@ -57,6 +58,9 @@ export class CustomerPortalComponent {
         const result = await this.geminiService.answerFromKb(query, this.articles());
         const sourceArticles = this.articles().filter(a => result.sourceIds.includes(a.id));
         this.kbAnswer.set({ answer: result.answer, sources: sourceArticles });
+    } catch (e) {
+        const message = e instanceof Error ? e.message : 'Could not perform AI search.';
+        this.kbAnswer.set({ answer: `Error: ${message}`, sources: [] });
     } finally {
         this.isSearchingKb.set(false);
     }

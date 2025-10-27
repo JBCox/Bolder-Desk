@@ -34,8 +34,8 @@ export class SlaManagementModalComponent {
     this.update.emit(this.editableRules());
   }
 
-  updateRule(priority: string, type: 'responseTime' | 'resolutionTime', event: Event) {
-    const value = parseInt((event.target as HTMLInputElement).value, 10);
+  updateRule(priority: string, type: 'responseTime' | 'resolutionTime', valueStr: string) {
+    const value = parseInt(valueStr, 10);
     if (!isNaN(value)) {
         this.editableRules.update(rules => {
             const newRules = {...rules};

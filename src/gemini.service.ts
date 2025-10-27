@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { GoogleGenAI, GenerateContentResponse, Type } from '@google/genai';
 import { Ticket, CustomFieldDefinition, KnowledgeBaseArticle, Agent, Anomaly, ProblemSuggestion } from './models';
 
@@ -28,6 +28,22 @@ interface AnalyticsAiInsights {
 })
 export class GeminiService {
   private ai: GoogleGenAI | null = null;
+  private readonly COOLDOWN_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+  private apiCooldownUntil = signal<number | null>(null);
+
+  isApiOnCooldown = computed(() => {
+    const cooldownEnd = this.apiCooldownUntil();
+    return cooldownEnd !== null && Date.now() < cooldownEnd;
+  });
+
+  cooldownTimeRemaining = computed(() => {
+    const cooldownEnd = this.apiCooldownUntil();
+    if (cooldownEnd === null || !this.isApiOnCooldown()) {
+      return 0;
+    }
+    return Math.ceil((cooldownEnd - Date.now()) / 1000); // remaining seconds
+  });
 
   constructor() {
     // IMPORTANT: Service is designed to fail gracefully if API_KEY is not set.
@@ -37,17 +53,26 @@ export class GeminiService {
     }
   }
 
+  private checkCooldown(): void {
+    if (this.isApiOnCooldown()) {
+      const remainingMinutes = Math.ceil(this.cooldownTimeRemaining() / 60);
+      throw new Error(`AI features are temporarily unavailable due to rate limiting. Please try again in about ${remainingMinutes} minute(s).`);
+    }
+  }
+
   private handleApiError(error: unknown, context: string): never {
     console.error(`Error in GeminiService.${context}:`, error);
     // A simple way to check for rate limit errors from the Gemini API client
     if (error instanceof Error && (error.message.includes('429') || error.message.includes('RESOURCE_EXHAUSTED'))) {
-      throw new Error('You have exceeded your API quota. Please check your plan and billing details, or try again later.');
+      this.apiCooldownUntil.set(Date.now() + this.COOLDOWN_DURATION_MS);
+      throw new Error('You have exceeded your API quota. Please check your plan and billing details. AI features will be temporarily disabled for 5 minutes.');
     }
     const action = context.replace(/([A-Z])/g, ' $1').toLowerCase();
     throw new Error(`Failed to ${action}.`);
   }
 
   async getAiTicketInsights(ticket: Ticket, contactName: string, availableTags: string[]): Promise<TicketAiInsights> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock insights.');
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -119,6 +144,7 @@ export class GeminiService {
   }
 
   async getAiAnalyticsInsights(tickets: Ticket[]): Promise<AnalyticsAiInsights> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock analytics insights.');
        await new Promise(r => setTimeout(r, 1000));
@@ -217,6 +243,7 @@ export class GeminiService {
   }
 
   async summarizeTicket(ticket: Ticket, contactName: string): Promise<string> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock summary.');
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network latency
@@ -250,6 +277,7 @@ export class GeminiService {
   }
 
   async generateReplySuggestions(ticket: Ticket, contactName: string): Promise<string[]> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock replies.');
        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network latency
@@ -307,6 +335,7 @@ export class GeminiService {
   }
 
   async analyzeSentiment(ticket: Ticket): Promise<'positive' | 'neutral' | 'negative'> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock sentiment.');
       const sentiments: ('positive' | 'neutral' | 'negative')[] = ['positive', 'neutral', 'negative'];
@@ -340,6 +369,7 @@ export class GeminiService {
   }
 
   async suggestTags(ticket: Ticket, availableTags: string[]): Promise<string[]> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock tags.');
       return availableTags.length > 2 ? [availableTags[0], availableTags[1]] : [];
@@ -387,6 +417,7 @@ export class GeminiService {
   }
   
   async extractFieldsFromContent(content: string, customFields: CustomFieldDefinition[]): Promise<{ [key: string]: any }> {
+    this.checkCooldown();
     if (!this.ai || customFields.length === 0) {
       console.warn('Gemini API key not configured or no custom fields defined. Skipping field extraction.');
       return {};
@@ -428,6 +459,7 @@ export class GeminiService {
   }
 
   async suggestAgentForTicket(ticket: Ticket, agents: Agent[]): Promise<Agent | null> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Mocking agent suggestion.');
       // Return a random agent for mock purposes
@@ -487,6 +519,7 @@ export class GeminiService {
   }
 
   async extractSkillsForTicket(ticket: Ticket, availableSkills: string[]): Promise<string[]> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock skills.');
       return availableSkills.length > 1 ? [availableSkills[0]] : [];
@@ -530,6 +563,7 @@ export class GeminiService {
   }
   
   async analyzeCSATComment(comment: string): Promise<string> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock CSAT driver.');
       return 'Other';
@@ -557,6 +591,7 @@ export class GeminiService {
   }
 
   async generateKbArticle(ticket: Ticket): Promise<{ title: string, content: string, tags: string[] }> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock KB article.');
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -608,6 +643,7 @@ export class GeminiService {
   }
 
   async changeTone(text: string, tone: 'Formal' | 'Friendly'): Promise<string> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning modified mock text.');
       return `(${tone}) ${text}`;
@@ -635,6 +671,7 @@ export class GeminiService {
   }
 
   async answerFromKb(query: string, articles: KnowledgeBaseArticle[]): Promise<{ answer: string, sourceIds: number[] }> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock KB answer.');
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -691,6 +728,7 @@ export class GeminiService {
   }
 
   async predictCsat(ticket: Ticket): Promise<number> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock CSAT prediction.');
       return Math.round((Math.random() * 4 + 1) * 10) / 10;
@@ -730,6 +768,7 @@ export class GeminiService {
   }
   
   async summarizeReportData(reportData: AgentReport[]): Promise<string> {
+    this.checkCooldown();
     if (!this.ai) {
       console.warn('Gemini API key not configured. Returning mock report summary.');
       return `This is a mock summary. The top performing agent appears to be ${reportData[0]?.agentName || 'N/A'} with ${reportData[0]?.resolvedCount || 0} resolved tickets.`;

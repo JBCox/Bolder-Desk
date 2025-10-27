@@ -119,9 +119,9 @@ export class DevPlanComponent {
             { name: 'Bulk Ticket Actions', description: 'Perform actions on multiple tickets at once.', status: 'Done' },
             { name: 'Knowledge Base (Authoring & Voting)', description: 'Create and manage support articles for agents and customers.', status: 'Done' },
             { name: 'Keyboard Shortcuts', description: 'Boost agent speed with keyboard navigation and actions.', status: 'Done' },
-            { name: 'Advanced Filtering (AND/OR Logic)', description: 'Build complex queries with nested condition groups using AND/OR logic to precisely target tickets.', status: 'Not Started' },
-            { name: 'Saved Views (Private & Shared)', description: 'Save complex filter combinations as views for quick access. Create private views or share them with teams.', status: 'Not Started' },
-            { name: 'Customizable Views (Columns, Sort, Group)', description: 'Customize saved views by choosing columns to display, setting default sorting, and grouping tickets.', status: 'Not Started' },
+            { name: 'Advanced Filtering (AND/OR Logic)', description: 'Build complex queries with nested condition groups using AND/OR logic to precisely target tickets.', status: 'Done' },
+            { name: 'Saved Views (Private & Shared)', description: 'Save complex filter combinations as views for quick access. Create private views or share them with teams.', status: 'Done' },
+            { name: 'Customizable Views (Columns, Sort, Group)', description: 'Customize saved views by choosing columns to display, setting default sorting, and grouping tickets.', status: 'Done' },
           ]
         },
         {
@@ -138,8 +138,8 @@ export class DevPlanComponent {
                 { name: 'Wallboard / Live Dashboard', description: 'A real-time, high-level view of help desk activity.', status: 'Done' },
                 { name: 'Multi-language Support', description: 'Localize the help desk for global teams and customers.', status: 'Done' },
                 { name: 'Audit Logs', description: 'Track all changes made within the system for security and compliance.', status: 'Done' },
-                { name: 'Custom Fields', description: 'Define custom data fields (text, number, dropdowns) to capture business-specific information on tickets.', status: 'Not Started' },
-                { name: 'Automated Tagging Rules', description: 'Create rules to automatically add tags based on ticket properties like subject, content, or source.', status: 'Not Started' },
+                { name: 'Custom Fields', description: 'Define custom data fields (text, number, dropdowns) to capture business-specific information on tickets.', status: 'Done' },
+                { name: 'Automated Tagging Rules', description: 'Create rules to automatically add tags based on ticket properties like subject, content, or source.', status: 'Done' },
             ]
         }
       ]

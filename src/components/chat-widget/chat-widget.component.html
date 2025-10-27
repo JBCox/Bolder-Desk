@@ -8,14 +8,14 @@
       <div class="bg-indigo-600 text-white p-4 rounded-t-lg flex justify-between items-center">
         <div>
           <h3 class="font-bold">Chat with us</h3>
-          @if (session()?.agentName) {
-            <p class="text-sm opacity-80">You're talking to {{ session()?.agentName }}</p>
+          @if (session()?.agentId) {
+            <p class="text-sm opacity-80">You're talking to an agent</p>
           } @else {
              <p class="text-sm opacity-80">We'll be with you shortly</p>
           }
         </div>
         <button (click)="toggleChat()" class="text-white opacity-80 hover:opacity-100">
-            <app-icon name="xcircle" class="w-6 h-6"></app-icon>
+            <app-icon name="x-circle" class="w-6 h-6"></app-icon>
         </button>
       </div>
 
@@ -25,14 +25,14 @@
                 Ask us anything! Let us know if you have a question about our product or pricing.
             </div>
         } @else {
-            @for(message of session()?.messages; track $index) {
-                <div [class]="'flex items-end gap-2 ' + (message.from === 'customer' ? 'justify-end' : '')">
-                    @if (message.from === 'agent') {
+            @for(message of session()?.transcript; track $index) {
+                <div [class]="'flex items-end gap-2 ' + (message.sender === 'customer' ? 'justify-end' : '')">
+                    @if (message.sender === 'agent') {
                         <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center font-bold text-white text-sm flex-shrink-0">{{ message.name.charAt(0) }}</div>
                     }
-                    <div [class]="'max-w-xs p-3 rounded-lg ' + (message.from === 'customer' ? 'bg-indigo-500 text-white' : 'bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600')">
+                    <div [class]="'max-w-xs p-3 rounded-lg ' + (message.sender === 'customer' ? 'bg-indigo-500 text-white' : 'bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600')">
                         <p class="text-sm dark:text-slate-200">{{ message.content }}</p>
-                        <p [class]="'text-xs mt-1 ' + (message.from === 'customer' ? 'text-indigo-200' : 'text-gray-400 dark:text-slate-500')">{{ formatTimestamp(message.timestamp) }}</p>
+                        <p [class]="'text-xs mt-1 ' + (message.sender === 'customer' ? 'text-indigo-200' : 'text-gray-400 dark:text-slate-500')">{{ formatTimestamp(message.timestamp) }}</p>
                     </div>
                 </div>
             }

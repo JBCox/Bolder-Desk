@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectionStrategy, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +32,10 @@ export class NewTicketModalComponent {
     if (!id) return null;
     return this.formTemplates().find(t => t.id === id);
   });
+
+  getOrganizationName(organizationId: number): string {
+    return this.organizations().find(o => o.id === organizationId)?.name || 'Unknown';
+  }
 
   handleFormSubmit(values: any) {
     this.formValues.set(values);

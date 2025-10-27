@@ -34,6 +34,9 @@ export class SettingsModalComponent {
   close = output<void>();
   saveRoles = output<models.Role[]>();
   saveSsoSettings = output<models.SsoSettings>();
+  saveAutomationRules = output<models.AutomationRule[]>();
+  saveSlaRules = output<models.SlaRules>();
+  saveFormTemplates = output<models.FormTemplate[]>();
   createApiKey = output<models.ApiKey>();
   revokeApiKey = output<string>();
   saveWebhooks = output<models.Webhook[]>();
@@ -58,10 +61,6 @@ export class SettingsModalComponent {
     if (this.activeTab() === tab) {
       return base + ' bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300';
     }
-    return base + ' hover:bg-slate-100 dark:hover:bg-slate-700';
-  }
-
-  noop() {
-    // Placeholder for child component outputs that are not fully implemented
+    return base + ' text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700';
   }
 }

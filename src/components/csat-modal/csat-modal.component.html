@@ -1,5 +1,9 @@
 <div class="fixed inset-0 bg-black bg-opacity-50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
-  <div class="bg-white dark:bg-slate-800 rounded-lg max-w-md w-full p-6">
+  <div class="bg-white dark:bg-slate-800 rounded-lg max-w-md w-full p-6 relative">
+    <button (click)="close.emit()" class="absolute top-3 right-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700">
+        <app-icon name="x" class="w-5 h-5"></app-icon>
+    </button>
+
     <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-2">How was your experience?</h2>
     <p class="text-gray-600 dark:text-slate-400 mb-6">We resolved your ticket: "{{ ticket().subject }}"</p>
     

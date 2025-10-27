@@ -30,7 +30,7 @@
             <button (click)="applyDatePreset('lastmonth')" class="px-3 py-2 text-sm bg-gray-200 dark:bg-slate-600 text-gray-700 dark:text-slate-200 rounded-r-md hover:bg-gray-300 dark:hover:bg-slate-500 transition -ml-px">Last Month</button>
         </div>
         <div class="self-end">
-            <button (click)="handleGenerateSummary()" [disabled]="isGeneratingSummary() || reportData().length === 0" class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed">
+            <button (click)="handleGenerateSummary()" [disabled]="isGeneratingSummary() || reportData().length === 0 || isApiOnCooldown()" class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed">
                 @if(isGeneratingSummary()) {
                     <app-icon name="loader" class="w-4 h-4"></app-icon>
                     <span>Generating...</span>
@@ -52,12 +52,17 @@
             </div>
         </div>
     } @else if (aiSummary()) {
-        <div class="mb-6 p-4 border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/50 rounded-lg">
-            <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center space-x-2">
-                <app-icon name="sparkles" class="w-5 h-5"></app-icon>
-                <span>AI Summary</span>
+        <div class="mb-6 p-4 border rounded-lg" [class]="aiSummary().startsWith('An error') || aiSummary().startsWith('You have exceeded') ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/50' : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/50'">
+            <h4 class="font-semibold mb-2 flex items-center space-x-2" [class]="aiSummary().startsWith('An error') || aiSummary().startsWith('You have exceeded') ? 'text-red-800 dark:text-red-200' : 'text-blue-800 dark:text-blue-200'">
+                @if (aiSummary().startsWith('An error') || aiSummary().startsWith('You have exceeded')) {
+                    <app-icon name="alert-circle" class="w-5 h-5"></app-icon>
+                    <span>Error</span>
+                } @else {
+                    <app-icon name="sparkles" class="w-5 h-5"></app-icon>
+                    <span>AI Summary</span>
+                }
             </h4>
-            <p class="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">{{ aiSummary() }}</p>
+            <p class="text-sm whitespace-pre-wrap" [class]="aiSummary().startsWith('An error') || aiSummary().startsWith('You have exceeded') ? 'text-red-700 dark:text-red-300' : 'text-blue-700 dark:text-blue-300'">{{ aiSummary() }}</p>
         </div>
     }
 

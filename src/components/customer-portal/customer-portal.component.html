@@ -1,43 +1,43 @@
 <div class="h-full bg-white dark:bg-slate-900 flex flex-col">
     @if (!selectedTicket()) {
         <div class="p-8 overflow-y-auto">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-6">Support Center</h1>
+            <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Support Center</h1>
             
-            <div class="border-b border-gray-200 dark:border-slate-700 mb-6">
+            <div class="border-b border-slate-200 dark:border-slate-700 mb-6">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button (click)="activeTab.set('tickets')" [class]="'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'tickets' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300')">
+                    <button (click)="activeTab.set('tickets')" [class]="'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'tickets' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300')">
                         My Tickets
                     </button>
-                    <button (click)="activeTab.set('kb')" [class]="'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'kb' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300')">
+                    <button (click)="activeTab.set('kb')" [class]="'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ' + (activeTab() === 'kb' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300')">
                         Knowledge Base
                     </button>
                 </nav>
             </div>
 
             @if (activeTab() === 'tickets') {
-                <div class="border border-gray-200 dark:border-slate-700 rounded-lg">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                        <thead class="bg-gray-50 dark:bg-slate-800">
+                <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                        <thead class="bg-slate-50 dark:bg-slate-800">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">ID</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Subject</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">Last Updated</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Subject</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Updated</th>
                                 <th scope="col" class="relative px-6 py-3"><span class="sr-only">View</span></th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white dark:bg-slate-800/50 divide-y divide-gray-200 dark:divide-slate-700">
+                        <tbody class="bg-white dark:bg-slate-800/50">
                             @for(ticket of tickets(); track ticket.id) {
-                                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-200">#{{ticket.id}}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-slate-300">{{ticket.subject}}</td>
+                                <tr class="odd:bg-white even:bg-slate-50 dark:odd:bg-slate-800/50 dark:even:bg-slate-800/20 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-200">#{{ticket.id}}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-800 dark:text-slate-300">{{ticket.subject}}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                                         <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + 
-                                        { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[ticket.status]">
+                                        { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300'}[ticket.status]">
                                             {{ ticket.status.replace('-', ' ') }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{{ formatDate(ticket.messages[ticket.messages.length - 1]?.timestamp || ticket.created) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ formatDate(ticket.messages[ticket.messages.length - 1]?.timestamp || ticket.created) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button (click)="viewTicket(ticket)" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">View</button>
                                     </td>
@@ -45,7 +45,7 @@
                             }
                             @if(tickets().length === 0) {
                                 <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-slate-400">You haven't submitted any tickets yet.</td>
+                                    <td colspan="5" class="px-6 py-12 text-center text-slate-500 dark:text-slate-400">You haven't submitted any tickets yet.</td>
                                 </tr>
                             }
                         </tbody>
@@ -56,43 +56,54 @@
                      @if(!selectedKbArticle()) {
                         <div>
                             <div class="relative mb-6">
-                                <span class="absolute left-4 top-3.5 text-gray-400 dark:text-slate-500">
+                                <span class="absolute left-4 top-3.5 text-slate-400 dark:text-slate-500">
                                     <app-icon name="search" class="w-5 h-5"></app-icon>
                                 </span>
-                                <input type="text" [(ngModel)]="kbSearchQuery" (keydown.enter)="handleKbSearch()" placeholder="Ask a question..." class="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200 text-lg">
+                                <input type="text" [(ngModel)]="kbSearchQuery" (keydown.enter)="handleKbSearch()" [disabled]="isApiOnCooldown()" placeholder="Ask a question..." class="w-full pl-12 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 dark:text-slate-200 text-lg disabled:opacity-50">
                             </div>
+
+                            @if(isApiOnCooldown()) {
+                                <div class="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm text-yellow-700 dark:text-yellow-300">
+                                    <p>AI search is temporarily unavailable due to high demand. Please use standard keyword search for now.</p>
+                                </div>
+                            }
                             
                             @if(isSearchingKb()) {
                                 <div class="text-center py-10">
                                     <app-icon name="loader" class="w-8 h-8 mx-auto text-indigo-500"></app-icon>
-                                    <p class="mt-2 text-sm text-gray-500 dark:text-slate-400">Finding an answer...</p>
+                                    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Finding an answer...</p>
                                 </div>
                             }
 
                             @if(kbAnswer(); as kb) {
-                                <div class="mb-8 p-6 bg-indigo-50 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 rounded-lg">
-                                  <h3 class="font-bold text-xl text-indigo-800 dark:text-indigo-200 mb-3 flex items-center gap-2"><app-icon name="sparkles" class="w-5 h-5 text-indigo-500"></app-icon> Answer</h3>
-                                  <p class="text-indigo-700 dark:text-indigo-300 mb-4">{{ kb.answer }}</p>
-                                  @if(kb.sources.length > 0) {
-                                    <div class="text-xs">
-                                      <span class="text-indigo-600 dark:text-indigo-400 font-semibold">Sources:</span>
-                                      @for(source of kb.sources; track source.id) {
-                                        <button (click)="viewKbArticle(source)" class="ml-2 text-indigo-600 dark:text-indigo-300 hover:underline">{{ source.title }}</button>
-                                      }
-                                    </div>
+                                <div class="mb-8 p-6 rounded-lg" [class]="kb.answer.startsWith('Error:') ? 'bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800' : 'bg-indigo-50 dark:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800'">
+                                  @if(kb.answer.startsWith('Error:')) {
+                                    <h3 class="font-bold text-xl text-red-800 dark:text-red-200 mb-3 flex items-center gap-2"><app-icon name="alert-circle" class="w-5 h-5 text-red-500"></app-icon> Error</h3>
+                                    <p class="text-red-700 dark:text-red-300 mb-4">{{ kb.answer }}</p>
+                                  } @else {
+                                    <h3 class="font-bold text-xl text-indigo-800 dark:text-indigo-200 mb-3 flex items-center gap-2"><app-icon name="sparkles" class="w-5 h-5 text-indigo-500"></app-icon> Answer</h3>
+                                    <p class="text-indigo-700 dark:text-indigo-300 mb-4">{{ kb.answer }}</p>
+                                    @if(kb.sources.length > 0) {
+                                      <div class="text-xs">
+                                        <span class="text-indigo-600 dark:text-indigo-400 font-semibold">Sources:</span>
+                                        @for(source of kb.sources; track source.id) {
+                                          <button (click)="viewKbArticle(source)" class="ml-2 text-indigo-600 dark:text-indigo-300 hover:underline">{{ source.title }}</button>
+                                        }
+                                      </div>
+                                    }
                                   }
                                 </div>
                             }
 
                             <div class="space-y-4">
                                 @for(article of filteredKbArticles(); track article.id) {
-                                    <div (click)="viewKbArticle(article)" class="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-600 cursor-pointer transition">
+                                    <div (click)="viewKbArticle(article)" class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-600 cursor-pointer transition">
                                         <h3 class="font-semibold text-lg text-indigo-600 dark:text-indigo-400 mb-1">{{ article.title }}</h3>
-                                        <p class="text-sm text-gray-600 dark:text-slate-400 line-clamp-2">{{ article.content }}</p>
+                                        <p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{{ article.content }}</p>
                                     </div>
                                 }
                                 @if(filteredKbArticles().length === 0 && submittedKbSearchQuery()) {
-                                     <div class="text-center py-12 text-gray-500 dark:text-slate-400">
+                                     <div class="text-center py-12 text-slate-500 dark:text-slate-400">
                                         <app-icon name="file-question" class="w-12 h-12 mx-auto mb-2"></app-icon>
                                         <p>No articles found matching your search.</p>
                                     </div>
@@ -106,28 +117,28 @@
                                 <app-icon name="library" class="w-4 h-4"></app-icon>
                                 <span>Back to all articles</span>
                             </button>
-                             <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100 my-2">{{ article.title }}</h1>
-                             <div class="text-sm text-gray-500 dark:text-slate-400 mb-6">
+                             <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100 my-2">{{ article.title }}</h1>
+                             <div class="text-sm text-slate-500 dark:text-slate-400 mb-6">
                                 Last updated: {{ formatDate(article.updatedAt) }}
                             </div>
-                             <div class="prose max-w-none text-gray-800 dark:text-slate-300">
+                             <div class="prose max-w-none text-slate-800 dark:text-slate-300">
                                 {{ article.content }}
                             </div>
-                            <div class="mt-8 pt-6 border-t border-gray-200 dark:border-slate-700">
+                            <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
                                 @if (!feedbackGiven()[article.id]) {
                                     <div class="flex items-center space-x-4">
-                                        <p class="font-medium text-gray-700 dark:text-slate-300">Did this help?</p>
-                                        <button (click)="handleKbVote(article.id, 'up')" class="flex items-center space-x-2 px-3 py-1 border border-gray-300 dark:border-slate-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+                                        <p class="font-medium text-slate-700 dark:text-slate-300">Did this help?</p>
+                                        <button (click)="handleKbVote(article.id, 'up')" class="flex items-center space-x-2 px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
                                             <app-icon name="thumbs-up" class="w-4 h-4"></app-icon>
                                             <span>Yes</span>
                                         </button>
-                                        <button (click)="handleKbVote(article.id, 'down')" class="flex items-center space-x-2 px-3 py-1 border border-gray-300 dark:border-slate-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+                                        <button (click)="handleKbVote(article.id, 'down')" class="flex items-center space-x-2 px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
                                             <app-icon name="thumbs-down" class="w-4 h-4"></app-icon>
                                             <span>No</span>
                                         </button>
                                     </div>
                                 } @else {
-                                    <p class="font-medium text-gray-700 dark:text-slate-300">Thank you for your feedback!</p>
+                                    <p class="font-medium text-slate-700 dark:text-slate-300">Thank you for your feedback!</p>
                                 }
                             </div>
                         </div>
@@ -143,35 +154,35 @@
                     <app-icon name="mail" class="w-4 h-4"></app-icon>
                     <span>Back to all tickets</span>
                 </button>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-slate-100">{{ ticket.subject }}</h1>
-                <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-slate-400 mt-2">
+                <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">{{ ticket.subject }}</h1>
+                <div class="flex items-center space-x-4 text-sm text-slate-500 dark:text-slate-400 mt-2">
                     <span>Created on: {{ formatDate(ticket.created) }}</span>
                     <span>Status: 
                          <span [class]="'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + 
-                                     { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}[ticket.status]">
+                                     { open: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300', 'in-progress': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300', resolved: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300', closed: 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300'}[ticket.status]">
                                         {{ ticket.status.replace('-', ' ') }}
                         </span>
                     </span>
                 </div>
             </div>
-            <div class="flex-1 overflow-y-auto mt-6 space-y-4 border-t border-gray-200 dark:border-slate-700 pt-6">
+            <div class="flex-1 overflow-y-auto mt-6 space-y-4 border-t border-slate-200 dark:border-slate-700 pt-6">
                  @for(message of ticket.messages; track $index) {
-                     <div [class]="'p-4 rounded-lg ' + (message.type === 'customer' ? 'bg-gray-100 dark:bg-slate-800' : 'bg-indigo-50 dark:bg-indigo-900/50')">
+                     <div [class]="'p-4 rounded-lg ' + (message.type === 'customer' ? 'bg-slate-100 dark:bg-slate-800' : 'bg-indigo-50 dark:bg-indigo-900/50')">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="font-medium text-gray-900 dark:text-slate-200">{{ message.from }}</span>
-                            <span class="text-xs text-gray-500 dark:text-slate-400">{{ formatDate(message.timestamp) }}</span>
+                            <span class="font-medium text-slate-900 dark:text-slate-200">{{ message.from }}</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">{{ formatDate(message.timestamp) }}</span>
                         </div>
-                        <p class="text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{{ message.content }}</p>
+                        <p class="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ message.content }}</p>
                     </div>
                 }
             </div>
              @if (ticket.status === 'open' || ticket.status === 'in-progress') {
-              <div class="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-slate-100">Add a Reply</h3>
+              <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <h3 class="text-lg font-medium text-slate-900 dark:text-slate-100">Add a Reply</h3>
                 <div class="mt-4">
-                  <textarea [(ngModel)]="replyText" rows="4" placeholder="Type your reply here..." class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-slate-700 dark:text-slate-200"></textarea>
+                  <textarea [(ngModel)]="replyText" rows="4" placeholder="Type your reply here..." class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-white dark:bg-slate-700 dark:text-slate-200"></textarea>
                   <div class="mt-2 flex justify-end">
-                    <button (click)="handleReply()" [disabled]="!replyText().trim()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400">Submit Reply</button>
+                    <button (click)="handleReply()" [disabled]="!replyText().trim()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-slate-400">Submit Reply</button>
                   </div>
                 </div>
               </div>

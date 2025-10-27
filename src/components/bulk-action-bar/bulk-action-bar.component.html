@@ -6,8 +6,8 @@
     <div class="relative">
       <button (click)="showMenu.set(showMenu() === 'status' ? null : 'status')" class="px-3 py-1 bg-indigo-500 rounded hover:bg-indigo-400 text-sm">Change Status</button>
       @if (showMenu() === 'status') {
-        <div class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40">
-          @for(status of ['open', 'in-progress', 'resolved', 'closed']; track status) {
+        <div class="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40">
+          @for(status of ['open', 'pending', 'resolved', 'closed']; track status) {
             <button (click)="onAction('status', status)" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 capitalize">{{ status.replace('-', ' ') }}</button>
           }
         </div>
@@ -17,9 +17,10 @@
     <div class="relative">
       <button (click)="showMenu.set(showMenu() === 'assign' ? null : 'assign')" class="px-3 py-1 bg-indigo-500 rounded hover:bg-indigo-400 text-sm">Assign To</button>
       @if (showMenu() === 'assign') {
-        <div class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40">
-          @for(agent of ['Sarah Johnson', 'Mike Chen', 'Unassigned']; track agent) {
-            <button (click)="onAction('assign', agent)" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ agent }}</button>
+        <div class="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40 max-h-60 overflow-y-auto">
+          <button (click)="onAction('assign', 'unassigned')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Unassigned</button>
+          @for(agent of agents(); track agent.id) {
+            <button (click)="onAction('assign', agent.name)" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ agent.name }}</button>
           }
         </div>
       }
@@ -28,7 +29,7 @@
     <div class="relative">
       <button (click)="showMenu.set(showMenu() === 'priority' ? null : 'priority')" class="px-3 py-1 bg-indigo-500 rounded hover:bg-indigo-400 text-sm">Set Priority</button>
       @if (showMenu() === 'priority') {
-        <div class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40">
+        <div class="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40">
           @for(priority of ['urgent', 'high', 'medium', 'low']; track priority) {
             <button (click)="onAction('priority', priority)" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 capitalize">{{ priority }}</button>
           }
@@ -39,7 +40,7 @@
     <div class="relative">
       <button (click)="showMenu.set(showMenu() === 'tag' ? null : 'tag')" class="px-3 py-1 bg-indigo-500 rounded hover:bg-indigo-400 text-sm">Add Tag</button>
       @if (showMenu() === 'tag') {
-        <div class="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40 max-h-60 overflow-y-auto">
+        <div class="absolute bottom-full left-0 mb-1 bg-white rounded-lg shadow-lg py-1 z-10 min-w-40 max-h-60 overflow-y-auto">
           @for(tag of availableTags(); track tag) {
             <button (click)="onAction('addTag', tag)" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">{{ tag }}</button>
           }

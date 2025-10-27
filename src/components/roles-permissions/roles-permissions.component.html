@@ -7,7 +7,7 @@
         @for (role of editableRoles(); track role.id) {
           <li>
             <button (click)="selectRole(role)" 
-              [class]="'w-full text-left p-2 rounded-md ' + (selectedRole()?.id === role.id ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700')">
+              [class]="'w-full text-left p-2 rounded-md ' + (selectedRole()?.id === role.id ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700')">
               {{ role.name }}
             </button>
           </li>
@@ -19,7 +19,7 @@
     <div class="w-2/3">
       @if (selectedRole(); as role) {
         <div class="p-4 border border-slate-200 dark:border-slate-700 rounded-lg">
-          <h4 class="text-md font-semibold mb-1">{{ role.name }}</h4>
+          <h4 class="text-md font-semibold mb-1 text-slate-800 dark:text-slate-100">{{ role.name }}</h4>
           <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">{{ role.description }}</p>
           
           <div class="grid grid-cols-2 gap-4">
@@ -29,7 +29,7 @@
                        [checked]="hasPermission(role, permission)"
                        (change)="togglePermission(role, permission)"
                        class="form-checkbox h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
-                <span class="text-sm">{{ formatPermission(permission) }}</span>
+                <span class="text-sm text-slate-700 dark:text-slate-300">{{ formatPermission(permission) }}</span>
               </label>
             }
           </div>

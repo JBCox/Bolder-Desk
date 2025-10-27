@@ -19,7 +19,10 @@ export const MOCK_DATA = {
         { from: 'Sarah Chen', type: 'customer', content: "I'm trying to log in but it says my password is incorrect. I tried resetting it but I haven't received an email.", timestamp: daysAgo(2), attachments: [] },
         { from: 'Alex Ray', type: 'agent', content: "Hi Sarah, I've checked our system and it seems there was a delay in our email service. I've manually sent you a password reset link. Please let me know if it works.", timestamp: daysAgo(1), attachments: [] },
       ],
-      internalNotes: [{ agentName: 'Alex Ray', content: 'Email service had an outage, might be related to other reports.', timestamp: daysAgo(1)}],
+      internalNotes: [
+        { agentName: 'Alex Ray', content: 'Email service had an outage, might be related to other reports.', timestamp: daysAgo(1)},
+        { agentName: 'Ben Carter', content: '@Alex Ray Can you follow up with Sarah on this?', timestamp: hoursAgo(2)}
+      ],
       activities: [],
       timeTrackedSeconds: 300,
       sla: { breachAt: hoursAgo(-20), status: 'risk' },
@@ -113,6 +116,11 @@ export const MOCK_DATA = {
     clientId: '',
     clientSecret: '',
   } as models.SsoSettings,
+   notifications: [
+    { id: 'n1', message: 'You were assigned ticket #2', timestamp: hoursAgo(0.5), read: false, ticketId: 2 },
+    { id: 'n2', message: 'Ben Carter mentioned you in ticket #1', timestamp: hoursAgo(2), read: false, ticketId: 1 },
+    { id: 'n3', message: 'SLA for ticket #1 is at risk', timestamp: hoursAgo(4), read: true, ticketId: 1 },
+  ] as models.Notification[],
   facebookThreads: [
     {
       id: 'fb1',

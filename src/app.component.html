@@ -2,20 +2,20 @@
 <div [class]="(sidebarCollapsed() ? 'ml-0' : 'md:ml-56') + ' transition-all duration-300 h-screen flex flex-col'">
   
   <!-- Header -->
-  <header class="flex-shrink-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center justify-between px-6">
+  <header class="flex-shrink-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 h-16 flex items-center justify-between px-6">
     <div class="flex items-center">
-      <button (click)="sidebarCollapsed.set(!sidebarCollapsed())" class="md:hidden mr-4 text-gray-500 dark:text-slate-400">
+      <button (click)="sidebarCollapsed.set(!sidebarCollapsed())" class="md:hidden mr-4 text-slate-500 dark:text-slate-400">
         <app-icon name="chevrons-right" class="w-6 h-6"></app-icon>
       </button>
       <div class="relative w-96">
-        <app-icon name="search" class="absolute left-3 top-2.5 w-5 h-5 text-gray-400 dark:text-slate-500"></app-icon>
+        <app-icon name="search" class="absolute left-3 top-2.5 w-5 h-5 text-slate-400 dark:text-slate-500"></app-icon>
         <input 
           type="text" 
           placeholder="Search tickets, customers, articles..." 
-          [ngModel]="searchQuery()" 
-          (ngModelChange)="searchQuery.set($event)"
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          (click)="showCommandPalette.set(true)"
+          class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
         />
+        <div class="absolute right-3 top-[7px] text-xs font-semibold text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 rounded-md px-1.5 py-0.5">⌘K</div>
       </div>
     </div>
     <div class="flex items-center space-x-4">
@@ -23,26 +23,55 @@
         <app-icon name="plus" class="w-5 h-5"></app-icon>
         <span>{{ translations().newTicket }}</span>
       </button>
-      <button (click)="toggleDarkMode()" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+      <button (click)="toggleDarkMode()" class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
         <app-icon [name]="isDarkMode() ? 'sun' : 'moon'" class="w-6 h-6"></app-icon>
       </button>
       <div class="relative">
-        <button (click)="showLanguageMenu.set(!showLanguageMenu())" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+        <button (click)="showLanguageMenu.set(!showLanguageMenu())" class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
           <app-icon name="globe" class="w-6 h-6"></app-icon>
         </button>
         @if(showLanguageMenu()) {
           <div class="absolute right-0 mt-2 w-36 bg-white dark:bg-slate-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-20">
-            <a (click)="currentLanguage.set('en'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">English</a>
-            <a (click)="currentLanguage.set('es'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">Español</a>
-            <a (click)="currentLanguage.set('fr'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer">Français</a>
+            <a (click)="currentLanguage.set('en'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">English</a>
+            <a (click)="currentLanguage.set('es'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">Español</a>
+            <a (click)="currentLanguage.set('fr'); showLanguageMenu.set(false)" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">Français</a>
           </div>
         }
       </div>
-       <button class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 relative">
+      <div class="relative">
+       <button (click)="showNotifications.set(!showNotifications())" class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 relative">
         <app-icon name="bell" class="w-6 h-6"></app-icon>
-        <span class="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+        @if(unreadNotificationsCount() > 0) {
+          <span class="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+        }
       </button>
-      <button (click)="openModal.set('settings')" class="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
+       @if(showNotifications()) {
+          <div class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-20">
+            <div class="p-3 font-semibold border-b dark:border-slate-700">Notifications</div>
+            <div class="max-h-96 overflow-y-auto">
+              @for(notification of notifications(); track notification.id) {
+                <div (click)="handleNotificationClick(notification)" [class]="'p-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer ' + (!notification.read ? 'bg-indigo-50 dark:bg-indigo-900/50' : '')">
+                  <div class="w-5 h-5 flex-shrink-0 mt-0.5">
+                    @if(notification.message.includes('assigned')) { <app-icon name="user" class="w-5 h-5 text-indigo-500"></app-icon> }
+                    @else if (notification.message.includes('mentioned')) { <app-icon name="at-sign" class="w-5 h-5 text-blue-500"></app-icon> }
+                    @else { <app-icon name="alert-circle" class="w-5 h-5 text-yellow-500"></app-icon> }
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ notification.message }}</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">{{ notification.timestamp | date:'short' }}</p>
+                  </div>
+                  @if(!notification.read) {
+                    <div class="w-2 h-2 rounded-full bg-indigo-500 mt-1 flex-shrink-0"></div>
+                  }
+                </div>
+              } @empty {
+                <p class="p-4 text-center text-sm text-slate-500">No new notifications.</p>
+              }
+            </div>
+          </div>
+       }
+      </div>
+      <button (click)="openModal.set('settings')" class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
         <app-icon name="settings" class="w-6 h-6"></app-icon>
       </button>
     </div>
@@ -55,8 +84,8 @@
         <div class="flex h-full">
           <!-- Filter Panel -->
           @if (showFilterPanel()) {
-            <div class="w-96 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col text-slate-800 dark:text-slate-200">
-              <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+            <div class="w-96 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col text-slate-800 dark:text-slate-200">
+              <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <h3 class="text-lg font-semibold">Filters</h3>
                 <button (click)="toggleFilterPanel()" class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
                   <app-icon name="x" class="w-5 h-5"></app-icon>
@@ -64,8 +93,8 @@
               </div>
               <div class="flex-1 overflow-y-auto p-4 space-y-4">
                 @for (group of panelFilters(); track group.id; let gIndex = $index) {
-                  <div class="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
-                    <div class="flex items-center justify-between mb-3">
+                  <div class="p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
                       <select (change)="updateGroupMatchType(gIndex, $event)" class="text-sm font-semibold bg-transparent border-0 focus:ring-0 p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600">
                         <option value="all" [selected]="group.matchType === 'all'">Match ALL</option>
                         <option value="any" [selected]="group.matchType === 'any'">Match ANY</option>
@@ -74,15 +103,15 @@
                         <button (click)="removeConditionGroup(gIndex)" class="text-xs text-red-500 hover:underline">Remove Group</button>
                       }
                     </div>
-                    <div class="space-y-2">
+                    <div class="space-y-1">
                       @for (condition of group.conditions; track condition.id; let cIndex = $index) {
                         @let fieldDef = getFieldDef(condition.field);
-                        <div class="grid grid-cols-[auto,auto,1fr,auto] gap-1 items-center">
-                          <select (change)="updateConditionField(gIndex, cIndex, $event)" class="filter-select">
+                        <div class="grid grid-cols-[1fr,1fr,minmax(120px,1.5fr),auto] gap-3 items-center">
+                          <select (change)="updateConditionField(gIndex, cIndex, $event)" class="filter-select min-w-0">
                             <option value="" disabled [selected]="!condition.field">Select field...</option>
                             @for (field of availableFilterFields(); track field.id) { <option [value]="field.id" [selected]="condition.field === field.id">{{ field.name }}</option> }
                           </select>
-                          <select (change)="updateConditionOperator(gIndex, cIndex, $event)" class="filter-select">
+                          <select (change)="updateConditionOperator(gIndex, cIndex, $event)" class="filter-select min-w-0">
                             @for(operator of getOperatorsForFieldType(fieldDef?.type); track operator.id) {
                               <option [value]="operator.id" [selected]="condition.operator === operator.id">{{ operator.name }}</option>
                             }
@@ -90,37 +119,45 @@
                           @if (condition.field && !['is_set', 'is_not_set'].includes(condition.operator)) {
                             @switch (fieldDef?.type) {
                               @case ('dropdown') {
-                                <select [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input">
-                                  @for (opt of fieldDef.options; track opt) { <option [value]="opt">{{opt}}</option> }
-                                </select>
+                                @if (condition.operator === 'is_one_of') {
+                                  <input type="text" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0" placeholder="value1,value2">
+                                } @else {
+                                  <select [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0">
+                                    @for (opt of fieldDef.options; track opt) { <option [value]="opt">{{opt}}</option> }
+                                  </select>
+                                }
                               }
                               @case ('agent_dropdown') {
-                                <select [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input">
-                                  <option value="unassigned">Unassigned</option>
-                                  @for (agent of agents(); track agent.id) { <option [value]="agent.name">{{agent.name}}</option> }
-                                </select>
+                                @if (condition.operator === 'is_one_of') {
+                                  <input type="text" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0" placeholder="Agent1,Agent2">
+                                } @else {
+                                  <select [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0">
+                                    <option value="unassigned">Unassigned</option>
+                                    @for (agent of agents(); track agent.id) { <option [value]="agent.name">{{agent.name}}</option> }
+                                  </select>
+                                }
                               }
                               @case ('date') { 
                                 @if(condition.operator === 'last_x_days') {
-                                  <input type="number" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input" placeholder="e.g., 7">
+                                  <input type="number" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0" placeholder="e.g., 7">
                                 } @else {
-                                  <input type="date" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input"> 
+                                  <input type="date" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0"> 
                                 }
                               }
-                              @case ('number') { <input type="number" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input"> }
-                              @default { <input type="text" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input"> }
+                              @case ('number') { <input type="number" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0"> }
+                              @default { <input type="text" [ngModel]="condition.value" (ngModelChange)="updateConditionValue(gIndex, cIndex, $event)" class="filter-input min-w-0"> }
                             }
                           } @else { <div class="filter-input bg-slate-200 dark:bg-slate-700"></div> }
                           <button (click)="removeCondition(gIndex, cIndex)" class="text-slate-400 hover:text-red-500 p-1"><app-icon name="x" class="w-4 h-4"></app-icon></button>
                         </div>
                       }
                     </div>
-                    <button (click)="addCondition(gIndex)" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-2">+ Add Condition</button>
+                    <button (click)="addCondition(gIndex)" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1">+ Add Condition</button>
                   </div>
                 }
                 <button (click)="addConditionGroup()" class="text-sm w-full p-2 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">+ Add Condition Group</button>
               </div>
-              <div class="p-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+              <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <button (click)="clearFilters()" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Clear all</button>
                 <button (click)="applyFilters()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold">Apply filters</button>
               </div>
@@ -128,8 +165,8 @@
           }
 
           <!-- Ticket List -->
-          <div class="w-2/3 border-r border-gray-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-800">
-            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+          <div class="w-2/3 border-r border-slate-200 dark:border-slate-700 flex flex-col bg-white dark:bg-slate-800 shadow-sm">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
                     <div class="relative">
@@ -137,7 +174,7 @@
                         @if(defaultViewId() === activeViewId()) { <app-icon name="star" class="w-4 h-4 text-amber-500 fill-current"></app-icon> }
                         <span>{{ activeViewId() === 'custom' ? 'Custom Filters' : activeView().name }}</span>
                         @if(isViewModified()) { <span class="text-amber-500 font-bold">*</span> }
-                        <app-icon name="chevrondown" class="w-5 h-5 text-slate-500"></app-icon>
+                        <app-icon name="chevron-down" class="w-5 h-5 text-slate-500"></app-icon>
                       </button>
                       @if (showViewsDropdown()) {
                         <div class="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-20">
@@ -212,15 +249,22 @@
                   @if (!activeView().displayOptions.groupBy || groupName === objectKeys(groups)[0]) {
                     <thead class="bg-slate-50 dark:bg-slate-800">
                       <tr class="border-b border-slate-200 dark:border-slate-700">
+                        <th class="p-2 w-12 text-center">
+                          <input type="checkbox" (change)="toggleSelectAll()" [checked]="areAllSelected()" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        </th>
                         @for (col of activeView().displayOptions.columns; track col) { <th class="p-2 text-left font-medium text-slate-500 dark:text-slate-400">{{ getColumnName(col) }}</th> }
+                        <th class="w-16"></th>
                       </tr>
                     </thead>
                   }
                   <tbody>
                     @for (ticket of groups[groupName]; track ticket.id) {
-                      <tr (click)="selectTicket(ticket.id)" [class]="'cursor-pointer border-b border-slate-200 dark:border-slate-700 ' + (selectedTicketId() === ticket.id ? 'bg-indigo-50 dark:bg-indigo-900/50' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50')">
+                      <tr class="group" [class]="'border-b border-slate-200 dark:border-slate-700 transition-colors ' + (selectedTicketId() === ticket.id ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'odd:bg-white even:bg-slate-50 dark:odd:bg-slate-800 dark:even:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50')">
+                        <td class="p-2 text-center">
+                           <input type="checkbox" (change)="toggleSelectTicket(ticket.id)" [checked]="selectedTicketIds().includes(ticket.id)" (click)="$event.stopPropagation()" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        </td>
                         @for (col of activeView().displayOptions.columns; track col) {
-                           <td class="p-2 truncate" [title]="getColumnValue(ticket, col)">
+                           <td [class]="'p-2 truncate cursor-pointer ' + (col === 'subject' ? 'font-semibold text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400')" (click)="selectTicket(ticket.id)">
                             @if(editingCell()?.ticketId === ticket.id && editingCell()?.columnId === col) {
                                @switch(col) {
                                 @case('status') {
@@ -243,16 +287,42 @@
                                }
                             } @else {
                                @switch(col) {
-                                @case('status') { <span (click)="startEditing(ticket.id, 'status', $event)" class="hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md">{{ getColumnValue(ticket, col) }}</span> }
-                                @case('priority') { <span (click)="startEditing(ticket.id, 'priority', $event)" class="hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md">{{ getColumnValue(ticket, col) }}</span> }
+                                @case('status') { 
+                                  <span (click)="startEditing(ticket.id, 'status', $event)" class="flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md">
+                                    <span [class]="'h-2 w-2 rounded-full ' + getStatusDotClass(ticket.status)"></span>
+                                    <span>{{ getColumnValue(ticket, col) }}</span>
+                                  </span> 
+                                }
+                                @case('priority') { <span (click)="startEditing(ticket.id, 'priority', $event)" class="hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md capitalize">{{ getColumnValue(ticket, col) }}</span> }
                                 @case('assignedTo') { <span (click)="startEditing(ticket.id, 'assignedTo', $event)" class="hover:bg-slate-200 dark:hover:bg-slate-600 p-1 rounded-md">{{ getColumnValue(ticket, col) }}</span> }
+                                @case('subject') {
+                                  <div>
+                                    <p>{{ getColumnValue(ticket, col) }}</p>
+                                    @let snippet = getLatestMessageSnippet(ticket);
+                                    <p class="text-xs text-slate-400 font-normal truncate"><span class="font-semibold">{{ snippet.from }}:</span> {{ snippet.snippet }}</p>
+                                  </div>
+                                }
+                                @case('contact') {
+                                  <div class="flex items-center gap-2">
+                                    <div [class]="'w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ' + getAvatarBgClass(getColumnValue(ticket, col))">
+                                      {{ getInitials(getColumnValue(ticket, col)) }}
+                                    </div>
+                                    <span>{{ getColumnValue(ticket, col) }}</span>
+                                  </div>
+                                }
                                 @default { <span>{{ getColumnValue(ticket, col) }}</span> }
                                }
                             }
                            </td> 
                         }
+                        <td class="p-2">
+                          <div class="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100">
+                            <button (click)="startEditing(ticket.id, 'status', $event)" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Change Status"><app-icon name="circle" class="w-4 h-4"></app-icon></button>
+                            <button (click)="startEditing(ticket.id, 'assignedTo', $event)" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400" title="Assign"><app-icon name="user" class="w-4 h-4"></app-icon></button>
+                          </div>
+                        </td>
                       </tr>
-                    } @empty { <tr><td class="p-4 text-center text-slate-500" [attr.colspan]="activeView().displayOptions.columns.length">No tickets match your filters.</td></tr> }
+                    } @empty { <tr><td class="p-4 text-center text-slate-500" [attr.colspan]="activeView().displayOptions.columns.length + 2">No tickets match your filters.</td></tr> }
                   </tbody>
                 </table>
               }
@@ -265,8 +335,8 @@
           </div>
         </div>
       }
-      @case ('mywork') { <app-my-work [tickets]="tickets()" [currentAgent]="currentAgent()" (viewTicket)="selectTicket($event)"></app-my-work> }
-      @case ('analytics') { <app-analytics-dashboard [data]="analyticsData()" [tickets]="tickets()" (createProblemTicket)="handleCreateProblemTicket($event)"></app-analytics-dashboard> }
+      @case ('my-inbox') { <app-my-inbox [allTickets]="tickets()" [currentAgent]="currentAgent()" (viewTicket)="selectTicket($event)"></app-my-inbox> }
+      @case ('analytics') { <app-analytics-dashboard [data]="analyticsData()" [tickets]="tickets()" (createProblemTicket)="handleCreateProblemTicket($event)" (filterRequested)="handleAnalyticsFilter($event)"></app-analytics-dashboard> }
       @case ('kb') { <app-knowledge-base [articles]="kbArticles()" [categories]="kbCategories()" (kbFeedback)="handleKbFeedback($event)"></app-knowledge-base> }
       @case ('customers') { <app-customers [organizations]="organizations()" [contacts]="contacts()" [tickets]="tickets()"></app-customers> }
       @case ('inbox') { <app-inbox [emails]="emails()" (convertToTicket)="handleConvertToTicket($event)"></app-inbox> }
@@ -288,39 +358,71 @@
 </div>
 
 <!-- Sidebar -->
-<aside [class]="(sidebarCollapsed() ? '-translate-x-full' : 'translate-x-0') + ' fixed inset-y-0 left-0 bg-white dark:bg-slate-800 w-56 border-r border-gray-200 dark:border-slate-700 transform transition-transform duration-300 ease-in-out md:translate-x-0 z-40'">
-  <div class="flex items-center justify-center h-16 border-b border-gray-200 dark:border-slate-700"> <app-icon name="briefcase" class="w-8 h-8 text-indigo-600"></app-icon> <span class="ml-2 text-xl font-bold text-gray-800 dark:text-slate-100">BoldDesk</span> </div>
-  <nav class="mt-4 px-2">
-    <a (click)="currentView.set('mywork')" [class]="'flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'mywork' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="user" class="w-5 h-5 mr-3"></app-icon> {{ translations().myWork }} </a>
-    <a (click)="currentView.set('tickets')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="mail" class="w-5 h-5 mr-3"></app-icon> {{ translations().tickets }} </a>
+<aside [class]="(sidebarCollapsed() ? '-translate-x-full' : 'translate-x-0') + ' fixed inset-y-0 left-0 bg-white dark:bg-slate-800 w-56 border-r border-slate-200 dark:border-slate-700 transform transition-transform duration-300 ease-in-out md:translate-x-0 z-40 flex flex-col'">
+  <div class="flex items-center justify-center h-16 border-b border-slate-200 dark:border-slate-700 flex-shrink-0"> <app-icon name="briefcase" class="w-8 h-8 text-indigo-600"></app-icon> <span class="ml-2 text-xl font-bold text-slate-800 dark:text-slate-100">BoldDesk</span> </div>
+  <nav class="flex-grow overflow-y-auto mt-4 px-2 pb-2">
+    <a (click)="currentView.set('my-inbox')" [class]="'flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'my-inbox' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="inbox" class="w-5 h-5 mr-3"></app-icon> {{ translations().myInbox }} </a>
+    <a (click)="currentView.set('tickets')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="mail" class="w-5 h-5 mr-3"></app-icon> {{ translations().tickets }} </a>
     @if(pinnedViews().length > 0) {
-      <div class="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+      <div class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
         @for(view of pinnedViews(); track view.id) {
-           <a (click)="selectView(view.id)" [class]="'flex items-center px-4 py-2 rounded-lg cursor-pointer text-sm ' + (activeViewId() === view.id && currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="pin" class="w-4 h-4 mr-3"></app-icon> <span class="truncate">{{ view.name }}</span> </a>
+           <a (click)="selectView(view.id)" [class]="'flex items-center px-4 py-2 rounded-lg cursor-pointer text-sm ' + (activeViewId() === view.id && currentView() === 'tickets' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="pin" class="w-4 h-4 mr-3"></app-icon> <span class="truncate">{{ view.name }}</span> </a>
         }
       </div>
     }
-    <div class="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
-        <a (click)="currentView.set('analytics')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'analytics' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="barchart3" class="w-5 h-5 mr-3"></app-icon> {{ translations().analytics }} </a>
-        <a (click)="currentView.set('kb')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'kb' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="library" class="w-5 h-5 mr-3"></app-icon> {{ translations().knowledgeBase }} </a>
-        <a (click)="currentView.set('customers')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'customers' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="users" class="w-5 h-5 mr-3"></app-icon> {{ translations().customers }} </a>
-        <a (click)="currentView.set('reports')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'reports' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="pie-chart" class="w-5 h-5 mr-3"></app-icon> {{ translations().reports }} </a>
-        <a (click)="currentView.set('qa')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'qa' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="award" class="w-5 h-5 mr-3"></app-icon> {{ translations().qualityAssurance }} </a>
-        <a (click)="currentView.set('wallboard')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'wallboard' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="tv" class="w-5 h-5 mr-3"></app-icon> {{ translations().wallboard }} </a>
-        <a (click)="currentView.set('kanban')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'kanban' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="layout-grid" class="w-5 h-5 mr-3"></app-icon> {{ translations().kanban }} </a>
+    <div class="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+        <a (click)="currentView.set('analytics')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'analytics' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="bar-chart-3" class="w-5 h-5 mr-3"></app-icon> {{ translations().analytics }} </a>
+        <a (click)="currentView.set('kb')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'kb' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="library" class="w-5 h-5 mr-3"></app-icon> {{ translations().knowledgeBase }} </a>
+        <a (click)="currentView.set('customers')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'customers' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="users" class="w-5 h-5 mr-3"></app-icon> {{ translations().customers }} </a>
+        <a (click)="currentView.set('reports')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'reports' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="pie-chart" class="w-5 h-5 mr-3"></app-icon> {{ translations().reports }} </a>
+        <a (click)="currentView.set('qa')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'qa' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="award" class="w-5 h-5 mr-3"></app-icon> {{ translations().qualityAssurance }} </a>
+        <a (click)="currentView.set('wallboard')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'wallboard' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="tv" class="w-5 h-5 mr-3"></app-icon> {{ translations().wallboard }} </a>
+        <a (click)="currentView.set('kanban')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'kanban' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="layout-grid" class="w-5 h-5 mr-3"></app-icon> {{ translations().kanban }} </a>
     </div>
-    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700"> <h3 class="px-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ translations().channels }}</h3> <a (click)="currentView.set('inbox')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'inbox' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="inbox" class="w-5 h-5 mr-3"></app-icon> {{ translations().inbox }} </a> <a (click)="currentView.set('chat')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'chat' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="message-circle" class="w-5 h-5 mr-3"></app-icon> {{ translations().liveChat }} </a> <a (click)="currentView.set('slack')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'slack' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="slack" class="w-5 h-5 mr-3"></app-icon> {{ translations().slack }} </a> <a (click)="currentView.set('facebook')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'facebook' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="facebook" class="w-5 h-5 mr-3"></app-icon> {{ translations().facebook }} </a> <a (click)="currentView.set('twitter')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'twitter' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="twitter" class="w-5 h-5 mr-3"></app-icon> {{ translations().twitter }} </a> <a (click)="currentView.set('whatsapp')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'whatsapp' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="phone" class="w-5 h-5 mr-3"></app-icon> {{ translations().whatsapp }} </a> </div>
-    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700"> <h3 class="px-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">{{ translations().integrations }}</h3> <a (click)="currentView.set('salesforce')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'salesforce' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="salesforce" class="w-5 h-5 mr-3"></app-icon> {{ translations().salesforce }} </a> <a (click)="currentView.set('jira')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'jira' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700')"> <app-icon name="jira" class="w-5 h-5 mr-3"></app-icon> {{ translations().jira }} </a> </div>
-    <div class="absolute bottom-0 left-0 w-full p-2 border-t border-gray-200 dark:border-slate-700"> <a (click)="currentView.set('portal')" class="flex items-center px-4 py-2 rounded-lg cursor-pointer text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"> <app-icon name="external-link" class="w-5 h-5 mr-3"></app-icon> {{ translations().customerPortal }} </a> <a (click)="currentView.set('devplan')" class="flex items-center px-4 py-2 rounded-lg cursor-pointer text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700"> <app-icon name="rocket" class="w-5 h-5 mr-3"></app-icon> {{ translations().devPlan }} </a> </div>
+    <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700"> <h3 class="px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ translations().channels }}</h3> <a (click)="currentView.set('inbox')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'inbox' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="inbox" class="w-5 h-5 mr-3"></app-icon> {{ translations().inbox }} </a> <a (click)="currentView.set('chat')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'chat' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="message-circle" class="w-5 h-5 mr-3"></app-icon> {{ translations().liveChat }} </a> <a (click)="currentView.set('slack')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'slack' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="slack" class="w-5 h-5 mr-3"></app-icon> {{ translations().slack }} </a> <a (click)="currentView.set('facebook')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'facebook' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="facebook" class="w-5 h-5 mr-3"></app-icon> {{ translations().facebook }} </a> <a (click)="currentView.set('twitter')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'twitter' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="twitter" class="w-5 h-5 mr-3"></app-icon> {{ translations().twitter }} </a> <a (click)="currentView.set('whatsapp')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'whatsapp' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="phone" class="w-5 h-5 mr-3"></app-icon> {{ translations().whatsapp }} </a> </div>
+    <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700"> <h3 class="px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ translations().integrations }}</h3> <a (click)="currentView.set('salesforce')" [class]="'mt-2 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'salesforce' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="salesforce" class="w-5 h-5 mr-3"></app-icon> {{ translations().salesforce }} </a> <a (click)="currentView.set('jira')" [class]="'mt-1 flex items-center px-4 py-2 rounded-lg cursor-pointer ' + (currentView() === 'jira' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700')"> <app-icon name="jira" class="w-5 h-5 mr-3"></app-icon> {{ translations().jira }} </a> </div>
   </nav>
+  <div class="flex-shrink-0 p-2 border-t border-slate-200 dark:border-slate-700"> <a (click)="currentView.set('portal')" class="flex items-center px-4 py-2 rounded-lg cursor-pointer text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"> <app-icon name="external-link" class="w-5 h-5 mr-3"></app-icon> {{ translations().customerPortal }} </a> <a (click)="currentView.set('devplan')" class="flex items-center px-4 py-2 rounded-lg cursor-pointer text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"> <app-icon name="rocket" class="w-5 h-5 mr-3"></app-icon> {{ translations().devPlan }} </a> </div>
 </aside>
 
 <!-- Modals -->
+@if(showCommandPalette()) {
+  <app-command-palette
+    [tickets]="tickets()"
+    [contacts]="contacts()"
+    [kbArticles]="kbArticles()"
+    (close)="showCommandPalette.set(false)"
+    (commandSelected)="handleCommandPaletteAction($event)"
+  ></app-command-palette>
+}
 @if (openModal() === 'newTicket') { <app-new-ticket-modal [contacts]="contacts()" [organizations]="organizations()" [customFieldDefinitions]="customFieldDefs()" [formTemplates]="formTemplates()" [knowledgeBaseArticles]="kbArticles()" (close)="openModal.set(null)" (create)="handleCreateTicket($event)"></app-new-ticket-modal> }
 @if (openModal() === 'mergeTicket' && selectedTicketForModal()) { <app-merge-ticket-modal [currentTicket]="selectedTicketForModal()!" [allTickets]="tickets()" [contacts]="contacts()" (close)="openModal.set(null)" (merge)="handleMergeTickets($event)"></app-merge-ticket-modal> }
 @if (openModal() === 'splitTicket' && selectedMessageForModal()) { <app-split-ticket-modal [messageToSplit]="selectedMessageForModal()!" (close)="openModal.set(null)" (split)="handleSplitTicket($event)"></app-split-ticket-modal> }
 @if (openModal() === 'csat' && selectedTicketForModal()) { <app-csat-modal [ticket]="selectedTicketForModal()!" (close)="openModal.set(null)" (submit)="handleCsatSubmit($event)"></app-csat-modal> }
-@if (openModal() === 'settings') { <app-settings-modal [roles]="roles()" [allPermissions]="allPermissions()" [automationRules]="automationRules()" [groups]="groups()" [slaRules]="slaRules()" [formTemplates]="formTemplates()" [currentAgent]="currentAgent()" [ssoSettings]="ssoSettings()" [auditLog]="auditLog()" [apiKeys]="apiKeys()" [webhooks]="webhooks()" (close)="openModal.set(null)" (saveRoles)="handleSaveRoles($event)" (saveSsoSettings)="handleSaveSsoSettings($event)" (createApiKey)="handleCreateApiKey($event)" (revokeApiKey)="handleRevokeApiKey($event)" (saveWebhooks)="handleSaveWebhooks($event)"></app-settings-modal> }
+@if (openModal() === 'settings') { 
+  <app-settings-modal 
+    [roles]="roles()" 
+    [allPermissions]="allPermissions()" 
+    [automationRules]="automationRules()" 
+    [groups]="groups()" 
+    [slaRules]="slaRules()" 
+    [formTemplates]="formTemplates()" 
+    [currentAgent]="currentAgent()" 
+    [ssoSettings]="ssoSettings()" 
+    [auditLog]="auditLog()" 
+    [apiKeys]="apiKeys()" 
+    [webhooks]="webhooks()" 
+    [ticketViews]="ticketViews()" 
+    (close)="openModal.set(null)" 
+    (saveRoles)="handleSaveRoles($event)" 
+    (saveSsoSettings)="handleSaveSsoSettings($event)"
+    (saveAutomationRules)="handleSaveAutomationRules($event)"
+    (saveSlaRules)="handleSaveSlaRules($event)"
+    (saveFormTemplates)="handleSaveFormTemplates($event)"
+    (createApiKey)="handleCreateApiKey($event)" 
+    (revokeApiKey)="handleRevokeApiKey($event)" 
+    (saveWebhooks)="handleSaveWebhooks($event)"></app-settings-modal> 
+}
 @if (openModal() === 'logTime' && selectedTicketForModal()) { <app-log-time-modal (close)="openModal.set(null)" (logTime)="handleLogTime($event)"></app-log-time-modal> }
 @if (openModal() === 'linkTicket' && selectedTicketForModal()) { <app-link-ticket-modal [currentTicket]="selectedTicketForModal()!" [allTickets]="tickets()" [contacts]="contacts()" (close)="openModal.set(null)" (link)="handleLinkTicket($event)"></app-link-ticket-modal> }
 @if (openModal() === 'shortcuts') { <app-keyboard-shortcuts-modal (close)="openModal.set(null)"></app-keyboard-shortcuts-modal> }
@@ -329,22 +431,28 @@
 @if (openModal() === 'saveView' && tempViewOptions(); as opts) {
   <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-      <div class="p-6 border-b dark:border-slate-700"><h3 class="text-lg font-semibold">{{ isEditingView() ? 'Edit View' : 'Save New View' }}</h3></div>
+      <div class="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+        <h3 class="text-lg font-semibold flex items-center gap-2">
+            <app-icon name="save" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></app-icon>
+            <span>{{ isEditingView() ? 'Edit View' : 'Save New View' }}</span>
+        </h3>
+        <button (click)="openModal.set(null)" class="p-1 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"><app-icon name="x" class="w-5 h-5"></app-icon></button>
+      </div>
       <div class="p-6 space-y-6 overflow-y-auto">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">View Name</label>
-          <input type="text" [(ngModel)]="newViewName" placeholder="e.g., High Priority Tickets" class="w-full mt-1 rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">View Name</label>
+          <input type="text" [(ngModel)]="newViewName" placeholder="e.g., High Priority Tickets" class="form-input mt-1 w-full">
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-slate-300">Visibility</label>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Visibility</label>
             <div class="mt-2 space-y-2">
                 <label class="flex items-center">
-                  <input type="radio" name="visibility" value="private" [(ngModel)]="newViewVisibility" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-                  <span class="ml-2 text-sm text-gray-700 dark:text-slate-300">Private (only visible to you)</span>
+                  <input type="radio" name="visibility" value="private" [(ngModel)]="newViewVisibility" class="h-4 w-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Private (only visible to you)</span>
                 </label>
                  <label class="flex items-center">
-                  <input type="radio" name="visibility" value="shared" [(ngModel)]="newViewVisibility" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-                  <span class="ml-2 text-sm text-gray-700 dark:text-slate-300">Shared</span>
+                  <input type="radio" name="visibility" value="shared" [(ngModel)]="newViewVisibility" class="h-4 w-4 text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Shared</span>
                 </label>
                 @if (newViewVisibility() === 'shared') {
                   <div class="pl-6 pt-2">
@@ -352,7 +460,7 @@
                       <div class="grid grid-cols-2 gap-2">
                           @for(group of groups(); track group.id) {
                               <label class="flex items-center">
-                                  <input type="checkbox" [checked]="newViewSharedGroups().includes(group.id)" (change)="toggleSharedGroup(group.id)" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                  <input type="checkbox" [checked]="newViewSharedGroups().includes(group.id)" (change)="toggleSharedGroup(group.id)" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
                                   <span class="ml-2 text-sm">{{ group.name }}</span>
                               </label>
                           }
@@ -369,7 +477,7 @@
               <div class="grid grid-cols-3 gap-2 mt-2">
                 @for(col of availableColumns(); track col.id) {
                   <label class="flex items-center space-x-2">
-                    <input type="checkbox" [checked]="opts.columns.includes(col.id)" (change)="toggleViewColumn(col.id)" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="checkbox" [checked]="opts.columns.includes(col.id)" (change)="toggleViewColumn(col.id)" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
                     <span class="text-sm">{{ col.name }}</span>
                   </label>
                 }
@@ -378,13 +486,13 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="text-sm font-medium">Sort By</label>
-                <select [(ngModel)]="opts.sortBy" class="w-full mt-1 text-sm rounded-md border-slate-300 dark:bg-slate-700 dark:border-slate-600">
+                <select [(ngModel)]="opts.sortBy" class="form-input w-full mt-1 text-sm">
                   @for(col of availableColumns(); track col.id) { <option [value]="col.id">{{ col.name }}</option> }
                 </select>
               </div>
               <div>
                 <label class="text-sm font-medium">Direction</label>
-                <select [(ngModel)]="opts.sortDirection" class="w-full mt-1 text-sm rounded-md border-slate-300 dark:bg-slate-700 dark:border-slate-600">
+                <select [(ngModel)]="opts.sortDirection" class="form-input w-full mt-1 text-sm">
                   <option value="asc">Ascending</option>
                   <option value="desc">Descending</option>
                 </select>
@@ -392,7 +500,7 @@
             </div>
             <div>
               <label class="text-sm font-medium">Group By</label>
-              <select [(ngModel)]="opts.groupBy" class="w-full mt-1 text-sm rounded-md border-slate-300 dark:bg-slate-700 dark:border-slate-600">
+              <select [(ngModel)]="opts.groupBy" class="form-input w-full mt-1 text-sm">
                 <option [ngValue]="undefined">None</option>
                 @for(col of availableColumns(); track col.id) { <option [value]="col.id">{{ col.name }}</option> }
               </select>
@@ -400,8 +508,8 @@
           </div>
         </div>
       </div>
-      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2">
-        <button (click)="openModal.set(null)" class="px-4 py-2 text-sm rounded-md">Cancel</button>
+      <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 flex justify-end space-x-2 border-t dark:border-slate-700">
+        <button (click)="openModal.set(null)" class="px-4 py-2 text-sm rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600">Cancel</button>
         <button (click)="saveCurrentView()" [disabled]="!newViewName().trim()" class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold disabled:opacity-50">
             {{ isEditingView() ? 'Save Changes' : 'Save View' }}
         </button>
@@ -411,15 +519,53 @@
 }
 
 <!-- Bulk Action Bar -->
-@if (selectedTicketIds().length > 0) { <div class="absolute bottom-0 left-0 right-0 z-20" [class]="(sidebarCollapsed() ? 'ml-0' : 'md:ml-56')"> <app-bulk-action-bar [selectedCount]="selectedTicketIds().length" [availableTags]="availableTags()" (action)="handleBulkAction($event)" (cancel)="selectedTicketIds.set([])"></app-bulk-action-bar> </div> }
+@if (selectedTicketIds().length > 0) { <div class="absolute bottom-0 left-0 right-0 z-20" [class]="(sidebarCollapsed() ? 'ml-0' : 'md:ml-56')"> <app-bulk-action-bar [selectedCount]="selectedTicketIds().length" [agents]="agents()" [availableTags]="availableTags()" (action)="handleBulkAction($event)" (cancel)="selectedTicketIds.set([])"></app-bulk-action-bar> </div> }
 
 <!-- Customer-facing chat widget -->
 @if (currentView() === 'portal') { <app-chat-widget [customer]="currentCustomer()" [session]="currentChatSession()" (startChat)="handleStartChat($event)" (sendMessage)="handleSendChatMessage({ chatId: $event.chatId, content: $event.content, from: 'customer' })"></app-chat-widget> }
 
+<!-- Toast Notifications Container -->
+<div class="fixed top-5 right-5 z-[100] space-y-2">
+  @for (toast of toasts(); track toast.id) {
+    <div class="max-w-sm w-full bg-white dark:bg-slate-800 shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden animate-fade-in-right">
+      <div class="p-4">
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <app-icon [name]="toast.icon" class="w-6 h-6" [class]="toast.type === 'success' ? 'text-green-500' : (toast.type === 'error' ? 'text-red-500' : 'text-blue-500')"></app-icon>
+          </div>
+          <div class="ml-3 w-0 flex-1 pt-0.5">
+            <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ toast.message }}</p>
+          </div>
+          <div class="ml-4 flex-shrink-0 flex">
+            <button (click)="removeToast(toast.id)" class="inline-flex text-slate-400 rounded-md hover:text-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <span class="sr-only">Close</span>
+              <app-icon name="x" class="w-5 h-5"></app-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
 <style>
-.filter-select { @apply text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50; }
-.filter-input { @apply text-sm w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50; }
+@keyframes fade-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-fade-in-right {
+  animation: fade-in-right 0.3s ease-out forwards;
+}
+
+/* Base interactive styles */
+.view-dropdown-item, .view-action-item, .form-add-button, button, a {
+  @apply transition-colors duration-200;
+}
+
+.filter-select, .filter-input, .form-input { 
+    @apply text-sm px-2 py-1 w-full bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50; 
+}
 .view-dropdown-item { @apply flex justify-between items-center w-full text-left px-3 py-1.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700; }
 .view-action-item { @apply flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700; }
-.inline-edit-select { @apply block w-full text-sm rounded-md border-indigo-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-500; }
+.inline-edit-select { @apply block w-full text-sm rounded-md border-indigo-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 dark:border-slate-500; }
 </style>

@@ -33,6 +33,7 @@ export class TicketDetailComponent {
   viewTicket = output<number>();
 
   private geminiService = inject(GeminiService);
+  isApiOnCooldown = this.geminiService.isApiOnCooldown;
 
   activeTab = signal<'reply' | 'note'>('reply');
   replyContent = signal('');
@@ -46,6 +47,7 @@ export class TicketDetailComponent {
   predictedCsat = signal<number | null>(null);
   isLoading = signal<Set<AiFeature>>(new Set());
   isRewritingTone = signal(false);
+  aiError = signal<string | null>(null);
   
   isGeneratingKb = signal(false);
   
@@ -85,6 +87,8 @@ export class TicketDetailComponent {
       this.replyContent.set(rewrittenText);
     } catch (error) {
       console.error('Failed to rewrite tone:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      this.aiError.set(errorMessage);
     } finally {
       this.isRewritingTone.set(false);
     }
@@ -94,6 +98,7 @@ export class TicketDetailComponent {
     if (!this.contact()) return;
 
     this.isLoading.set(new Set(['summary', 'suggestions', 'tags', 'sentiment', 'predictedCsat']));
+    this.aiError.set(null);
     this.summary.set('');
     this.suggestions.set([]);
     this.suggestedTags.set([]);
@@ -112,7 +117,7 @@ export class TicketDetailComponent {
     } catch (e) {
         console.error('Failed to get AI ticket insights', e);
         const errorMessage = e instanceof Error ? e.message : 'Could not load AI insights.';
-        this.summary.set(errorMessage);
+        this.aiError.set(errorMessage);
     } finally {
         this.isLoading.set(new Set());
     }

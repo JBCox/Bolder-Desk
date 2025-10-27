@@ -1,10 +1,9 @@
 
-
 export interface Ticket {
   id: number;
   subject: string;
   contactId: number;
-  assignedTo?: string; // Agent name
+  assignedTo?: string;
   created: string;
   status: 'open' | 'pending' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -32,7 +31,7 @@ export interface Ticket {
 }
 
 export interface Message {
-  from: string; // "Customer" or agent name
+  from: string;
   type: 'customer' | 'agent';
   content: string;
   timestamp: string;
@@ -47,7 +46,7 @@ export interface InternalNote {
 
 export interface Activity {
   type: 'status_change' | 'assignment' | 'tag_add' | 'tag_remove' | 'created' | 'merged' | 'split' | 'ai_assignment';
-  user: string; // agent name or "System"
+  user: string;
   timestamp: string;
   details: string;
 }
@@ -94,8 +93,8 @@ export interface CustomFieldDefinition {
 
 export interface SlaRules {
   [key: string]: {
-    responseTime: number; // minutes
-    resolutionTime: number; // minutes
+    responseTime: number;
+    resolutionTime: number;
   };
 }
 
@@ -167,8 +166,8 @@ export interface FormField {
 export interface AnalyticsData {
   ticketsCreated: number;
   ticketsResolved: number;
-  avgFirstResponseTime: number; // in minutes
-  avgResolutionTime: number; // in hours
+  avgFirstResponseTime: number;
+  avgResolutionTime: number;
   satisfactionScore: number;
   topPerformingAgent: string;
   csatDrivers: { [key: string]: number };
@@ -206,24 +205,24 @@ export interface ChatSession {
 }
 
 export interface SlackMessage {
-    id: string;
-    channel: string;
-    user: string;
-    text: string;
-    timestamp: string;
-    isSupportRequest: boolean;
-    status: 'unprocessed' | 'ticket_created' | 'reply_added';
-    linkedTicketId?: number;
+  id: string;
+  channel: string;
+  user: string;
+  text: string;
+  timestamp: string;
+  isSupportRequest: boolean;
+  status: 'unprocessed' | 'ticket_created' | 'reply_added';
+  linkedTicketId?: number;
 }
 
 export interface SlackSettings {
-    connected: boolean;
-    supportChannel: string;
-    notificationRules: {
-        newTicket: boolean;
-        ticketResolved: boolean;
-        slaBreach: boolean;
-    };
+  connected: boolean;
+  supportChannel: string;
+  notificationRules: {
+    newTicket: boolean;
+    ticketResolved: boolean;
+    slaBreach: boolean;
+  };
 }
 
 export interface WallboardData {
@@ -261,17 +260,17 @@ export interface QAReview {
   totalScore: number;
 }
 
-export type Permission = 
-  'ticket:merge' |
-  'view:tickets' | 'edit:tickets' | 'delete:tickets' |
-  'view:customers' | 'edit:customers' |
-  'view:reports' | 'view:settings' | 'manage:agents' | 'manage:billing';
+export type Permission =
+  | 'ticket:merge'
+  | 'view:tickets' | 'edit:tickets' | 'delete:tickets'
+  | 'view:customers' | 'edit:customers'
+  | 'view:reports' | 'view:settings' | 'manage:agents' | 'manage:billing';
 
 export interface Role {
-    id: string;
-    name: string;
-    description: string;
-    permissions: Permission[];
+  id: string;
+  name: string;
+  description: string;
+  permissions: Permission[];
 }
 
 export interface SsoSettings {
@@ -288,7 +287,7 @@ export interface ProblemSuggestion {
 
 export interface AuditLogEntry {
   id: string;
-  user: string; // Agent name
+  user: string;
   action: string;
   timestamp: string;
   details?: string;
@@ -296,61 +295,61 @@ export interface AuditLogEntry {
 }
 
 export interface FacebookMessage {
-    sender: 'customer' | 'page';
-    content: string;
-    timestamp: string;
+  sender: 'customer' | 'page';
+  content: string;
+  timestamp: string;
 }
 
 export interface FacebookThread {
-    id: string;
-    customerName: string;
-    customerProfilePic: string;
-    lastMessageSnippet: string;
-    updatedAt: string;
-    status: 'unprocessed' | 'ticket_created';
-    linkedTicketId?: number;
-    messages: FacebookMessage[];
+  id: string;
+  customerName: string;
+  customerProfilePic: string;
+  lastMessageSnippet: string;
+  updatedAt: string;
+  status: 'unprocessed' | 'ticket_created';
+  linkedTicketId?: number;
+  messages: FacebookMessage[];
 }
 
 export interface TwitterMessage {
-    sender: 'customer' | 'agent';
-    content: string;
-    timestamp: string;
+  sender: 'customer' | 'agent';
+  content: string;
+  timestamp: string;
 }
 
 export interface TwitterThread {
-    id: string;
-    customerName: string;
-    customerHandle: string;
-    customerProfilePic: string;
-    lastMessageSnippet: string;
-    updatedAt: string;
-    status: 'unprocessed' | 'ticket_created';
-    linkedTicketId?: number;
-    messages: TwitterMessage[];
+  id: string;
+  customerName: string;
+  customerHandle: string;
+  customerProfilePic: string;
+  lastMessageSnippet: string;
+  updatedAt: string;
+  status: 'unprocessed' | 'ticket_created';
+  linkedTicketId?: number;
+  messages: TwitterMessage[];
 }
 
 export interface WhatsAppMessage {
-    sender: 'customer' | 'agent';
-    content: string;
-    timestamp: string;
+  sender: 'customer' | 'agent';
+  content: string;
+  timestamp: string;
 }
 
 export interface WhatsAppThread {
-    id: string;
-    customerName: string;
-    customerPhone: string;
-    lastMessageSnippet: string;
-    updatedAt: string;
-    status: 'unprocessed' | 'ticket_created';
-    linkedTicketId?: number;
-    messages: WhatsAppMessage[];
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  lastMessageSnippet: string;
+  updatedAt: string;
+  status: 'unprocessed' | 'ticket_created';
+  linkedTicketId?: number;
+  messages: WhatsAppMessage[];
 }
 
 export interface ApiKey {
   id: string;
   name: string;
-  key: string; // The full secret key
+  key: string;
   createdAt: string;
   lastUsedAt?: string;
 }
@@ -425,32 +424,26 @@ export interface KanbanWorkspace {
   description?: string;
 }
 
-// Advanced Filtering Models
-export type FilterOperator = 
-  // General
-  | 'is' 
-  | 'is_not' 
-  | 'is_set' 
+export type FilterOperator =
+  | 'is'
+  | 'is_not'
+  | 'is_set'
   | 'is_not_set'
-  // Text
-  | 'contains' 
+  | 'contains'
   | 'does_not_contain'
   | 'starts_with'
   | 'ends_with'
-  // Number
   | 'greater_than'
   | 'less_than'
-  // Date
   | 'is_on'
   | 'is_before'
   | 'is_after'
   | 'last_x_days'
-  // Dropdown / Multi-select
   | 'is_one_of';
 
 export interface TicketFilterCondition {
   id: string;
-  field: string; // 'status', 'priority', or a custom field ID like 'cf_123'
+  field: string;
   operator: FilterOperator;
   value: any;
 }
@@ -466,16 +459,16 @@ export type TicketFilters = TicketFilterGroup[];
 export interface TicketView {
   id: string;
   name: string;
-  ownerId: number; // ID of the agent who created it
+  ownerId: number;
   visibility: 'private' | 'shared';
-  sharedWithGroupIds?: number[]; // Only applies if visibility is 'shared'
+  sharedWithGroupIds?: number[];
   isPinned?: boolean;
   filters: TicketFilters;
   displayOptions: {
-    columns: string[]; // e.g., ['id', 'subject', 'contact', 'status', 'priority', 'cf_product_area']
-    sortBy: string; // e.g., 'created'
+    columns: string[];
+    sortBy: string;
     sortDirection: 'asc' | 'desc';
-    groupBy?: string; // e.g., 'status'
+    groupBy?: string;
   };
 }
 
@@ -485,4 +478,18 @@ export interface Notification {
   timestamp: string;
   read: boolean;
   ticketId?: number;
+}
+
+export interface Toast {
+  id: number;
+  message: string;
+  type: 'success' | 'info' | 'error';
+  icon: string;
+}
+
+export interface Command {
+  id: string;
+  name: string;
+  icon: string;
+  action: any;
 }

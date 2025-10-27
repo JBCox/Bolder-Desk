@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, computed, effect, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, effect, inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MOCK_DATA } from './mock-data';
@@ -35,11 +35,12 @@ import { SalesforceIntegrationComponent } from './components/salesforce-integrat
 import { JiraIntegrationComponent } from './components/jira-integration/jira-integration.component';
 import { KanbanComponent } from './components/kanban/kanban.component';
 import { NewKanbanBoardModalComponent } from './components/new-kanban-board-modal/new-kanban-board-modal.component';
-import { MyWorkComponent } from './components/my-work/my-work.component';
+import { MyInboxComponent } from './components/my-inbox/my-inbox.component';
+import { CommandPaletteComponent } from './components/command-palette/command-palette.component';
 import { GeminiService } from './gemini.service';
 
 
-type View = 'tickets' | 'analytics' | 'kb' | 'customers' | 'inbox' | 'chat' | 'reports' | 'slack' | 'qa' | 'wallboard' | 'devplan' | 'portal' | 'facebook' | 'twitter' | 'whatsapp' | 'salesforce' | 'jira' | 'kanban' | 'mywork';
+type View = 'tickets' | 'analytics' | 'kb' | 'customers' | 'inbox' | 'chat' | 'reports' | 'slack' | 'qa' | 'wallboard' | 'devplan' | 'portal' | 'facebook' | 'twitter' | 'whatsapp' | 'salesforce' | 'jira' | 'kanban' | 'my-inbox';
 type Modal = 'newTicket' | 'mergeTicket' | 'splitTicket' | 'csat' | 'settings' | 'logTime' | 'linkTicket' | 'shortcuts' | 'newKanbanBoard' | 'saveView';
 
 @Component({
@@ -81,7 +82,8 @@ type Modal = 'newTicket' | 'mergeTicket' | 'splitTicket' | 'csat' | 'settings' |
     JiraIntegrationComponent,
     KanbanComponent,
     NewKanbanBoardModalComponent,
-    MyWorkComponent,
+    MyInboxComponent,
+    CommandPaletteComponent,
   ],
 })
 export class AppComponent {
@@ -90,7 +92,7 @@ export class AppComponent {
   private readonly PINNED_VIEWS_LS_KEY = 'bolddesk_pinned_views';
 
   // === STATE SIGNALS ===
-  currentView = signal<View>('mywork');
+  currentView = signal<View>('my-inbox');
   openModal = signal<Modal | null>(null);
   
   // Data signals
@@ -125,6 +127,7 @@ export class AppComponent {
   allPermissions = signal<models.Permission[]>(['ticket:merge', 'view:tickets', 'edit:tickets', 'delete:tickets', 'view:customers', 'edit:customers', 'view:reports', 'view:settings', 'manage:agents', 'manage:billing']);
   auditLog = signal<models.AuditLogEntry[]>([]);
   ticketViews = signal<models.TicketView[]>(this.loadViews());
+  notifications = signal<models.Notification[]>(MOCK_DATA.notifications || []);
   
   // UI State
   selectedTicketId = signal<number | null>(null);
@@ -136,6 +139,9 @@ export class AppComponent {
   isDarkMode = signal(false);
   showLanguageMenu = signal(false);
   currentLanguage = signal<'en' | 'es' | 'fr'>('en');
+  toasts = signal<models.Toast[]>([]);
+  showNotifications = signal(false);
+  showCommandPalette = signal(false);
 
   // Advanced filter & view state
   showFilterPanel = signal(false);
@@ -157,6 +163,18 @@ export class AppComponent {
   currentCustomer = signal(this.contacts()[0]);
   currentChatSession = computed(() => this.chatSessions().find(c => c.customerEmail === this.currentCustomer().email && c.status !== 'ended') || null);
 
+  @HostListener('document:keydown.meta.k', ['$event'])
+  onMacCommandK(event: KeyboardEvent) {
+    event.preventDefault();
+    this.showCommandPalette.update(v => !v);
+  }
+
+  @HostListener('document:keydown.control.k', ['$event'])
+  onCtrlK(event: KeyboardEvent) {
+    event.preventDefault();
+    this.showCommandPalette.update(v => !v);
+  }
+
   constructor() {
     this.selectView(this.defaultViewId()); // Load default view on init
   }
@@ -165,12 +183,14 @@ export class AppComponent {
   translations = computed(() => {
     const lang = this.currentLanguage();
     const map = {
-        en: { tickets: 'Tickets', analytics: 'Analytics', knowledgeBase: 'Knowledge Base', customers: 'Customers', reports: 'Reports', qualityAssurance: 'Quality Assurance', wallboard: 'Wallboard', kanban: 'Kanban', channels: 'Channels', inbox: 'Inbox', liveChat: 'Live Chat', slack: 'Slack', facebook: 'Facebook', twitter: 'Twitter', whatsapp: 'WhatsApp', integrations: 'Integrations', salesforce: 'Salesforce', jira: 'Jira', devPlan: 'Dev Plan', customerPortal: 'Customer Portal', newTicket: 'New Ticket', myWork: 'My Work' },
-        es: { tickets: 'Tiquetes', analytics: 'Analítica', knowledgeBase: 'Base de Conocimiento', customers: 'Clientes', reports: 'Informes', qualityAssurance: 'Seguro de Calidad', wallboard: 'Panel de Control', kanban: 'Kanban', channels: 'Canales', inbox: 'Bandeja de entrada', liveChat: 'Chat en Vivo', slack: 'Slack', facebook: 'Facebook', twitter: 'Twitter', whatsapp: 'WhatsApp', integrations: 'Integraciones', salesforce: 'Salesforce', jira: 'Jira', devPlan: 'Plan de Desarrollo', customerPortal: 'Portal del Cliente', newTicket: 'Nuevo Tiquete', myWork: 'Mi Trabajo' },
-        fr: { tickets: 'Billets', analytics: 'Analytique', knowledgeBase: 'Base de Connaissances', customers: 'Clients', reports: 'Rapports', qualityAssurance: 'Assurance Qualité', wallboard: 'Tableau de Bord', kanban: 'Kanban', channels: 'Canaux', inbox: 'Boîte de Réception', liveChat: 'Chat en Direct', slack: 'Slack', facebook: 'Facebook', twitter: 'Twitter', whatsapp: 'WhatsApp', integrations: 'Intégrations', salesforce: 'Salesforce', jira: 'Jira', devPlan: 'Plan de Dév', customerPortal: 'Portail Client', newTicket: 'Nouveau Billet', myWork: 'Mon Travail' }
+        en: { tickets: 'Tickets', analytics: 'Analytics', knowledgeBase: 'Knowledge Base', customers: 'Customers', reports: 'Reports', qualityAssurance: 'Quality Assurance', wallboard: 'Wallboard', kanban: 'Kanban', channels: 'Channels', inbox: 'Inbox', liveChat: 'Live Chat', slack: 'Slack', facebook: 'Facebook', twitter: 'Twitter', whatsapp: 'WhatsApp', integrations: 'Integrations', salesforce: 'Salesforce', jira: 'Jira', devPlan: 'Dev Plan', customerPortal: 'Customer Portal', newTicket: 'New Ticket', myInbox: 'My Inbox' },
+        es: { tickets: 'Tiquetes', analytics: 'Analítica', knowledgeBase: 'Base de Conocimiento', customers: 'Clientes', reports: 'Informes', qualityAssurance: 'Seguro de Calidad', wallboard: 'Panel de Control', kanban: 'Kanban', channels: 'Canales', inbox: 'Bandeja de entrada', liveChat: 'Chat en Vivo', slack: 'Slack', facebook: 'Facebook', twitter: 'Twitter', whatsapp: 'WhatsApp', integrations: 'Integraciones', salesforce: 'Salesforce', jira: 'Jira', devPlan: 'Plan de Desarrollo', customerPortal: 'Portal del Cliente', newTicket: 'Nuevo Tiquete', myInbox: 'Mi Buzón' },
+        fr: { tickets: 'Billets', analytics: 'Analytique', knowledgeBase: 'Base de Connaissances', customers: 'Clients', reports: 'Rapports', qualityAssurance: 'Assurance Qualité', wallboard: 'Tableau de Bord', kanban: 'Kanban', channels: 'Canaux', inbox: 'Boîte de Réception', liveChat: 'Chat en Direct', slack: 'Slack', facebook: 'Facebook', twitter: 'Twitter', whatsapp: 'WhatsApp', integrations: 'Intégrations', salesforce: 'Salesforce', jira: 'Jira', devPlan: 'Plan de Dév', customerPortal: 'Portail Client', newTicket: 'Nouveau Billet', myInbox: 'Ma Boîte' }
     };
     return map[lang];
   });
+  
+  unreadNotificationsCount = computed(() => this.notifications().filter(n => !n.read).length);
 
   selectedTicket = computed(() => {
     const id = this.selectedTicketId();
@@ -403,12 +423,30 @@ export class AppComponent {
   availableTags = computed(() => [...new Set(this.tickets().flatMap(t => t.tags))]);
   customerPortalTickets = computed(() => this.tickets().filter(t => t.contactId === this.currentCustomer().id));
   hasPermission = computed(() => (permission: models.Permission) => (this.roles().find(r => r.id === this.currentAgent().roleId)?.permissions.includes(permission) ?? false));
+  areAllSelected = computed(() => {
+    const filteredIds = this.filteredTickets().map(t => t.id);
+    return filteredIds.length > 0 && filteredIds.every(id => this.selectedTicketIds().includes(id));
+  });
 
   // === METHODS ===
   
   private addAuditLog(icon: string, action: string, details?: string) {
     const newLog: models.AuditLogEntry = { id: `log_${Date.now()}_${Math.random()}`, user: this.currentAgent().name, action, details, timestamp: new Date().toISOString(), icon };
     this.auditLog.update(log => [newLog, ...log]);
+  }
+
+  addToast(message: string, type: 'success' | 'info' | 'error' = 'info') {
+    const id = Date.now();
+    const icon = { success: 'check-circle', info: 'alert-circle', error: 'x-circle' }[type];
+    const newToast: models.Toast = { id, message, type, icon };
+    
+    this.toasts.update(toasts => [...toasts, newToast]);
+    
+    setTimeout(() => this.removeToast(id), 5000);
+  }
+
+  removeToast(id: number) {
+    this.toasts.update(toasts => toasts.filter(t => t.id !== id));
   }
 
   toggleDarkMode() {
@@ -418,8 +456,58 @@ export class AppComponent {
 
   getContact = (id: number) => this.contacts().find(c => c.id === id);
   getAgent = (name: string) => this.agents().find(a => a.name === name);
-  selectTicket = (id: number | null) => { this.selectedTicketId.set(id); this.currentView.set('tickets'); };
+  selectTicket = (id: number | null) => { 
+    this.selectedTicketId.set(id); 
+    if (id !== null) {
+      this.currentView.set('tickets'); 
+    }
+  };
   
+  getStatusDotClass(status: models.Ticket['status']): string {
+    switch (status) {
+      case 'open': return 'bg-blue-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'resolved':
+      case 'closed':
+        return 'bg-green-500';
+      default: return 'bg-slate-400';
+    }
+  }
+  
+  getInitials(name: string = ''): string {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '';
+  }
+
+  getAvatarBgClass(name: string = ''): string {
+    const colors = ['bg-red-200', 'bg-green-200', 'bg-blue-200', 'bg-yellow-200', 'bg-purple-200', 'bg-pink-200'];
+    const charCodeSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colors[charCodeSum % colors.length];
+  }
+  
+  getLatestMessageSnippet(ticket: models.Ticket): { snippet: string, from: string } {
+    if (ticket.messages.length === 0) {
+      return { snippet: 'No messages yet.', from: 'system' };
+    }
+    const lastMessage = ticket.messages[ticket.messages.length - 1];
+    const from = lastMessage.type === 'agent' ? lastMessage.from === this.currentAgent().name ? 'You' : lastMessage.from : 'Customer';
+    return {
+      snippet: lastMessage.content,
+      from,
+    };
+  }
+  
+  markNotificationAsRead(notificationId: string) {
+    this.notifications.update(notifs => notifs.map(n => n.id === notificationId ? { ...n, read: true } : n));
+  }
+  
+  handleNotificationClick(notification: models.Notification) {
+    this.markNotificationAsRead(notification.id);
+    if (notification.ticketId) {
+      this.selectTicket(notification.ticketId);
+    }
+    this.showNotifications.set(false);
+  }
+
   // == Filter & View Methods ==
   toggleFilterPanel() {
     if (!this.showFilterPanel()) {
@@ -465,9 +553,11 @@ export class AppComponent {
     const operator = (event.target as HTMLSelectElement).value as models.FilterOperator;
     this.panelFilters.update(f => { f[groupIndex].conditions[condIndex].operator = operator; return [...f]; });
   }
-  updateConditionValue(groupIndex: number, condIndex: number, event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-    this.panelFilters.update(f => { f[groupIndex].conditions[condIndex].value = value; return [...f]; });
+  updateConditionValue(groupIndex: number, condIndex: number, value: any) {
+    this.panelFilters.update(f => {
+      f[groupIndex].conditions[condIndex].value = value;
+      return [...f];
+    });
   }
 
   getFieldDef = (fieldId: string) => this.availableFilterFields().find(f => f.id === fieldId);
@@ -518,6 +608,7 @@ export class AppComponent {
   cloneView() {
     this.openSaveViewModal(true);
     this.showViewActions.set(false);
+    this.addToast('View cloned. You can now save it as a new view.', 'info');
   }
 
   renameView(viewId: string) {
@@ -527,6 +618,7 @@ export class AppComponent {
     if (newName && newName.trim()) {
         this.ticketViews.update(views => views.map(v => v.id === viewId ? {...v, name: newName.trim()} : v));
         this.addAuditLog('tag', `Renamed view from "${view.name}" to "${newName.trim()}"`);
+        this.addToast(`View renamed to "${newName.trim()}"`, 'success');
     }
     this.showViewActions.set(false);
   }
@@ -535,7 +627,9 @@ export class AppComponent {
     localStorage.setItem(this.DEFAULT_VIEW_LS_KEY, viewId);
     this.defaultViewId.set(viewId);
     this.showViewActions.set(false);
-    this.addAuditLog('star', `Set "${this.ticketViews().find(v=>v.id === viewId)?.name}" as default view`);
+    const viewName = this.ticketViews().find(v=>v.id === viewId)?.name;
+    this.addAuditLog('star', `Set "${viewName}" as default view`);
+    this.addToast(`"${viewName}" is now your default view.`, 'success');
   }
 
   openEditViewModal() {
@@ -573,6 +667,7 @@ export class AppComponent {
         : v
     ));
     this.addAuditLog('save', `Updated filters for view "${this.activeView().name}"`);
+    this.addToast(`View "${this.activeView().name}" updated.`, 'success');
   }
 
   deleteView(viewId: string) {
@@ -581,6 +676,7 @@ export class AppComponent {
         this.ticketViews.update(views => views.filter(v => v.id !== viewId));
         this.selectView('all');
         this.addAuditLog('trash', `Deleted view "${viewName}"`);
+        this.addToast(`View "${viewName}" deleted.`, 'success');
     }
     this.showViewActions.set(false);
   }
@@ -597,6 +693,7 @@ export class AppComponent {
             : v
         ));
         this.addAuditLog('edit-3', `Edited view "${viewName}"`);
+        this.addToast(`View "${viewName}" saved.`, 'success');
     } else {
         const newView: models.TicketView = {
             id: `view_${Date.now()}`,
@@ -610,6 +707,7 @@ export class AppComponent {
         this.ticketViews.update(views => [...views, newView]);
         this.activeViewId.set(newView.id);
         this.addAuditLog('plus-circle', `Created view "${viewName}"`);
+        this.addToast(`View "${viewName}" created.`, 'success');
     }
     this.openModal.set(null);
   }
@@ -655,11 +753,21 @@ export class AppComponent {
   }
 
   togglePinView(viewId: string) {
+    let viewName = '';
+    let isPinned = false;
     this.ticketViews.update(views => {
-        const newViews = views.map(v => v.id === viewId ? { ...v, isPinned: !v.isPinned } : v);
+        const newViews = views.map(v => {
+            if (v.id === viewId) {
+                viewName = v.name;
+                isPinned = !v.isPinned;
+                return { ...v, isPinned };
+            }
+            return v;
+        });
         this.saveViews(newViews);
         return newViews;
     });
+    this.addToast(isPinned ? `View "${viewName}" pinned.` : `View "${viewName}" unpinned.`, 'success');
     this.showViewActions.set(false);
   }
   
@@ -694,6 +802,47 @@ export class AppComponent {
         t.id === ticketId ? { ...t, [columnId]: value === 'unassigned' ? undefined : value } : t
     ));
     this.stopEditing();
+  }
+  
+  handleAnalyticsFilter(conditions: { field: string, operator: models.FilterOperator, value: any }[]) {
+    const newFilters: models.TicketFilters = [
+      {
+        id: `g_${Date.now()}`,
+        matchType: 'all',
+        conditions: conditions.map(c => ({
+          id: `c_${Date.now()}_${Math.random()}`,
+          ...c
+        }))
+      }
+    ];
+    this.activeFilters.set(newFilters);
+    this.activeViewId.set('custom');
+    this.currentView.set('tickets');
+    this.selectedTicketId.set(null);
+  }
+  
+  handleCommandPaletteAction(item: any) {
+    switch (item.type) {
+        case 'navigation':
+            this.currentView.set(item.view);
+            break;
+        case 'action':
+            if (item.action === 'newTicket') this.openModal.set('newTicket');
+            if (item.action === 'toggleDarkMode') this.toggleDarkMode();
+            break;
+        case 'ticket':
+            this.selectTicket(item.id);
+            break;
+        case 'kb':
+            this.currentView.set('kb');
+            // A more robust implementation would select the article in the KB component
+            break;
+        case 'contact':
+             this.currentView.set('customers');
+            // A more robust implementation would select the contact in the Customers component
+            break;
+    }
+    this.showCommandPalette.set(false);
   }
 
   // === TICKET ACTION HANDLERS ===
@@ -754,7 +903,7 @@ export class AppComponent {
     
     // Add activity log for specific changes
     if (update.status) this.addAuditLog('circle', `Changed status of #${id} to ${update.status}`);
-    if (update.priority) this.addAuditLog('alertcircle', `Changed priority of #${id} to ${update.priority}`);
+    if (update.priority) this.addAuditLog('alert-circle', `Changed priority of #${id} to ${update.priority}`);
     if (update.assignedTo) this.addAuditLog('user', `Assigned #${id} to ${update.assignedTo}`);
   }
 
@@ -837,7 +986,7 @@ export class AppComponent {
       updated.push(newTicket);
       return updated;
     });
-    this.addAuditLog('alertcircle', `Created problem ticket #${newTicket.id} from ${suggestion.incidentTicketIds.length} incidents`);
+    this.addAuditLog('alert-circle', `Created problem ticket #${newTicket.id} from ${suggestion.incidentTicketIds.length} incidents`);
   }
 
   handleCsatSubmit(event: { rating: number; comment: string }) {
@@ -888,30 +1037,68 @@ export class AppComponent {
     this.openModal.set(null);
   }
 
+  toggleSelectTicket(ticketId: number) {
+    this.selectedTicketIds.update(ids => 
+      ids.includes(ticketId) 
+        ? ids.filter(id => id !== ticketId) 
+        : [...ids, ticketId]
+    );
+  }
+
+  toggleSelectAll() {
+    if (this.areAllSelected()) {
+      this.selectedTicketIds.set([]);
+    } else {
+      this.selectedTicketIds.set(this.filteredTickets().map(t => t.id));
+    }
+  }
+
   handleBulkAction(event: { action: string, value: any }) {
     this.tickets.update(tickets => tickets.map(t => {
       if (this.selectedTicketIds().includes(t.id)) {
         switch (event.action) {
           case 'status': return { ...t, status: event.value };
           case 'priority': return { ...t, priority: event.value };
-          case 'assign': return { ...t, assignedTo: event.value };
+          case 'assign': return { ...t, assignedTo: event.value === 'unassigned' ? undefined : event.value };
           case 'addTag': return { ...t, tags: [...new Set([...t.tags, event.value])] };
           default: return t;
         }
       }
       return t;
     }));
+    this.addAuditLog('check-square', `Applied bulk action "${event.action}" to ${this.selectedTicketIds().length} tickets.`);
+    this.addToast(`${this.selectedTicketIds().length} tickets updated.`, 'success');
     this.selectedTicketIds.set([]);
   }
 
   handleSaveRoles(updatedRoles: models.Role[]) {
     this.roles.set(updatedRoles);
     this.addAuditLog('shield', `Updated roles and permissions`);
+    this.addToast('Roles and permissions saved.', 'success');
   }
 
   handleSaveSsoSettings(settings: models.SsoSettings) {
     this.ssoSettings.set(settings);
     this.addAuditLog('shield', `Updated SSO settings`);
+    this.addToast('SSO settings saved.', 'success');
+  }
+  
+  handleSaveAutomationRules(rules: models.AutomationRule[]) {
+    this.automationRules.set(rules);
+    this.addAuditLog('zap', `Updated automation rules`);
+    this.addToast('Automation rules saved.', 'success');
+  }
+
+  handleSaveSlaRules(rules: models.SlaRules) {
+    this.slaRules.set(rules);
+    this.addAuditLog('sliders', `Updated SLA policies`);
+    this.addToast('SLA policies saved.', 'success');
+  }
+  
+  handleSaveFormTemplates(templates: models.FormTemplate[]) {
+    this.formTemplates.set(templates);
+    this.addAuditLog('layout-template', `Updated form templates`);
+    this.addToast('Form templates saved.', 'success');
   }
   
   handleCreateApiKey(key: models.ApiKey) {
@@ -922,11 +1109,13 @@ export class AppComponent {
   handleRevokeApiKey(keyId: string) {
     this.apiKeys.update(keys => keys.filter(k => k.id !== keyId));
     this.addAuditLog('key', `Revoked API Key`);
+    this.addToast('API Key revoked.', 'success');
   }
 
   handleSaveWebhooks(webhooks: models.Webhook[]) {
     this.webhooks.set(webhooks);
     this.addAuditLog('webhook', `Updated webhooks configuration`);
+    this.addToast('Webhooks saved.', 'success');
   }
   
   handleSaveSalesforceSettings(settings: models.SalesforceSettings) { this.salesforceSettings.set(settings); }

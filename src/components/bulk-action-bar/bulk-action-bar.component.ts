@@ -1,6 +1,7 @@
 
 import { Component, ChangeDetectionStrategy, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Agent } from '../../models';
 
 @Component({
   selector: 'app-bulk-action-bar',
@@ -10,6 +11,7 @@ import { CommonModule } from '@angular/common';
 })
 export class BulkActionBarComponent {
   selectedCount = input.required<number>();
+  agents = input.required<Agent[]>();
   availableTags = input.required<string[]>();
   action = output<{ action: string; value: any }>();
   cancel = output<void>();
